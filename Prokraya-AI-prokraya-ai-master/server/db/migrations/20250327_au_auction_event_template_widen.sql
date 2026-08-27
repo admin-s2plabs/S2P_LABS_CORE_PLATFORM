@@ -1,0 +1,3 @@
+-- Deprecated: use auctions_database_updates.sql instead (idempotent, full auction DDL).
+--
+--   psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f server/db/migrations/auctions_database_updates.sql

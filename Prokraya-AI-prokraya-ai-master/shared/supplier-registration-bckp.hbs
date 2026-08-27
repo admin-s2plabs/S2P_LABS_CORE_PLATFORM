@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Supplier Registration</title>
+<style>
+body{font-family:Arial,sans-serif;font-size:12px}
+table{width:100%;border-collapse:collapse;margin-bottom:12px}
+th,td{border:1px solid #000;padding:6px}
+th{background:#f2f2f2}
+h2,h3{text-align:center}
+.logo{text-align:center;margin-bottom:10px}
+.no-record{text-align:center;font-style:italic}
+</style>
+</head>
+<body>
+<div class="logo">{{#if logo}}<img src="{{logo}}" style="max-height:80px;background:#1b1b31;" alt="Logo">{{/if}}</div>
+<h2>SUPPLIER REGISTRATION FORM</h2>
+
+<h3>Supplier Reference Information</h3>
+<table><tr><td>Supplier Reference ID</td><td>{{defaultValue basicDetails.supplierId}}</td></tr></table>
+
+<h3>Basic Details</h3>
+<table>
+<tr><td>Company Name</td><td>{{defaultValue basicDetails.companyName}}</td></tr>
+<tr><td>Location</td><td>{{defaultValue basicDetails.city}}</td></tr>
+<tr><td>Country</td><td>{{defaultValue basicDetails.country}}</td></tr>
+<tr><td>Address</td><td>{{defaultValue basicDetails.address1}},{{defaultValue basicDetails.city}},{{defaultValue basicDetails.state}} - {{defaultValue basicDetails.postalCode}} </td></tr>
+<tr><td>Email</td><td>{{defaultValue basicDetails.emailId}}</td></tr>
+<tr><td>Supplier Mobile Number</td><td>{{defaultValue basicDetails.phone}}</td></tr>
+<tr><td>Legal Entity Type</td><td>{{defaultValue basicDetails.legalEntityType}}</td></tr>
+<tr><td>Business Expiry Date</td><td>{{defaultValue expiryDate}}</td></tr>
+<tr><td>Place of Issue</td><td>{{defaultValue basicDetails.placeOfIssue}}</td></tr>
+<tr><td>Incorporation Date</td><td>{{defaultValue incorporationDate}}</td></tr>
+<tr><td>Annual Revenue</td><td>{{defaultValue basicDetails.annualTurnOver}}</td></tr>
+<tr><td>License Number</td><td>{{defaultValue basicDetails.licenseNo}}</td></tr>
+<tr><td>Currency</td><td>{{defaultValue basicDetails.turnOverCurrency}}</td></tr>
+<tr><td>Payment Terms</td><td>{{defaultValue basicDetails.paymentTerms}}</td></tr>
+<tr><td>GST/VAT Number</td><td>{{defaultValue basicDetails.taxRegNo}}</td></tr>
+<tr><td>TIN Number</td><td>{{defaultValue basicDetails.taxPayerId}}</td></tr>
+<tr><td>Working Hours</td><td>{{defaultValue basicDetails.workingTimeStartTime}} - {{defaultValue basicDetails.workingTimeEndTime}}</td></tr>
+<tr><td>Working Days</td><td>{{defaultValue basicDetails.workingdayStart}} - {{defaultValue basicDetails.workingdayEnd}}</td></tr>
+<tr><td>Tax Effective Date</td><td>{{defaultValue taxEffectiveDate}}</td></tr>
+<tr><td>Pan Number</td><td>{{defaultValue basicDetails.panNo}}</td></tr>
+</table>
+
+<h3>Contact Details</h3>
+<table><tr><th>Name</th><th>Role</th><th>Category</th><th>Number</th><th>Email</th><th>Tag</th></tr>
+{{#if contacts}}{{#each contacts}}<tr><td>{{defaultValue contactName}}</td><td>{{defaultValue designation}}</td><td>{{defaultValue contactCategory}}</td><td>{{defaultValue mobile}}</td><td>{{defaultValue email}}</td><td>{{defaultValue isPrimary}}</td></tr>{{/each}}{{else}}<tr><td colspan="6" class="no-record">No records available</td></tr>{{/if}}
+</table>
+
+<h3>Scope Of Supply</h3>
+<table>
+<tr><td>Service Experience</td><td>{{defaultValue basicDetails.brandName}}</td></tr>
+<tr><td>Domestic Experience</td><td>{{defaultValue basicDetails.yearOfExpLocMarket}}</td></tr>
+<tr><td>International Experience</td><td>{{defaultValue basicDetails.yearOfExpInternational}}</td></tr>
+</table>
+
+<h3>Goods / Services</h3>
+<table><tr><th>Category</th><th>Sub Category</th></tr>
+{{#if goodsServices}}{{#each goodsServices}}<tr><td>{{defaultValue category}}</td><td>{{defaultValue subCategory}}</td></tr>{{/each}}{{else}}<tr><td colspan="2" class="no-record">No records available</td></tr>{{/if}}
+</table>
+
+<h3>Banking Details</h3>
+<table><tr><th>Account</th><th>Bank</th><th>Name</th><th>Country</th><th>City</th><th>Tag</th></tr>
+{{#if bankDetails}}{{#each bankDetails}}<tr><td>{{defaultValue accountNo}}</td><td>{{defaultValue bankName}}</td><td>{{defaultValue beneficiaryName}}</td><td>{{defaultValue country}}</td><td>{{defaultValue city}}</td><td>{{defaultValue tag}}</td></tr>{{/each}}{{else}}<tr><td colspan="6" class="no-record">No records available</td></tr>{{/if}}
+</table>
+
+<h3>Documents</h3>
+<table><tr><th>Name</th><th>Attachment</th></tr>
+{{#if documents}}{{#each documents}}<tr><td>{{defaultValue docType}}</td><td>{{defaultValue filename}}</td></tr>{{/each}}{{else}}<tr><td colspan="2" class="no-record">No records available</td></tr>{{/if}}
+</table>
+
+<h3>Authorization</h3>
+<table>
+<tr><td>Signatory</td><td>{{defaultValue authorization.signatoryName}}</td></tr>
+<tr><td>Designation</td><td>{{defaultValue authorization.designation}}</td></tr>
+<tr><td>Date</td><td>{{defaultValue authorization.date}}</td></tr>
+</table>
+
+<h3>Declaration on Conflict of Interest</h3>
+<p>This is to certify that we, M/s {{defaultValue declaration.supplierCompany}} are having the following entities/persons in actual or potential conflict of interest while dealing with {{defaultValue declaration.organizationName}}.</p>
+<table><tr><th>Entity</th><th>Related Person</th><th>Relationship</th></tr>
+{{#if declaration.conflicts}}{{#each declaration.conflicts}}<tr><td>{{defaultValue entity}}</td><td>{{defaultValue relatedPerson}}</td><td>{{defaultValue relationship}}</td></tr>{{/each}}{{else}}<tr><td colspan="3" class="no-record">No records available</td></tr>{{/if}}
+</table>
+</body></html>

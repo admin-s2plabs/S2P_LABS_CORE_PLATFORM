@@ -1,0 +1,1 @@
+ALTER TABLE dbo.cm_sow ADD COLUMN IF NOT EXISTS po_number VARCHAR(50);

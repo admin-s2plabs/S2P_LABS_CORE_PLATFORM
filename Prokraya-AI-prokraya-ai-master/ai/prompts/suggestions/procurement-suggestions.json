@@ -1,0 +1,119 @@
+{
+  "quickActions": {
+    "createPr": "Create a new PR for {{description}}",
+    "convertPrToPo": "Convert {{pr_id}} into a PO",
+    "pendingActions": "Show me all pending alerts, requests and approvals"
+  },
+  "phase2QuickActions": {
+    "createBudget": "Create a new budget {{description}}",
+    "trackStatus": "Show the complete status of {{pr_id/po_id}}, including approval, delivery, and receipt.",
+    "procurementDashboard": "Show procurement insights, including PRs, POs, budgets, spend, and approvals."
+  },
+  "categories": [
+    {
+      "module": "Cross-Module & Complex Queries",
+      "icon": "Sparkles",
+      "prompts": [
+        "Fetch complete status of PR {{pr_id}}, including approval, PO linkage, delivery, and receipt.",
+        "If PR {{pr_id}} is approved, convert it into a PO for supplier {{supplier_id}}.",
+        "Recommend the preferred supplier for {{pr_id}}."
+      ],
+      "phase2Prompts": [
+        "Check delivered items for PO {{po_id}} and record GRN for received quantities.",
+        "Generate a procurement dashboard with PR and PO statistics.",
+        "Create a full procurement cycle for {{item_name}}, from PR to PO to delivery."
+      ]
+    },
+    {
+      "module": "PR creation & management",
+      "icon": "FilePlus",
+      "prompts": [
+        "Create a purchase requisition for {{category_or_purpose}}.",
+        "Create a PR for {{quantity}} units of {{item_name}} at {{unit_price}} each.",
+        "Add line item to PR {{pr_id}}: {{item_name}}, {{quantity}} units at {{unit_price}}.",
+        "Update PR {{pr_id}} description to \"{{description}}\".",
+        "Change PR {{pr_id}} need-by date to {{date}}.",
+        "Submit PR {{pr_id}} for approval.",
+        "Check if PR {{pr_id}} is ready for submission.",
+        "List all PRs with status {{status}}.",
+        "Show details of PR {{pr_id}}.",
+        "Create a purchase requisition based on {{description}}.",
+        "Recommend items for {{description}}.",
+        "Suggest the most appropriate items for {{pr_id}}.",
+        "Recommend the quantity for {{item_name}}."
+      ],
+      "phase2Prompts": [
+        "Show PRs from department {{department_name}}.",
+        "Detect duplicate purchase requisitions.",
+        "Who requested PR {{pr_id}}?"
+      ]
+    },
+    {
+      "module": "PO creation & management",
+      "icon": "ShoppingCart",
+      "prompts": [
+        "Raise goods receipt for PO {{po_id}}: {{quantity}} units of {{item_name}}.",
+        "Show all purchase orders.",
+        "List POs with status {{status}}.",
+        "List POs from supplier {{supplier_name}}.",
+        "Find POs with total value above {{amount}}.",
+        "Show details of PO {{po_id}}."
+      ],
+      "phase2Prompts": [
+        "Create a purchase order from PR {{pr_id}} for supplier {{supplier_id}}.",
+        "Convert PR {{pr_id}} into a purchase order.",
+        "Add line item to PO {{po_id}}: {{item_name}}, {{quantity}} units at {{unit_price}}.",
+        "Show delivery notes for PO {{po_id}}.",
+        "How much has been received vs ordered on PO {{po_id}}?"
+      ]
+    },
+    {
+      "module": "Operation analytics",
+      "icon": "BarChart3",
+      "prompts": [
+        "Count PRs with status {{status}}.",
+        "Show PR activity by department.",
+        "How many POs are currently active?"
+      ],
+      "phase2Prompts": [
+        "Show PR statistics.",
+        "What is the average PR processing time?",
+        "Show PRs delayed beyond {{threshold_days}} days.",
+        "Calculate total spend for POs with status {{status}}.",
+        "What is the total procurement spend?"
+      ]
+    }
+  ],
+  "phase2Categories": [
+    {
+      "module": "Items and category",
+      "icon": "Package",
+      "prompts": [
+        "Search for {{item_name}} in the item catalog.",
+        "Find items under {{category_name}}.",
+        "Find {{item_name}} with supplier options.",
+        "Find vendors for {{category_name}} category."
+      ]
+    },
+    {
+      "module": "Budgets details & management",
+      "icon": "Wallet",
+      "prompts": [
+        "Show me the details of Budget.",
+        "Create a budget for {{Budget Name}}.",
+        "Create a budget with the following details: Budget Name {{Budget Name}}, Business Entity {{Business Entity}}, Budget Owner {{Budget Owner}}, Start Date {{Start Date}}, End Date {{End Date}}.",
+        "Create a budget for {{Department}}.",
+        "Create a budget for {{Department}} with a total amount of {{Amount}}.",
+        "Create a budget for {{Department}} for {{Year}}.",
+        "Add a line item to budget {{Budget}} with Cost Center {{Cost Center}}, Location {{Location}}, Department {{Department}}, and Amount {{Amount}}.",
+        "Suggest a budget amount for Cost Center {{Cost Center}}.",
+        "Show all line items for budget {{Budget}}.",
+        "Show the approval history of budget {{Budget}}.",
+        "How many PRs are raised against budget {{Budget}}?",
+        "How many POs are created against budget {{Budget}}?",
+        "How many invoices are created against budget {{Budget}}?",
+        "Show the number of PRs, POs, and invoices for budget {{Budget}}."
+      ]
+    }
+  ]
+}

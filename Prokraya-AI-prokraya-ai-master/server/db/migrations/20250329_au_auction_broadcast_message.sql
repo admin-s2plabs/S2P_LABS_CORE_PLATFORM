@@ -1,0 +1,3 @@
+-- Deprecated: consolidated into auctions_database_updates.sql (same DDL).
+--
+--   psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f server/db/migrations/auctions_database_updates.sql

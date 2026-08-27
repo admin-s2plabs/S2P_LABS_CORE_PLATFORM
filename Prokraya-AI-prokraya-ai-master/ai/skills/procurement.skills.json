@@ -1,0 +1,2262 @@
+[
+  {
+    "type": "function",
+    "tags": [
+      "read"
+    ],
+    "function": {
+      "name": "search_requisitions",
+      "description": "Search or list purchase requisitions (PRs). Call with NO parameters to list all PRs. Optionally filter by status, department, or text search. Supports pagination \u2014 use page parameter for 'show more' requests.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "search": {
+            "type": "string",
+            "description": "Search term (PR number, description, requestor name)"
+          },
+          "status": {
+            "type": "string",
+            "description": "Filter by status",
+            "enum": [
+              "Draft",
+              "Pending Approval",
+              "Approved",
+              "Rejected",
+              "More Info Required",
+              "all"
+            ]
+          },
+          "department": {
+            "type": "string",
+            "description": "Filter by department name"
+          },
+          "limit": {
+            "type": "number",
+            "description": "Max results per page (default 20, max 50)"
+          },
+          "page": {
+            "type": "number",
+            "description": "Page number (default 1). Increment for 'show more' or 'next page' requests."
+          }
+        },
+        "required": []
+      }
+    }
+  },
+  {
+    "type": "function",
+    "tags": [
+      "read"
+    ],
+    "function": {
+      "name": "get_requisition_details",
+      "description": "Get full details of a specific purchase requisition including header info, line items, and approval history. Requires PR number.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "prNumber": {
+            "type": "string",
+            "description": "The PR number (e.g. PR_00001)"
+          }
+        },
+        "required": [
+          "prNumber"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "tags": [
+      "read"
+    ],
+    "function": {
+      "name": "get_pr_stats",
+      "description": "Get purchase requisition statistics \u2014 total counts, breakdown by status, pending items, and trends.",
+      "parameters": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    }
+  },
+  {
+    "type": "function",
+    "tags": [
+      "read"
+    ],
+    "function": {
+      "name": "get_pr_stats_by_department",
+      "description": "Get purchase requisition statistics grouped BY DEPARTMENT \u2014 per-department total counts, breakdown by status, and value. This is the PREFERRED tool for 'PR activity by department', 'PRs by department', or any per-department PR summary. Returns aggregated counts only (does NOT list individual PRs), so use this instead of calling search_requisitions per department.",
+      "parameters": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    }
+  },
+  {
+    "type": "function",
+    "tags": [
+      "read"
+    ],
+    "function": {
+      "name": "search_purchase_orders",
+      "description": "Search or list purchase orders (POs). Call with NO parameters to list all POs. Optionally filter by supplier, status, department, PO total value, or text search across PO number, supplier name, buyer, and department. For 'POs from supplier X', resolve X with search_vendors and pass the numeric id as supplierId \u2014 never as search. For 'PO activity by department' or 'POs for the IT department', pass the department name via the department parameter (call once per department to build a per-department breakdown) \u2014 do NOT put the department in search. For 'POs with total value above/over N' pass minAmount: N (and maxAmount for 'below/under N') \u2014 the database applies the amount filter, so NEVER list all POs and filter the amounts yourself. Supports pagination \u2014 use page parameter for 'show more' requests.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "search": {
+            "type": "string",
+            "description": "Free-text term matched against PO number, supplier name, buyer, and department. NEVER put a numeric supplier id here \u2014 it matches digits inside unrelated PO numbers. Use supplierId instead."
+          },
+          "supplierId": {
+            "type": "number",
+            "description": "Canonical supplier/vendor id from search_vendors. Returns every PO for that supplier regardless of status. Preferred over search whenever the user names a vendor."
+          },
+          "status": {
+            "type": "string",
+            "description": "Filter by PO status",
+            "enum": [
+              "Draft",
+              "Pending Approval",
+              "Approved",
+              "Rejected",
+              "Issued",
+              "Closed",
+              "all"
+            ]
+          },
+          "minAmount": {
+            "type": "number",
+            "description": "Only return POs whose total value (po_total_cost) is strictly greater than this number. Use for 'total value above/over/more than N'."
+          },
+          "maxAmount": {
+            "type": "number",
+            "description": "Only return POs whose total value (po_total_cost) is strictly less than this number. Use for 'total value below/under/less than N'."
+          },
+          "department": {
+            "type": "string",
+            "description": "Filter by department name (matches department_name). Use for 'POs for the IT department' or to break PO activity down by department \u2014 call once per department."
+          },
+          "limit": {
+            "type": "number",
+            "description": "Max results per page (default 20, max 50)"
+          },
+          "page": {
+            "type": "number",
+            "description": "Page number (default 1). Increment for 'show more' or 'next page' requests."
+          }
+        },
+        "required": []
+      }
+    }
+  },
+  {
+    "type": "function",
+    "tags": [
+      "read"
+    ],
+    "function": {
+      "name": "get_po_details",
+      "description": "Get full details of a specific purchase order including header info, line items, supplier info, and approval history. Requires PO number.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "poNumber": {
+            "type": "string",
+            "description": "The PO number (e.g. PO_00001)"
+          }
+        },
+        "required": [
+          "poNumber"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "tags": [
+      "read"
+    ],
+    "function": {
+      "name": "get_po_stats",
+      "description": "Get purchase order statistics \u2014 total counts, breakdown by status, value summaries.",
+      "parameters": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    }
+  },
+  {
+    "type": "function",
+    "tags": [
+      "read"
+    ],
+    "function": {
+      "name": "get_po_stats_by_department",
+      "description": "Get purchase order statistics grouped BY DEPARTMENT \u2014 per-department total counts, breakdown by status, and value. This is the PREFERRED tool for 'PO activity by department', 'POs by department', or any per-department PO summary. Returns aggregated counts only (does NOT list individual POs), so use this instead of calling search_purchase_orders per department.",
+      "parameters": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    }
+  },
+  {
+    "type": "function",
+    "tags": [
+      "read"
+    ],
+    "function": {
+      "name": "search_items",
+      "description": "Search or list items in the product/service catalog. Call with NO parameters to list all items. Optionally filter by name, description, category, or code. Supports pagination \u2014 use page parameter for 'show more' requests.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "search": {
+            "type": "string",
+            "description": "Search term (item name, description, SKU, or code)"
+          },
+          "category": {
+            "type": "string",
+            "description": "Filter by category name or code"
+          },
+          "limit": {
+            "type": "number",
+            "description": "Max results per page (default 20, max 50)"
+          },
+          "page": {
+            "type": "number",
+            "description": "Page number (default 1). Increment for 'show more' or 'next page' requests."
+          }
+        },
+        "required": []
+      }
+    }
+  },
+  {
+    "type": "function",
+    "tags": [
+      "read"
+    ],
+    "function": {
+      "name": "recommend_items_for_description",
+      "description": "AI Advisor: recommend Item Master items that match a free-text need, e.g. \"Recommend items for apple laptops\" or \"what should I buy for a new engineering hire\". Returns catalog items with unit of measure and price only \u2014 it creates nothing. This is NOT a request to create a purchase order or requisition, so never answer it with recommend_purchase_order or recommend_requisition.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string",
+            "description": "What the user needs, in their own words (e.g. \"apple laptops\")"
+          }
+        },
+        "required": [
+          "description"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "tags": [
+      "read"
+    ],
+    "function": {
+      "name": "suggest_items_for_requisition",
+      "description": "AI Assisted: suggest Item Master items for an EXISTING requisition, using that PR's own description and department, e.g. \"Suggest the most appropriate items for PR_00072\". Read-only \u2014 it lists suggestions and adds nothing to the PR; use prepare_add_pr_line when the user then picks one. Never answer this with recommend_requisition or recommend_purchase_order.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "prNumber": {
+            "type": "string",
+            "description": "The PR number to suggest items for (e.g. PR_00072)"
+          }
+        },
+        "required": [
+          "prNumber"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "tags": [
+      "read"
+    ],
+    "function": {
+      "name": "recommend_item_quantity",
+      "description": "AI predicted quantity for one Item Master item, e.g. \"Recommend the quantity for laptops\". Resolves the item against the Item Master first, then predicts a quantity from past purchases. Read-only, and it needs no PR, budget, vendor, entity or department \u2014 never ask for those and never answer this with recommend_purchase_order or recommend_requisition.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "itemName": {
+            "type": "string",
+            "description": "The item as the user named it (e.g. \"laptops\")"
+          },
+          "prNumber": {
+            "type": "string",
+            "description": "Optional. Only when the user tied the question to a requisition, so its budget can inform the prediction."
+          }
+        },
+        "required": [
+          "itemName"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "tags": [
+      "read"
+    ],
+    "function": {
+      "name": "search_categories",
+      "description": "Search UNSPSC product/service categories. Supports search by name, browse by level (segment/family/class/commodity), or browse by parent code to explore the hierarchy. Supports pagination \u2014 use page parameter for 'show more' requests.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "search": {
+            "type": "string",
+            "description": "Search term (category name or code)"
+          },
+          "level": {
+            "type": "string",
+            "description": "Browse by hierarchy level",
+            "enum": [
+              "segment",
+              "family",
+              "class",
+              "commodity"
+            ]
+          },
+          "parentCode": {
+            "type": "string",
+            "description": "Browse children of a parent category code"
+          },
+          "limit": {
+            "type": "number",
+            "description": "Max results per page (default 20, max 50)"
+          },
+          "page": {
+            "type": "number",
+            "description": "Page number (default 1). Increment for 'show more' or 'next page' requests."
+          }
+        },
+        "required": []
+      }
+    }
+  },
+  {
+    "type": "function",
+    "tags": [
+      "read"
+    ],
+    "function": {
+      "name": "get_category_details",
+      "description": "Get details of a specific UNSPSC category by its code. Returns category name, level, parent, and description.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "UNSPSC category code (e.g. 43211500)"
+          }
+        },
+        "required": [
+          "code"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "tags": [
+      "read"
+    ],
+    "function": {
+      "name": "get_vendors_by_category",
+      "description": "Find vendors/suppliers registered under a specific UNSPSC category code. Useful for sourcing decisions.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "categoryCode": {
+            "type": "string",
+            "description": "UNSPSC category code to look up vendors for"
+          }
+        },
+        "required": [
+          "categoryCode"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "tags": [
+      "read"
+    ],
+    "function": {
+      "name": "get_po_delivery_notes",
+      "description": "Get all delivery notes (ASN / shipment notices) for a purchase order. Shows shipping status, carrier, dates, and tracking.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "poNumber": {
+            "type": "string",
+            "description": "PO number (e.g. PO_00001)"
+          }
+        },
+        "required": [
+          "poNumber"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "tags": [
+      "read"
+    ],
+    "function": {
+      "name": "get_po_grns",
+      "description": "Get all Goods Receipt Notes (GRNs) for a purchase order. Shows received quantities, dates, who received, and receipt status.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "poNumber": {
+            "type": "string",
+            "description": "PO number (e.g. PO_00001)"
+          }
+        },
+        "required": [
+          "poNumber"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "tags": [
+      "read"
+    ],
+    "function": {
+      "name": "get_po_receipt_status",
+      "description": "Get receipt/fulfillment status for all PO lines \u2014 shows ordered qty, delivered qty, received (GRN) qty, and pending qty for each line item.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "poNumber": {
+            "type": "string",
+            "description": "PO number (e.g. PO_00001)"
+          }
+        },
+        "required": [
+          "poNumber"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "tags": [
+      "write",
+      "prepare"
+    ],
+    "function": {
+      "name": "prepare_create_delivery_note",
+      "description": "Prepare creating a delivery note (ASN) for a purchase order. ONLY for Approved POs (same as Raise DN on PO detail — blocked for Draft / Pending Approval / Rejected / Cancelled). Role-specific, same as the Raise DN button: only the supplier user on that PO (after they Accept it) or a superadmin may create one; other users are refused and should use prepare_create_grn to record the receipt. ALWAYS call get_po_details or confirm Approved status first, then get_po_receipt_status for line numbers. Do NOT invent an ASN number — omit asnNumber unless the user explicitly provided one; the server assigns a unique ASN-YYYYMMDD-NNNN. Default ship date to today if not specified. Default expected arrival to 7 days after ship date if not specified.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "poNumber": {
+            "type": "string",
+            "description": "PO number (e.g. PO_00001)"
+          },
+          "asnNumber": {
+            "type": "string",
+            "description": "ASN/shipment number ONLY if the user explicitly provided one. Otherwise omit — server allocates a unique ASN."
+          },
+          "carrier": {
+            "type": "string",
+            "description": "Carrier/shipping company name"
+          },
+          "shipDate": {
+            "type": "string",
+            "description": "Ship date in YYYY-MM-DD format"
+          },
+          "expectedArrivalDate": {
+            "type": "string",
+            "description": "Expected arrival date in YYYY-MM-DD format"
+          },
+          "shipFrom": {
+            "type": "string",
+            "description": "Ship from location"
+          },
+          "shipTo": {
+            "type": "string",
+            "description": "Ship to location"
+          },
+          "billOfLanding": {
+            "type": "string",
+            "description": "Bill of lading number (optional)"
+          },
+          "lines": {
+            "type": "array",
+            "description": "Line items to include in the delivery note",
+            "items": {
+              "type": "object",
+              "properties": {
+                "poLineNumber": {
+                  "type": "string",
+                  "description": "PO line number"
+                },
+                "itemName": {
+                  "type": "string",
+                  "description": "Item name"
+                },
+                "qty": {
+                  "type": "number",
+                  "description": "Quantity being shipped"
+                },
+                "uom": {
+                  "type": "string",
+                  "description": "Unit of measure"
+                }
+              },
+              "required": [
+                "poLineNumber",
+                "qty"
+              ]
+            }
+          }
+        },
+        "required": [
+          "poNumber",
+          "carrier",
+          "lines"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "tags": [
+      "write",
+      "execute"
+    ],
+    "function": {
+      "name": "execute_create_delivery_note",
+      "description": "Execute creating a delivery note after user confirms. Only call after prepare_create_delivery_note. Re-checks that the PO is Approved and that the caller is the supplier on the PO (accepted) or a superadmin.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "poNumber": {
+            "type": "string",
+            "description": "PO number"
+          },
+          "asnNumber": {
+            "type": "string",
+            "description": "ASN from prepare step (or user-provided). Server re-validates uniqueness and reallocates if needed."
+          },
+          "carrier": {
+            "type": "string",
+            "description": "Carrier name"
+          },
+          "shipDate": {
+            "type": "string",
+            "description": "Ship date (defaults to today)"
+          },
+          "expectedArrivalDate": {
+            "type": "string",
+            "description": "Expected arrival date (defaults to 7 days from ship date)"
+          },
+          "shipFrom": {
+            "type": "string",
+            "description": "Ship from location (defaults to Supplier Warehouse)"
+          },
+          "shipTo": {
+            "type": "string",
+            "description": "Ship to location (defaults to Main Warehouse)"
+          },
+          "billOfLanding": {
+            "type": "string",
+            "description": "Bill of lading number"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "poLineNumber": {
+                  "type": "string",
+                  "description": "PO line number"
+                },
+                "itemName": {
+                  "type": "string",
+                  "description": "Item name"
+                },
+                "qty": {
+                  "type": "number",
+                  "description": "Quantity"
+                },
+                "uom": {
+                  "type": "string",
+                  "description": "Unit of measure"
+                }
+              }
+            }
+          },
+          "_confirmed": {
+            "type": "boolean",
+            "description": "Must be true to execute"
+          }
+        },
+        "required": [
+          "poNumber",
+          "carrier",
+          "lines"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "tags": [
+      "write",
+      "prepare"
+    ],
+    "function": {
+      "name": "prepare_create_grn",
+      "description": "Prepare creating a Goods Receipt Note (GRN) for a purchase order \u2014 same fields and gates as the Raise Receipt UI. ONLY for Approved POs; blocked for Draft / Pending Approval / Rejected / Cancelled. A delivery note must already exist. ALWAYS confirm Approved status and call get_po_receipt_status FIRST. Map user-mentioned items to actual PO line numbers. If receivedLocation is omitted, prepare defaults to the PO deliver-to location; otherwise resolve via search_locations. Default receiptDate to today if the user did not provide one. created_by comes from the session user (do not ask for received-by).",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "poNumber": {
+            "type": "string",
+            "description": "PO number (e.g. PO_00001)"
+          },
+          "receiptDate": {
+            "type": "string",
+            "description": "Receipt date in YYYY-MM-DD format (UI Receipt Date). Defaults to today if omitted."
+          },
+          "receiptNumber": {
+            "type": "string",
+            "description": "Receipt number (UI Receipt Number / API receipt_number). Must be unique."
+          },
+          "receivedLocation": {
+            "type": "string",
+            "description": "Received location name (UI Received Location / API received_location). Prefer a name from search_locations or the PO deliver-to location."
+          },
+          "receiptNotes": {
+            "type": "string",
+            "description": "Optional receipt notes (UI Receipt Notes / API receipt_notes)"
+          },
+          "lines": {
+            "type": "array",
+            "description": "Line items being received (must have receivedQty > 0 and not exceed pending delivery qty)",
+            "items": {
+              "type": "object",
+              "properties": {
+                "poLineNumber": {
+                  "type": "string",
+                  "description": "PO line number"
+                },
+                "itemName": {
+                  "type": "string",
+                  "description": "Item name"
+                },
+                "receivedQty": {
+                  "type": "number",
+                  "description": "Quantity received (capped at pending delivery qty)"
+                },
+                "receivedCost": {
+                  "type": "number",
+                  "description": "Cost per unit received (defaults to PO line unit price)"
+                }
+              },
+              "required": [
+                "poLineNumber",
+                "receivedQty"
+              ]
+            }
+          }
+        },
+        "required": [
+          "poNumber",
+          "receiptNumber",
+          "lines"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "tags": [
+      "write",
+      "execute"
+    ],
+    "function": {
+      "name": "execute_create_grn",
+      "description": "Execute creating a GRN after user confirms. Only call after prepare_create_grn. Re-checks Approved status and that a delivery note exists. Mirrors POST /api/purchase-orders/:poNumber/receipts.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "poNumber": {
+            "type": "string",
+            "description": "PO number"
+          },
+          "receiptDate": {
+            "type": "string",
+            "description": "Receipt date YYYY-MM-DD"
+          },
+          "receiptNumber": {
+            "type": "string",
+            "description": "Receipt number (must be unique)"
+          },
+          "receivedLocation": {
+            "type": "string",
+            "description": "Received location name"
+          },
+          "receivedLocationId": {
+            "type": "string",
+            "description": "Resolved location id from prepare (optional)"
+          },
+          "receiptNotes": {
+            "type": "string",
+            "description": "Optional receipt notes"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "poLineNumber": {
+                  "type": "string",
+                  "description": "PO line number"
+                },
+                "itemName": {
+                  "type": "string",
+                  "description": "Item name"
+                },
+                "receivedQty": {
+                  "type": "number",
+                  "description": "Quantity received"
+                },
+                "receivedCost": {
+                  "type": "number",
+                  "description": "Cost per unit"
+                }
+              }
+            }
+          },
+          "_confirmed": {
+            "type": "boolean",
+            "description": "Must be true to execute"
+          }
+        },
+        "required": [
+          "poNumber",
+          "receiptDate",
+          "receiptNumber",
+          "receivedLocation",
+          "lines"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "tags": [
+      "write",
+      "prepare"
+    ],
+    "function": {
+      "name": "recommend_requisition",
+      "description": "PREFERRED way to start a purchase requisition from a natural language request such as 'create a PR for 20 laptops for a new engineering team'. Analyses approved budgets, historical purchase orders and buyer assignment history to recommend the budget, business entity, department, delivery location, currency, need-by date and buyer, then shows an editable review card. Use this INSTEAD of prepare_create_requisition whenever the user describes what they want to buy. The PR is NOT created until the user confirms the card.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "request": {
+            "type": "string",
+            "description": "The user's full natural language purchase request, including quantities and the intended use or team when mentioned."
+          }
+        },
+        "required": [
+          "request"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "tags": [
+      "write",
+      "execute"
+    ],
+    "function": {
+      "name": "execute_create_requisition_from_recommendation",
+      "description": "Create the purchase requisition after the user confirms the recommendation card. Only ever runs from the user's Confirm click; never call this directly.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string",
+            "description": "Description/title of the purchase requisition"
+          },
+          "budgetLineId": {
+            "type": "number",
+            "description": "Selected budget line id"
+          },
+          "orgId": {
+            "type": "number",
+            "description": "Business entity id"
+          },
+          "departmentId": {
+            "type": "string",
+            "description": "Department id"
+          },
+          "deliveryLocationId": {
+            "type": "string",
+            "description": "Delivery location id"
+          },
+          "currency": {
+            "type": "string",
+            "description": "Currency code"
+          },
+          "needByDate": {
+            "type": "string",
+            "description": "Required by date in YYYY-MM-DD format"
+          },
+          "buyerId": {
+            "type": "number",
+            "description": "Buyer user id"
+          },
+          "buyerName": {
+            "type": "string",
+            "description": "Buyer display name"
+          },
+          "lineItems": {
+            "type": "array",
+            "description": "Line items to add to the requisition",
+            "items": {
+              "type": "object",
+              "properties": {
+                "description": {
+                  "type": "string"
+                },
+                "quantity": {
+                  "type": "number"
+                },
+                "unitOfMeasure": {
+                  "type": "string"
+                },
+                "estimatedPrice": {
+                  "type": "number"
+                },
+                "itemId": {
+                  "type": "string"
+                },
+                "categoryCode": {
+                  "type": "string"
+                },
+                "categoryName": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "description"
+              ]
+            }
+          },
+          "_confirmed": {
+            "type": "boolean",
+            "description": "Must be true to execute"
+          }
+        },
+        "required": [
+          "description"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "tags": [
+      "write",
+      "prepare"
+    ],
+    "function": {
+      "name": "recommend_purchase_order",
+      "description": "PREFERRED way to create a standalone Direct Purchase Order from a natural language request such as 'create a PO for laptops' or 'PO for 50 Dell laptops'. Analyses approved budgets, historical POs and vendor recommendations, then shows an editable review card with budget, business entity, department, delivery location, currency, need-by date, vendor, payment terms, requestor and AI-generated line items. Use this INSTEAD of prepare_create_purchase_order whenever the user describes what they want to buy. The PO is NOT created until the user confirms the card. Prefer prepare_create_po_from_pr when converting an approved PR. Do NOT call this again when the user only changes vendor, need-by date, or quantity on an already-open recommendation card — the UI patches that card in place.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "request": {
+            "type": "string",
+            "description": "The user's full natural language purchase request, including quantities and intended use when mentioned. Do not pass a field-edit sentence such as 'change vendor to Acme' as the request."
+          },
+          "supplierName": {
+            "type": "string",
+            "description": "Vendor/supplier name when named in the original purchase request. Do not use this to edit an already-open recommendation card."
+          },
+          "supplierId": {
+            "type": "number",
+            "description": "Resolved vendor id when already known."
+          },
+          "needByDate": {
+            "type": "string",
+            "description": "Need-by date when named in the original purchase request (ISO YYYY-MM-DD or a phrase like '20th june'). Do not use this to edit an already-open recommendation card."
+          }
+        },
+        "required": [
+          "request"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "tags": [
+      "write",
+      "execute"
+    ],
+    "function": {
+      "name": "execute_create_purchase_order_from_recommendation",
+      "description": "Create the Direct Purchase Order after the user confirms the recommendation card. Only ever runs from the user's Confirm click; never call this directly.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "budgetLineId": {
+            "type": "number"
+          },
+          "budgetName": {
+            "type": "string"
+          },
+          "orgId": {
+            "type": "number"
+          },
+          "orgName": {
+            "type": "string"
+          },
+          "departmentId": {
+            "type": "string"
+          },
+          "departmentName": {
+            "type": "string"
+          },
+          "deliveryLocationId": {
+            "type": "string"
+          },
+          "deliveryLocationName": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "needByDate": {
+            "type": "string"
+          },
+          "supplierId": {
+            "type": "number"
+          },
+          "supplierName": {
+            "type": "string"
+          },
+          "paymentTermsId": {
+            "type": "string"
+          },
+          "paymentTermsName": {
+            "type": "string"
+          },
+          "requestorId": {
+            "type": "number"
+          },
+          "requestorName": {
+            "type": "string"
+          },
+          "buyerId": {
+            "type": "number"
+          },
+          "buyerName": {
+            "type": "string"
+          },
+          "lineItems": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "description": {
+                  "type": "string"
+                },
+                "quantity": {
+                  "type": "number"
+                },
+                "unitOfMeasure": {
+                  "type": "string"
+                },
+                "estimatedPrice": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "description"
+              ]
+            }
+          },
+          "_confirmed": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "description"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "tags": [
+      "write",
+      "prepare"
+    ],
+    "function": {
+      "name": "prepare_create_requisition",
+      "description": "Prepare a bare purchase requisition header when the user explicitly wants only a header with no budget or line item analysis. For a normal 'create a PR for X' request, use recommend_requisition instead. PR is NOT created until user confirms.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string",
+            "description": "Description/title of the purchase requisition"
+          },
+          "requestorName": {
+            "type": "string",
+            "description": "Name of the person requesting"
+          },
+          "currency": {
+            "type": "string",
+            "description": "Currency code (default AED)",
+            "enum": [
+              "AED",
+              "INR",
+              "USD",
+              "EUR",
+              "GBP"
+            ]
+          },
+          "needByDate": {
+            "type": "string",
+            "description": "Required by date in YYYY-MM-DD format"
+          }
+        },
+        "required": [
+          "description"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "tags": [
+      "write",
+      "execute"
+    ],
+    "function": {
+      "name": "execute_create_requisition",
+      "description": "Execute the creation of a purchase requisition after user confirms the preview. Only call this after prepare_create_requisition.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string",
+            "description": "Description/title of the purchase requisition"
+          },
+          "requestorName": {
+            "type": "string",
+            "description": "Name of the person requesting"
+          },
+          "currency": {
+            "type": "string",
+            "description": "Currency code"
+          },
+          "needByDate": {
+            "type": "string",
+            "description": "Required by date in YYYY-MM-DD format"
+          },
+          "_confirmed": {
+            "type": "boolean",
+            "description": "Must be true to execute"
+          }
+        },
+        "required": [
+          "description"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "tags": [
+      "write",
+      "prepare"
+    ],
+    "function": {
+      "name": "prepare_add_pr_line",
+      "description": "Prepare adding a line item to an existing draft purchase requisition. Shows preview for confirmation. Requires only the PR number and the item. The item is resolved against the Item Master, the unit of measure and any missing price come from the AI Assisted Service, a missing quantity comes from AI quantity prediction, and the currency comes from the target PR — never supply those yourself.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "prNumber": {
+            "type": "string",
+            "description": "PR number (e.g. PR_00001)"
+          },
+          "itemDescription": {
+            "type": "string",
+            "description": "Item name exactly as the user wrote it. It is looked up in the Item Master; do not rename, expand or translate it."
+          },
+          "quantity": {
+            "type": "number",
+            "description": "Quantity, ONLY if the user stated one. Omit it entirely when they did not — it is predicted. Never guess or default to 1."
+          },
+          "unitCost": {
+            "type": "number",
+            "description": "Unit price, ONLY if the user stated one. Omit it entirely when they did not — it is priced from purchase history or the catalog. Never guess or default to 0."
+          }
+        },
+        "required": [
+          "prNumber",
+          "itemDescription"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "tags": [
+      "write",
+      "execute"
+    ],
+    "function": {
+      "name": "execute_add_pr_line",
+      "description": "Execute adding a line item to a PR after user confirms. Only call after prepare_add_pr_line.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "prNumber": {
+            "type": "string",
+            "description": "PR number"
+          },
+          "itemDescription": {
+            "type": "string",
+            "description": "Description of the item"
+          },
+          "quantity": {
+            "type": "number",
+            "description": "Quantity, only if the user stated one"
+          },
+          "unitCost": {
+            "type": "number",
+            "description": "Unit price, only if the user stated one"
+          },
+          "_confirmed": {
+            "type": "boolean",
+            "description": "Must be true to execute"
+          }
+        },
+        "required": [
+          "prNumber",
+          "itemDescription"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "tags": [
+      "write",
+      "prepare"
+    ],
+    "function": {
+      "name": "prepare_update_requisition",
+      "description": "Prepare updating a draft purchase requisition's header fields. Shows preview of changes for confirmation.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "prNumber": {
+            "type": "string",
+            "description": "PR number to update (e.g. PR_00001)"
+          },
+          "description": {
+            "type": "string",
+            "description": "New description/title"
+          },
+          "currency": {
+            "type": "string",
+            "description": "New currency code"
+          },
+          "needByDate": {
+            "type": "string",
+            "description": "New need-by date in YYYY-MM-DD format"
+          }
+        },
+        "required": [
+          "prNumber"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "tags": [
+      "write",
+      "execute"
+    ],
+    "function": {
+      "name": "execute_update_requisition",
+      "description": "Execute updating a PR after user confirms. Only call after prepare_update_requisition.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "prNumber": {
+            "type": "string",
+            "description": "PR number"
+          },
+          "description": {
+            "type": "string",
+            "description": "New description"
+          },
+          "currency": {
+            "type": "string",
+            "description": "New currency"
+          },
+          "needByDate": {
+            "type": "string",
+            "description": "New need-by date"
+          },
+          "_confirmed": {
+            "type": "boolean",
+            "description": "Must be true to execute"
+          }
+        },
+        "required": [
+          "prNumber"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "tags": [
+      "write",
+      "prepare"
+    ],
+    "function": {
+      "name": "prepare_submit_requisition",
+      "description": "Prepare submitting a draft purchase requisition for approval. The PR must be in Draft status and have at least one line item. Shows confirmation preview.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "prNumber": {
+            "type": "string",
+            "description": "PR number to submit (e.g. PR_00001)"
+          }
+        },
+        "required": [
+          "prNumber"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "tags": [
+      "write",
+      "execute"
+    ],
+    "function": {
+      "name": "execute_submit_requisition",
+      "description": "Execute submitting a PR for approval after user confirms. Only call after prepare_submit_requisition.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "prNumber": {
+            "type": "string",
+            "description": "PR number to submit"
+          },
+          "_confirmed": {
+            "type": "boolean",
+            "description": "Must be true to execute"
+          }
+        },
+        "required": [
+          "prNumber"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "tags": [
+      "write",
+      "prepare"
+    ],
+    "function": {
+      "name": "prepare_submit_purchase_order",
+      "description": "Prepare submitting a draft purchase order for approval. The PO must be in Draft status, have at least one line item, and amount greater than zero. Runs a budget check first and only offers confirmation when the PO is within budget. Shows confirmation preview.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "poNumber": {
+            "type": "string",
+            "description": "PO number to submit (e.g. PO_00001)"
+          }
+        },
+        "required": [
+          "poNumber"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "tags": [
+      "write",
+      "execute"
+    ],
+    "function": {
+      "name": "execute_submit_purchase_order",
+      "description": "Execute submitting a PO for approval after user confirms. Re-runs the budget check, then submits. Only call after prepare_submit_purchase_order.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "poNumber": {
+            "type": "string",
+            "description": "PO number to submit"
+          },
+          "_confirmed": {
+            "type": "boolean",
+            "description": "Must be true to execute"
+          }
+        },
+        "required": [
+          "poNumber"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "tags": [
+      "write",
+      "prepare"
+    ],
+    "function": {
+      "name": "prepare_create_po_from_pr",
+      "description": "Prepare creating a Purchase Order from an approved Purchase Requisition. Links the PO to a specific supplier. IMPORTANT: If the user references a vendor by name instead of ID, call search_vendors FIRST to find the supplier ID. For vague references like 'the steel supplier', search with the key term (e.g., 'steel').",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "prNumber": {
+            "type": "string",
+            "description": "PR number to convert (e.g. PR_00001)"
+          },
+          "supplierId": {
+            "type": "number",
+            "description": "Supplier/vendor ID to assign to the PO"
+          }
+        },
+        "required": [
+          "prNumber",
+          "supplierId"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "tags": [
+      "write",
+      "execute"
+    ],
+    "function": {
+      "name": "execute_create_po_from_pr",
+      "description": "Execute creating a PO from a PR after user confirms. Only call after prepare_create_po_from_pr.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "prNumber": {
+            "type": "string",
+            "description": "PR number"
+          },
+          "supplierId": {
+            "type": "number",
+            "description": "Supplier ID"
+          },
+          "_confirmed": {
+            "type": "boolean",
+            "description": "Must be true to execute"
+          }
+        },
+        "required": [
+          "prNumber",
+          "supplierId"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "tags": [
+      "write",
+      "prepare"
+    ],
+    "function": {
+      "name": "prepare_create_purchase_order",
+      "description": "Prepare a bare Direct Purchase Order header when the user explicitly wants only a header with no budget/line/vendor analysis. For a normal 'create a PO for X' request, use recommend_purchase_order instead. Prefer prepare_create_po_from_pr when converting an approved PR. PO is NOT created until user confirms.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string",
+            "description": "PO description/title extracted from the user's request (e.g. Purchase of 100 Dell laptops)"
+          },
+          "supplierId": {
+            "type": "number",
+            "description": "Canonical supplier ID. Pass ONLY if the user named a vendor (after search_vendors). Otherwise OMIT \u2014 prepare suggests a vendor via the PR\u2192PO AI recommender. NEVER put a supplier name here."
+          },
+          "supplierName": {
+            "type": "string",
+            "description": "Supplier display name (for confirmation)"
+          },
+          "currency": {
+            "type": "string",
+            "description": "Currency code. If omitted, derived from the selected Budget (then Admin/org default).",
+            "enum": [
+              "AED",
+              "INR",
+              "USD",
+              "EUR",
+              "GBP"
+            ]
+          },
+          "requiredDate": {
+            "type": "string",
+            "description": "Required delivery date in YYYY-MM-DD. Pass ONLY if the user explicitly gave a date. Otherwise OMIT \u2014 prepare suggests Need By Date from Approved PO historical lead times."
+          },
+          "deliveryLocation": {
+            "type": "string",
+            "description": "Numeric delivery location ID only (after search_locations). NEVER put a name like Mumbai here."
+          },
+          "deliveryLocationName": {
+            "type": "string",
+            "description": "Delivery location display name ONLY if the user explicitly named one. Otherwise OMIT \u2014 derived from the selected Budget."
+          },
+          "requestorId": {
+            "type": "string",
+            "description": "Requestor user ID. Usually omit \u2014 session user is used."
+          },
+          "requestorName": {
+            "type": "string",
+            "description": "Requestor display name"
+          },
+          "requestorDepartment": {
+            "type": "string",
+            "description": "Numeric department ID only. NEVER put a name like IT here."
+          },
+          "requestorDepartmentName": {
+            "type": "string",
+            "description": "Department display name ONLY if the user explicitly named one (e.g. IT). Otherwise OMIT \u2014 derived from the selected Budget. May be passed as a soft hint for budget matching."
+          },
+          "buyerId": {
+            "type": "string",
+            "description": "Buyer user ID if known. Usually omit \u2014 resolved from prior POs / session."
+          },
+          "buyerName": {
+            "type": "string",
+            "description": "Buyer display name. Usually omit."
+          },
+          "buyerEmail": {
+            "type": "string",
+            "description": "Buyer email"
+          },
+          "orgId": {
+            "type": "string",
+            "description": "Numeric business entity / organization ID only. NEVER put a name like ProductionQA here."
+          },
+          "orgName": {
+            "type": "string",
+            "description": "Business Entity display name ONLY if the user explicitly named one. Otherwise OMIT \u2014 derived from the selected Budget."
+          },
+          "budgetId": {
+            "type": "string",
+            "description": "Numeric approved budget line ID only. NEVER put a budget name/code here."
+          },
+          "budgetName": {
+            "type": "string",
+            "description": "Budget display name or code ONLY if the user explicitly named a budget. Otherwise OMIT \u2014 prepare AI-matches eligible approved budgets from the prompt."
+          },
+          "paymentTermsId": {
+            "type": "string",
+            "description": "Canonical payment terms ID only. NEVER put '30 days' here."
+          },
+          "paymentTermsName": {
+            "type": "string",
+            "description": "Payment terms display name ONLY if the user explicitly specified terms. Otherwise OMIT \u2014 Admin Payment Settings default is applied."
+          },
+          "advanceFlag": {
+            "type": "boolean",
+            "description": "Whether advance payment is enabled"
+          },
+          "advancePercentage": {
+            "type": "string",
+            "description": "Advance payment percentage (0-100). Mandatory when advanceFlag is true."
+          }
+        },
+        "required": [
+          "description"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "tags": [
+      "write",
+      "execute"
+    ],
+    "function": {
+      "name": "execute_create_purchase_order",
+      "description": "Execute creating a standalone Direct Purchase Order after user confirms. Only call after prepare_create_purchase_order produced a Confirm action. Re-validates all mandatory header fields and will refuse creation if any are missing or IDs are non-canonical.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string",
+            "description": "PO description/title extracted from the user's request (e.g. Purchase of 100 Dell laptops)"
+          },
+          "supplierId": {
+            "type": "number",
+            "description": "Canonical supplier ID from search_vendors. NEVER put a supplier name here."
+          },
+          "supplierName": {
+            "type": "string",
+            "description": "Supplier display name (for confirmation)"
+          },
+          "currency": {
+            "type": "string",
+            "description": "Currency code. If omitted, uses Admin/org default when available.",
+            "enum": [
+              "AED",
+              "INR",
+              "USD",
+              "EUR",
+              "GBP"
+            ]
+          },
+          "requiredDate": {
+            "type": "string",
+            "description": "Required delivery date in YYYY-MM-DD. Mandatory \u2014 extract from natural language (e.g. September 30 \u2192 2026-09-30). Do not invent."
+          },
+          "deliveryLocation": {
+            "type": "string",
+            "description": "Numeric delivery location ID only (after search_locations). NEVER put a name like Mumbai here."
+          },
+          "deliveryLocationName": {
+            "type": "string",
+            "description": "Delivery location display name (e.g. Mumbai). Preferred over ID \u2014 prepare resolves the canonical ID."
+          },
+          "requestorId": {
+            "type": "string",
+            "description": "Requestor user ID. Usually omit \u2014 session user is used."
+          },
+          "requestorName": {
+            "type": "string",
+            "description": "Requestor display name"
+          },
+          "requestorDepartment": {
+            "type": "string",
+            "description": "Numeric department ID only. NEVER put a name like IT here."
+          },
+          "requestorDepartmentName": {
+            "type": "string",
+            "description": "Department display name (e.g. IT). Preferred \u2014 prepare resolves the canonical ID."
+          },
+          "buyerId": {
+            "type": "string",
+            "description": "Buyer user ID if known"
+          },
+          "buyerName": {
+            "type": "string",
+            "description": "Buyer display name"
+          },
+          "buyerEmail": {
+            "type": "string",
+            "description": "Buyer email"
+          },
+          "orgId": {
+            "type": "string",
+            "description": "Numeric business entity / organization ID only. NEVER put a name like ProductionQA here."
+          },
+          "orgName": {
+            "type": "string",
+            "description": "Business Entity display name (e.g. ProductionQA). Preferred \u2014 prepare resolves numeric orgId."
+          },
+          "budgetId": {
+            "type": "string",
+            "description": "Numeric approved budget line ID only. NEVER put a budget name/code here."
+          },
+          "budgetName": {
+            "type": "string",
+            "description": "Budget display name or code (e.g. BU250016 / IT equipment budget). Preferred \u2014 prepare resolves numeric budgetId."
+          },
+          "paymentTermsId": {
+            "type": "string",
+            "description": "Canonical payment terms ID only. NEVER put '30 days' here."
+          },
+          "paymentTermsName": {
+            "type": "string",
+            "description": "Payment terms display name (e.g. Net 30 / 30 days). Preferred \u2014 prepare resolves ID; Admin default used if omitted."
+          },
+          "advanceFlag": {
+            "type": "boolean",
+            "description": "Whether advance payment is enabled"
+          },
+          "advancePercentage": {
+            "type": "string",
+            "description": "Advance payment percentage (0-100). Mandatory when advanceFlag is true."
+          },
+          "_confirmed": {
+            "type": "boolean",
+            "description": "Must be true to execute"
+          }
+        },
+        "required": [
+          "description"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "tags": [
+      "write",
+      "prepare"
+    ],
+    "function": {
+      "name": "prepare_add_po_line",
+      "description": "Prepare adding an Item Master line to an existing draft purchase order. Pass the item text exactly as the user wrote it. Quantity and unitPrice are optional: pass them ONLY when the user stated them; otherwise the same AI quantity prediction and AI Assisted price/UOM services used for PR lines fill them in. Item id, category and UOM are resolved from application services — never invent or ask for them. Shows the resolved category and predicted/estimated values for confirmation.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "poNumber": {
+            "type": "string",
+            "description": "PO number (e.g. PO_00001)"
+          },
+          "description": {
+            "type": "string",
+            "description": "Description of the line item"
+          },
+          "quantity": {
+            "type": "number",
+            "description": "Quantity, ONLY if the user stated one. Omit it to use AI quantity prediction."
+          },
+          "unitPrice": {
+            "type": "number",
+            "description": "Price per unit, ONLY if the user stated one. Omit it to use AI Assisted pricing."
+          },
+          "taxRate": {
+            "type": "number",
+            "description": "Tax rate percentage (default 0)"
+          }
+        },
+        "required": [
+          "poNumber",
+          "description"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "tags": [
+      "write",
+      "execute"
+    ],
+    "function": {
+      "name": "execute_add_po_line",
+      "description": "Execute adding a line item to a PO after user confirms. Only call after prepare_add_po_line.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "poNumber": {
+            "type": "string",
+            "description": "PO number"
+          },
+          "description": {
+            "type": "string",
+            "description": "Line item description"
+          },
+          "quantity": {
+            "type": "number",
+            "description": "Quantity"
+          },
+          "unitPrice": {
+            "type": "number",
+            "description": "Price per unit"
+          },
+          "taxRate": {
+            "type": "number",
+            "description": "Tax rate percentage"
+          },
+          "_confirmed": {
+            "type": "boolean",
+            "description": "Must be true to execute"
+          }
+        },
+        "required": [
+          "poNumber",
+          "description"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "tags": [
+      "write",
+      "prepare"
+    ],
+    "function": {
+      "name": "prepare_update_purchase_order",
+      "description": "Prepare changing header fields on an existing Draft or More Info Required purchase order — the same fields the Edit Purchase Order screen allows. Use this whenever the user asks to change, update, correct or replace something on a PO that already exists (vendor/supplier, need-by date, currency, delivery location, department, business entity, budget, payment terms, description, notes, advance payment). Pass names as the user said them — vendorName \"Acme\", paymentTermsName \"Net 30\", deliveryLocationName \"Head Quarters Dubai\" — and they are resolved against the same lists the form uses; never invent IDs. Send ONLY the fields the user asked to change; everything else on the PO is left alone. Shows a preview for confirmation.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "poNumber": {
+            "type": "string",
+            "description": "PO number to update (e.g. PO_00058)"
+          },
+          "description": {
+            "type": "string",
+            "description": "New PO description/title"
+          },
+          "vendorName": {
+            "type": "string",
+            "description": "New vendor/supplier by name, as the user said it (e.g. \"Acme\"). Preferred over supplierId."
+          },
+          "supplierId": {
+            "type": "string",
+            "description": "New vendor by numeric supplier id, when it is already known from search_vendors"
+          },
+          "needByDate": {
+            "type": "string",
+            "description": "New need-by / required date, YYYY-MM-DD or natural language such as \"next Friday\""
+          },
+          "currency": {
+            "type": "string",
+            "description": "New currency code (e.g. INR, AED, USD)"
+          },
+          "deliveryLocationName": {
+            "type": "string",
+            "description": "New delivery location by name"
+          },
+          "requestorDepartmentName": {
+            "type": "string",
+            "description": "New department by name"
+          },
+          "orgName": {
+            "type": "string",
+            "description": "New business entity by name"
+          },
+          "budgetName": {
+            "type": "string",
+            "description": "New budget line by name or code"
+          },
+          "paymentTermsName": {
+            "type": "string",
+            "description": "New payment terms by name (e.g. Net 30, 60 Days)"
+          },
+          "notes": {
+            "type": "string",
+            "description": "New PO notes; pass an empty string to clear them"
+          },
+          "advanceFlag": {
+            "type": "boolean",
+            "description": "Whether the PO carries an advance payment. When true, advancePercentage is required."
+          },
+          "advancePercentage": {
+            "type": "string",
+            "description": "Advance percentage of the PO value, required when advanceFlag is true"
+          }
+        },
+        "required": [
+          "poNumber"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "tags": [
+      "write",
+      "execute"
+    ],
+    "function": {
+      "name": "execute_update_purchase_order",
+      "description": "Execute the purchase order header update after the user confirms. Only call after prepare_update_purchase_order.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "poNumber": {
+            "type": "string",
+            "description": "PO number"
+          },
+          "description": {
+            "type": "string",
+            "description": "New PO description/title"
+          },
+          "vendorName": {
+            "type": "string",
+            "description": "New vendor by name"
+          },
+          "supplierId": {
+            "type": "string",
+            "description": "New vendor by numeric supplier id"
+          },
+          "needByDate": {
+            "type": "string",
+            "description": "New need-by date"
+          },
+          "currency": {
+            "type": "string",
+            "description": "New currency code"
+          },
+          "deliveryLocationName": {
+            "type": "string",
+            "description": "New delivery location by name"
+          },
+          "requestorDepartmentName": {
+            "type": "string",
+            "description": "New department by name"
+          },
+          "orgName": {
+            "type": "string",
+            "description": "New business entity by name"
+          },
+          "budgetName": {
+            "type": "string",
+            "description": "New budget line by name or code"
+          },
+          "paymentTermsName": {
+            "type": "string",
+            "description": "New payment terms by name"
+          },
+          "notes": {
+            "type": "string",
+            "description": "New PO notes"
+          },
+          "advanceFlag": {
+            "type": "boolean",
+            "description": "Whether the PO carries an advance payment"
+          },
+          "advancePercentage": {
+            "type": "string",
+            "description": "Advance percentage of the PO value"
+          },
+          "_confirmed": {
+            "type": "boolean",
+            "description": "Must be true to execute"
+          }
+        },
+        "required": [
+          "poNumber"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "tags": [
+      "write",
+      "prepare"
+    ],
+    "function": {
+      "name": "prepare_update_pr_line",
+      "description": "Prepare changing an EXISTING line item on a Draft or More Info Required requisition — quantity, unit price, unit of measure or the item description. This is the tool for \"update the quantity to 20 for this PR\", \"change the unit price on PR_00076 to 50\", \"line 2 should be 10 units\". Never answer an update request with prepare_add_pr_line — that appends a second line instead of editing the one that is there. Identify the line by lineNumber when the user gave one, otherwise by itemName; on a single-line PR neither is needed. Send ONLY the fields being changed, but send ALL of them in ONE call — \"quantity to 10 and unit price to 1000 and UOM to each\" is a single call with all three arguments, never three calls. The amount and the PR total are recalculated, and every other value on the line is preserved. Shows a preview for confirmation.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "prNumber": {
+            "type": "string",
+            "description": "PR number (e.g. PR_00076)"
+          },
+          "lineNumber": {
+            "type": "number",
+            "description": "The line number shown on the PR (1 for the first line)"
+          },
+          "itemName": {
+            "type": "string",
+            "description": "The item on the line, when the user named it instead of a line number"
+          },
+          "quantity": {
+            "type": "number",
+            "description": "New quantity"
+          },
+          "unitCost": {
+            "type": "number",
+            "description": "New price per unit"
+          },
+          "uom": {
+            "type": "string",
+            "description": "New unit of measure"
+          },
+          "itemDescription": {
+            "type": "string",
+            "description": "New line description. Only when the user asked to reword the line — it does not re-point the line at a different Item Master item."
+          }
+        },
+        "required": [
+          "prNumber"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "tags": [
+      "write",
+      "execute"
+    ],
+    "function": {
+      "name": "execute_update_pr_line",
+      "description": "Execute the requisition line update after the user confirms. Only call after prepare_update_pr_line.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "prNumber": {
+            "type": "string",
+            "description": "PR number"
+          },
+          "lineId": {
+            "type": "string",
+            "description": "Row id of the line, as returned by prepare_update_pr_line"
+          },
+          "lineNumber": {
+            "type": "number",
+            "description": "The line number shown on the PR"
+          },
+          "itemName": {
+            "type": "string",
+            "description": "The item on the line"
+          },
+          "quantity": {
+            "type": "number",
+            "description": "New quantity"
+          },
+          "unitCost": {
+            "type": "number",
+            "description": "New price per unit"
+          },
+          "uom": {
+            "type": "string",
+            "description": "New unit of measure"
+          },
+          "itemDescription": {
+            "type": "string",
+            "description": "New line description"
+          },
+          "_confirmed": {
+            "type": "boolean",
+            "description": "Must be true to execute"
+          }
+        },
+        "required": [
+          "prNumber",
+          "_confirmed"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "tags": [
+      "write",
+      "prepare"
+    ],
+    "function": {
+      "name": "prepare_update_po_line",
+      "description": "Prepare changing an existing line item on a Draft or More Info Required purchase order — quantity, unit price, unit of measure, per-unit discount, tax rate or the item description. Use this for \"change the quantity on PO_00058 to 5\", \"make the laptops 900 each\", \"line 2 should be 10 units\". Identify the line by lineNumber when the user gave one, otherwise by itemName; on a single-line PO neither is needed. Send ONLY the fields being changed, but send ALL of them in ONE call — never one call per field. The line cost and tax are recalculated and the PO totals are refreshed. Shows a preview for confirmation.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "poNumber": {
+            "type": "string",
+            "description": "PO number (e.g. PO_00058)"
+          },
+          "lineNumber": {
+            "type": "number",
+            "description": "The line number shown on the PO (1 for the first line)"
+          },
+          "itemName": {
+            "type": "string",
+            "description": "The item or description on the line, when the user named it instead of a line number"
+          },
+          "quantity": {
+            "type": "number",
+            "description": "New quantity"
+          },
+          "unitPrice": {
+            "type": "number",
+            "description": "New price per unit"
+          },
+          "uom": {
+            "type": "string",
+            "description": "New unit of measure"
+          },
+          "discount": {
+            "type": "number",
+            "description": "New discount per unit"
+          },
+          "taxRate": {
+            "type": "number",
+            "description": "New tax rate percentage"
+          },
+          "description": {
+            "type": "string",
+            "description": "New line description"
+          }
+        },
+        "required": [
+          "poNumber"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "tags": [
+      "write",
+      "execute"
+    ],
+    "function": {
+      "name": "execute_update_po_line",
+      "description": "Execute the purchase order line update after the user confirms. Only call after prepare_update_po_line.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "poNumber": {
+            "type": "string",
+            "description": "PO number"
+          },
+          "lineId": {
+            "type": "string",
+            "description": "Row id of the line, as returned by prepare_update_po_line"
+          },
+          "lineNumber": {
+            "type": "number",
+            "description": "The line number shown on the PO"
+          },
+          "itemName": {
+            "type": "string",
+            "description": "The item or description on the line"
+          },
+          "quantity": {
+            "type": "number",
+            "description": "New quantity"
+          },
+          "unitPrice": {
+            "type": "number",
+            "description": "New price per unit"
+          },
+          "uom": {
+            "type": "string",
+            "description": "New unit of measure"
+          },
+          "discount": {
+            "type": "number",
+            "description": "New discount per unit"
+          },
+          "taxRate": {
+            "type": "number",
+            "description": "New tax rate percentage"
+          },
+          "description": {
+            "type": "string",
+            "description": "New line description"
+          },
+          "_confirmed": {
+            "type": "boolean",
+            "description": "Must be true to execute"
+          }
+        },
+        "required": [
+          "poNumber"
+        ]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "tags": [
+      "read"
+    ],
+    "function": {
+      "name": "search_vendors",
+      "description": "Search for vendors/suppliers in the database. Use this to find a vendor by name, list all vendors, or filter by status. CRITICAL: Always use this tool when user references a vendor by name and you need the supplier ID for creating POs. For vague references like 'the steel supplier' or 'IT hardware vendor', search with the key term (e.g., 'steel', 'IT hardware'). Also use for 'which suppliers are available' queries.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "search": {
+            "type": "string",
+            "description": "Search term (company name, email)"
+          },
+          "status": {
+            "type": "string",
+            "description": "Filter by vendor status",
+            "enum": [
+              "Approved",
+              "Draft",
+              "Pending Approval",
+              "Rejected",
+              "all"
+            ]
+          },
+          "limit": {
+            "type": "number",
+            "description": "Max results per page (default 20, max 50)"
+          },
+          "page": {
+            "type": "number",
+            "description": "Page number (default 1). Increment for 'show more' or 'next page' requests."
+          }
+        },
+        "required": []
+      }
+    }
+  },
+  {
+    "type": "function",
+    "tags": [
+      "read"
+    ],
+    "function": {
+      "name": "search_organizations",
+      "description": "Search business entities (organizations) by name \u2014 same source as GET /api/organizations / the manual Create PO Business Entity dropdown. Use when the user names a Business Entity (e.g. ProductionQA) so you can resolve it for Direct PO. Pass the matched display name as orgName to prepare_create_purchase_order (preferred); the prepare tool resolves the numeric orgId. Do not invent organization IDs.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "search": {
+            "type": "string",
+            "description": "Business entity / organization name to match (case-insensitive; exact preferred)"
+          },
+          "limit": {
+            "type": "number",
+            "description": "Max results (default 20, max 50)"
+          }
+        },
+        "required": []
+      }
+    }
+  },
+  {
+    "type": "function",
+    "tags": [
+      "read"
+    ],
+    "function": {
+      "name": "search_budgets",
+      "description": "Search approved budget lines by name or code \u2014 same source as GET /api/budgets/approved-lines. Prefer omitting budget on prepare_create_purchase_order so the server can AI-match from the procurement prompt. Use this tool when the user explicitly names a budget, or when prepare asks the user to choose. When multiple budgets share a name, list budgetId; pass that budgetId to prepare. Do not invent budget IDs.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "search": {
+            "type": "string",
+            "description": "Budget name, segment name, or code (e.g. BU250016)"
+          },
+          "limit": {
+            "type": "number",
+            "description": "Max results (default 20, max 50)"
+          }
+        },
+        "required": []
+      }
+    }
+  },
+  {
+    "type": "function",
+    "tags": [
+      "read"
+    ],
+    "function": {
+      "name": "search_departments",
+      "description": "Search departments by name \u2014 same source as GET /api/cost-centers/3/items / the manual Create PO Department dropdown. Pass requestorDepartmentName (e.g. IT) to prepare_create_purchase_order.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "search": {
+            "type": "string",
+            "description": "Department name or code (e.g. IT)"
+          },
+          "limit": {
+            "type": "number",
+            "description": "Max results (default 20, max 50)"
+          }
+        },
+        "required": []
+      }
+    }
+  },
+  {
+    "type": "function",
+    "tags": [
+      "read"
+    ],
+    "function": {
+      "name": "search_locations",
+      "description": "Search delivery locations by name \u2014 same source as GET /api/locations / the manual Create PO Delivery Location dropdown. Pass deliveryLocationName (e.g. Mumbai) to prepare_create_purchase_order.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "search": {
+            "type": "string",
+            "description": "Location name (e.g. Mumbai)"
+          },
+          "limit": {
+            "type": "number",
+            "description": "Max results (default 20, max 50)"
+          }
+        },
+        "required": []
+      }
+    }
+  },
+  {
+    "type": "function",
+    "tags": [
+      "read"
+    ],
+    "function": {
+      "name": "search_payment_terms",
+      "description": "Search payment terms by name \u2014 same source as GET /api/payment-terms / the manual Create PO Payment Terms dropdown. Pass paymentTermsName (e.g. Net 30 / 30 days). If omitted on prepare, Admin Payment Settings default is used when available.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "search": {
+            "type": "string",
+            "description": "Payment term name or code (e.g. Net 30, 30 days)"
+          },
+          "limit": {
+            "type": "number",
+            "description": "Max results (default 20, max 50)"
+          }
+        },
+        "required": []
+      }
+    }
+  }
+]
