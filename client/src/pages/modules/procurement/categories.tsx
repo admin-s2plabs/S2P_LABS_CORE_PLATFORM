@@ -2,6 +2,7 @@ import { StatusCountBadges } from "@/components/status-count-badges";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { FormSheet } from "@/components/form-sheet";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -11,14 +12,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -307,7 +300,7 @@ export default function Categories() {
     <div className="p-4 space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight flex items-center gap-2" data-testid="page-title">
+          <h1 className="text-xl font-semibold tracking-tight flex items-center gap-2 text-primary" data-testid="page-title">
             <FolderTree className="h-5 w-5 text-primary" />
             Category Management
           </h1>
@@ -319,83 +312,77 @@ export default function Categories() {
         </Button>
       </div>
 
-      <Sheet open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <SheetContent className="w-[50vw] sm:max-w-[50vw] overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle className="text-lg">Add New Category</SheetTitle>
-            <SheetDescription>
-              Create a new UNSPSC category for supplier qualification and item classification.
-            </SheetDescription>
-          </SheetHeader>
-          <div className="space-y-6 mt-2">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Code <span className="text-destructive">*</span></Label>
-                <Input
-                  placeholder="e.g., 43211502"
-                  value={newCategory.code}
-                  onChange={e => setNewCategory(prev => ({ ...prev, code: e.target.value }))}
-                  data-testid="input-category-code"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Level <span className="text-destructive">*</span></Label>
-                <Select
-                  value={newCategory.level}
-                  onValueChange={v => setNewCategory(prev => ({ ...prev, level: v }))}
-                >
-                  <SelectTrigger data-testid="select-category-level">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="segment">Segment (2-digit)</SelectItem>
-                    <SelectItem value="family">Family (4-digit)</SelectItem>
-                    <SelectItem value="class">Class (6-digit)</SelectItem>
-                    <SelectItem value="commodity">Commodity (8-digit)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Name <span className="text-destructive">*</span></Label>
-                <Input
-                  placeholder="Category name"
-                  value={newCategory.name}
-                  onChange={e => setNewCategory(prev => ({ ...prev, name: e.target.value }))}
-                  data-testid="input-category-name"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Parent Code</Label>
-                <Input
-                  placeholder="e.g., 4321 for families under segment 43"
-                  value={newCategory.parentCode}
-                  onChange={e => setNewCategory(prev => ({ ...prev, parentCode: e.target.value }))}
-                  data-testid="input-category-parent"
-                />
-              </div>
+      <FormSheet
+        open={isAddDialogOpen}
+        onOpenChange={setIsAddDialogOpen}
+        title="Add New Category"
+        description="Create a new UNSPSC category for supplier qualification and item classification."
+        onSubmit={() => createMutation.mutate(newCategory)}
+        submitLabel={createMutation.isPending ? "Creating..." : "Create Category"}
+        isSubmitting={createMutation.isPending}
+        submitDisabled={!newCategory.code || !newCategory.name || createMutation.isPending}
+      >
+        <p className="text-xs text-muted-foreground mb-4">
+          <span className="text-destructive">*</span> Indicates mandatory fields
+        </p>
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Code <span className="text-destructive">*</span></Label>
+              <Input
+                placeholder="e.g., 43211502"
+                value={newCategory.code}
+                onChange={e => setNewCategory(prev => ({ ...prev, code: e.target.value }))}
+                data-testid="input-category-code"
+              />
             </div>
             <div className="space-y-2">
-              <Label>Description</Label>
-              <Textarea
-                placeholder="Brief description of the category"
-                value={newCategory.description}
-                onChange={e => setNewCategory(prev => ({ ...prev, description: e.target.value }))}
-                data-testid="input-category-description"
+              <Label>Level <span className="text-destructive">*</span></Label>
+              <Select
+                value={newCategory.level}
+                onValueChange={v => setNewCategory(prev => ({ ...prev, level: v }))}
+              >
+                <SelectTrigger data-testid="select-category-level">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="segment">Segment (2-digit)</SelectItem>
+                  <SelectItem value="family">Family (4-digit)</SelectItem>
+                  <SelectItem value="class">Class (6-digit)</SelectItem>
+                  <SelectItem value="commodity">Commodity (8-digit)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Name <span className="text-destructive">*</span></Label>
+              <Input
+                placeholder="Category name"
+                value={newCategory.name}
+                onChange={e => setNewCategory(prev => ({ ...prev, name: e.target.value }))}
+                data-testid="input-category-name"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Parent Code</Label>
+              <Input
+                placeholder="e.g., 4321 for families under segment 43"
+                value={newCategory.parentCode}
+                onChange={e => setNewCategory(prev => ({ ...prev, parentCode: e.target.value }))}
+                data-testid="input-category-parent"
               />
             </div>
           </div>
-          <SheetFooter className="flex gap-2 mt-6">
-            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>Cancel</Button>
-            <Button 
-              onClick={() => createMutation.mutate(newCategory)}
-              disabled={!newCategory.code || !newCategory.name || createMutation.isPending}
-              data-testid="button-submit-category"
-            >
-              {createMutation.isPending ? "Creating..." : "Create Category"}
-            </Button>
-          </SheetFooter>
-        </SheetContent>
-      </Sheet>
+          <div className="space-y-2">
+            <Label>Description</Label>
+            <Textarea
+              placeholder="Brief description of the category"
+              value={newCategory.description}
+              onChange={e => setNewCategory(prev => ({ ...prev, description: e.target.value }))}
+              data-testid="input-category-description"
+            />
+          </div>
+        </div>
+      </FormSheet>
 
       <div className="grid gap-3 md:grid-cols-4">
         <Card className="hover-elevate">

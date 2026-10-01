@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Link } from "wouter";
-import prokrayaLogoDark from "@/assets/images/prokraya-logo-dark.png";
-import prokrayaLogoLight from "@/assets/images/prokraya-logo-light.png";
+import s2pLabsLogo from "@/assets/images/s2plabs_logo.jpeg";
 import {
   Building2,
   ArrowLeft,
@@ -167,10 +166,10 @@ export default function FreeTrial() {
               <span className="text-sm opacity-70 group-hover:opacity-100 transition-opacity">Back to home</span>
             </div>
           </Link>
-          <img src={prokrayaLogoLight} alt="Prokraya" className="h-9 object-contain object-left mb-8" />
+          <img src={s2pLabsLogo} alt="S2P Labs" className="h-9 object-contain object-left mb-8" />
 
           <h1 className="text-2xl lg:text-3xl font-bold mb-3">
-            Try Prokraya in Action
+            Try S2P Labs in Action
           </h1>
           <p className="text-white/80 text-sm mb-8">
             Experience the power of AI-native procurement. Get your own dedicated environment with full platform access.
@@ -424,7 +423,7 @@ export default function FreeTrial() {
             </div>
             <h2 className="text-2xl font-bold mb-2" data-testid="text-complete-heading">Your Environment is Ready!</h2>
             <p className="text-muted-foreground mb-6">
-              Your dedicated Prokraya instance has been set up successfully.
+              Your dedicated S2P Labs instance has been set up successfully.
             </p>
 
             <Card className="mb-6 border-emerald-200 dark:border-emerald-800">
@@ -458,7 +457,7 @@ export default function FreeTrial() {
                 data-testid="button-trial-launch"
               >
                 <Rocket className="h-4 w-4" />
-                Launch Your Prokraya
+                Launch Your S2P Labs
               </Button>
               <Link href="/">
                 <Button variant="outline" size="lg" className="w-full gap-2" data-testid="button-trial-home">

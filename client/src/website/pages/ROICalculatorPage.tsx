@@ -1,6 +1,5 @@
-import { ArrowRight, Calculator, ChevronDown, DollarSign, FileText, ShoppingCart, TrendingUp } from "lucide-react";
+import { Calculator, ChevronDown, DollarSign, FileText, ShoppingCart, TrendingUp } from "lucide-react";
 import { useMemo, useState } from "react";
-import { Link } from "wouter";
 
 const INDUSTRY_RATES: Record<string, number> = {
   "Manufacturing": 0.06,
@@ -230,17 +229,6 @@ export function ROICalculatorPage() {
                 </div>
               )}
 
-              {/* CTA */}
-              <div className="bg-white rounded-2xl border border-gray-100 p-6 text-center">
-                <p className="text-sm text-gray-500 mb-4">Ready to unlock these savings? See Prokraya in action.</p>
-                <Link
-                  to="/book-demo"
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-violet-600 text-white font-semibold rounded-lg hover:bg-violet-700 transition-colors w-full justify-center"
-                >
-                  Book a Demo <ArrowRight className="w-4 h-4" />
-                </Link>
-              </div>
-
               <p className="text-xs text-gray-400 text-center px-2">
                 * Estimates are based on industry benchmarks. Actual savings may vary depending on your procurement complexity and adoption rate.
               </p>
@@ -252,10 +240,10 @@ export function ROICalculatorPage() {
       {/* Why it works */}
       <section className="py-16 bg-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-10">How Prokraya Delivers These Savings</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-10">How S2P Labs Delivers These Savings</h2>
           <div className="grid md:grid-cols-3 gap-6">
             {[
-              { title: "Spend Optimisation", desc: "AI-driven sourcing, competitive bidding, contract compliance, and maverick spend detection reduce your total procurement cost.", color: "bg-violet-50 text-violet-600" },
+              { title: "Spend Optimisation", desc: "Data-driven sourcing, competitive bidding, contract compliance, and maverick spend detection reduce your total procurement cost.", color: "bg-violet-50 text-violet-600" },
               { title: "Invoice Automation", desc: "OCR + 3-way matching eliminates manual invoice processing. Fewer errors, faster approvals, reduced labor cost per invoice.", color: "bg-teal-50 text-teal-600" },
               { title: "PO Efficiency", desc: "Automated PR-to-PO conversion, approval workflows, and budget controls shrink the time and cost of every purchase order.", color: "bg-orange-50 text-orange-600" },
             ].map((item, i) => (

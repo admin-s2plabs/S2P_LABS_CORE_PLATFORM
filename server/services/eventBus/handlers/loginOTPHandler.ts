@@ -15,7 +15,7 @@ class LoginOTPHandler extends BaseEmailHandler<LoginOTPEvent> {
       user: event.userName,           // Dear ${user}
       userName: event.loginUserName,  // User Name: ${userName}
       otp: event.otp,    // OTP: ${otp}
-      orgName: event.orgName || 'Prokraya',
+      orgName: event.orgName || 'S2P Labs',
       orgLogoPath: event.orgLogoPath || '',
     };
   }

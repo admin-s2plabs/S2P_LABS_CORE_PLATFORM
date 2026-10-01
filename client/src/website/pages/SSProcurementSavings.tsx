@@ -26,7 +26,7 @@ const solutionsList = [
     id: 3,
     heading: "Reports and real-time analytics dashboard",
     content:
-      "Prokraya single platform one stop solution provided real-time analytics for enhanced approval check and informed decision-making.",
+      "S2P Labs single platform one stop solution provided real-time analytics for enhanced approval check and informed decision-making.",
   },
 ];
 
@@ -80,9 +80,9 @@ const ScrollContentSwitcher = ({ sections }: { sections: any[] }) => {
             Our approach
           </h2>
           <p className="font-bold">
-            To address these challenges, the client implemented Prokraya's
+            To address these challenges, the client implemented S2P Labs'
             platform, integrating all procurement data into a centralized
-            dashboard. Prokraya's auctions module provided the client with
+            dashboard. S2P Labs' auctions module provided the client with
             robust tools to automate and streamline supplier management over
             bids, and real-time analytics.
           </p>
@@ -294,7 +294,7 @@ export const SSProcurementSavings = () => {
                     alt=""
                     className="absolute left-0 top-1 h-5 w-5"
                   />
-                  Reduced turnaround time: Prokraya's solution decreased TAT
+                  Reduced turnaround time: S2P Labs' solution decreased TAT
                   from PR to PO from several days to under 24-48 hours,
                   expediting procurement cycles and reducing delays.
                 </li>
@@ -304,7 +304,7 @@ export const SSProcurementSavings = () => {
                     alt=""
                     className="absolute left-0 top-1 h-5 w-5"
                   />
-                  Digitized supplier information: Prokraya enabled the client to
+                  Digitized supplier information: S2P Labs enabled the client to
                   digitize and centralize data for suppliers, fostering a
                   streamlined supplier management experience and boosting active
                   supplier participation for auction over approximately 21%.

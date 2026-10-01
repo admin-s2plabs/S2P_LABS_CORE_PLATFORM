@@ -144,7 +144,7 @@ export default function FeedbackPage() {
   return (
     <div className="p-4 space-y-4">
       <div>
-        <h1 className="text-xl font-bold" data-testid="text-page-title">Application Feedback</h1>
+        <h1 className="text-xl font-bold text-primary" data-testid="text-page-title">Application Feedback</h1>
         <p className="text-sm text-muted-foreground">
           All System and process related feedback can be submitted from here!
         </p>
@@ -174,7 +174,7 @@ export default function FeedbackPage() {
                     <Building2 className="h-4 w-4" />
                     <span>Company Name</span>
                   </div>
-                  <p className="font-medium">{userProfile?.company_name || "Prokraya Inc"}</p>
+                  <p className="font-medium">{userProfile?.company_name || "S2P Labs Inc"}</p>
                   <p className="text-sm">{userProfile?.address_line1 || ""}{userProfile?.city ? `, ${userProfile.city}` : ""}</p>
                 </div>
                 <div className="space-y-1">

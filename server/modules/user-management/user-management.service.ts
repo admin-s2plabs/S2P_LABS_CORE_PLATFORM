@@ -214,7 +214,7 @@ await getPool().query(`update dbo.um_user_dtls set attribute_1=$1,attribute_12=$
     userName: name,
     loginUserName: email_id,
     resetLinkUrl,
-    orgName: 'Prokraya',
+    orgName: 'S2P Labs',
     orgLogoPath: orgData.org_logo_path,
   };
 

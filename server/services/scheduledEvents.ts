@@ -83,7 +83,7 @@ async function autoCloseBids(): Promise<void> {
             `Bid Closed: ${bid.id} – ${bid.bid_title}`,
             `<p>Dear ${m.name},</p>
              <p>The bid <strong>${bid.id} – ${bid.bid_title}</strong> has been automatically closed as its closing date has passed.</p>
-             <p>Please log in to Prokraya to proceed with bid evaluation.</p>`
+             <p>Please log in to S2P Labs to proceed with bid evaluation.</p>`
           );
         }
       } catch (err) {
@@ -197,7 +197,7 @@ async function notifyContractExpiry(): Promise<void> {
           <strong>${daysLeft} day${daysLeft !== 1 ? 's' : ''}</strong>
           (${new Date(contract.end_date).toLocaleDateString()}).</p>
           <p>This contract is <strong>${isRenewable ? 'eligible for renewal' : 'not marked for renewal'}</strong>.
-          Please log in to Prokraya to ${action} this contract.</p>
+          Please log in to S2P Labs to ${action} this contract.</p>
         `;
 
         if (contract.owner_email) {
@@ -281,7 +281,7 @@ async function sendPendingTaskReminders(): Promise<void> {
         const html = `
           <p>Dear ${data.name || owner},</p>
           <p>You have <strong>${data.tasks.length} pending approval task${data.tasks.length !== 1 ? 's' : ''}</strong>
-          awaiting your action in Prokraya:</p>
+          awaiting your action in S2P Labs:</p>
           <table style="width:100%;border-collapse:collapse;font-size:13px">
             <thead>
               <tr style="background:#f5f5f5">
@@ -293,12 +293,12 @@ async function sendPendingTaskReminders(): Promise<void> {
             </thead>
             <tbody>${taskRows}</tbody>
           </table>
-          <p style="margin-top:16px">Please log in to Prokraya to action these tasks.</p>
+          <p style="margin-top:16px">Please log in to S2P Labs to action these tasks.</p>
         `;
 
         await sendDirectEmail(
           data.email,
-          `Reminder: You have ${data.tasks.length} pending approval task${data.tasks.length !== 1 ? 's' : ''} in Prokraya`,
+          `Reminder: You have ${data.tasks.length} pending approval task${data.tasks.length !== 1 ? 's' : ''} in S2P Labs`,
           html
         );
         console.log(`[Scheduler] Task reminder sent to ${owner} (${data.tasks.length} tasks)`);

@@ -385,7 +385,7 @@ export async function updateInvitationEmail(invitationId: number, emailId: strin
 }
 
 async function publishInviteEvent(emailId: string, companyName: string, invitationId: string, sessionUser: any) {
-  let orgName = "Prokraya";
+  let orgName = "S2P Labs";
   let orgId = sessionUser?.orgId || "";
 
   if (orgId) {
@@ -861,7 +861,7 @@ export async function quickCreateSupplier(data: any, sessionUser: any) {
 }
 
 async function publishOnBehalfInviteEvent(emailId: string, companyName: string, invitationId: string, sessionUser: any, mobileNo?: string) {
-  let orgName = "Prokraya";
+  let orgName = "S2P Labs";
   const orgId = sessionUser?.orgId || "";
   const orgData = await adminRepo.getOrgDetails();
 

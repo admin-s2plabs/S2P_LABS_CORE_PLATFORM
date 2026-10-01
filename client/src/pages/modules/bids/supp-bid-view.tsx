@@ -1,14 +1,13 @@
+import { FormSheet } from "@/components/form-sheet";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { FmpSupplierHint, type SupplierFmpView } from "@/components/fmpi/fmp-supplier-hint";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -207,11 +206,6 @@ export default function SupplierBidView() {
 
   const lines = data?.lines;
 
-  const { data: fmpData } = useQuery<{ enabled: boolean; lines: Record<string, SupplierFmpView> }>({
-    queryKey: ["/api/dbo/suppbids", bidId, "fmp"],
-    enabled: !!bidId,
-  });
-  const fmpLines = fmpData?.enabled ? fmpData.lines : undefined;
 
   const { data: requirements } = useQuery<any[]>({
     queryKey: ["/api/dbo/bids", bidId, "requirements"],
@@ -403,12 +397,6 @@ export default function SupplierBidView() {
         <CardHeader className="py-3 px-4">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <SectionHeader icon={Package} title="Scope of Work" count={lines?.length || 0} />
-            {fmpLines && (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-purple-50 text-purple-900 border border-purple-200/80 dark:bg-purple-950/40 dark:text-purple-200 dark:border-purple-800/60 text-xs font-medium whitespace-nowrap shadow-xs">
-                <AlertCircle className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400 shrink-0" aria-hidden="true" />
-                <span>AI can make mistakes. Please verify.</span>
-              </span>
-            )}
           </div>
         </CardHeader>
         <CardContent className="px-4 pb-4 pt-0 text-sm">
@@ -440,11 +428,6 @@ export default function SupplierBidView() {
                           </TooltipTrigger>
                           <TooltipContent><p>{line.description}</p></TooltipContent>
                         </Tooltip>
-                        <FmpSupplierHint
-                          fmp={fmpLines?.[String(line.id)]}
-                          currency={bid?.currency || "INR"}
-                          testId={`text-fmp-line-${line.id}`}
-                        />
                       </TableCell>
                       <TableCell className="py-2">
                         <Badge variant="outline" className="text-xs">{line.linetype}</Badge>
@@ -678,22 +661,28 @@ export default function SupplierBidView() {
         </CardContent>
       </Card>
 
-      <Sheet open={ackSheetOpen} onOpenChange={(open) => {
-        if (!open) {
-          setAckSheetOpen(false);
-          setAckType("");
-          setAckNotes("");
-          setAckTermsAccepted(false);
-        }
-      }}>
-        <SheetContent className="sm:max-w-md">
-          <SheetHeader>
-            <SheetTitle>Bid Acknowledge</SheetTitle>
-            <SheetDescription>
-              Please fill in the required details to acknowledge this bid.
-            </SheetDescription>
-          </SheetHeader>
-          <div className="space-y-5 py-4">
+      <FormSheet
+        open={ackSheetOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setAckSheetOpen(false);
+            setAckType("");
+            setAckNotes("");
+            setAckTermsAccepted(false);
+          }
+        }}
+        title="Bid Acknowledge"
+        description="Please fill in the required details to acknowledge this bid."
+        onSubmit={() => acknowledgeMutation.mutate()}
+        submitLabel={acknowledgeMutation.isPending ? "Processing..." : "Submit"}
+        isSubmitting={acknowledgeMutation.isPending}
+        submitDisabled={!ackType || !ackNotes.trim() || !ackTermsAccepted}
+        widthClassName="sm:max-w-md"
+      >
+          <p className="text-xs text-muted-foreground mb-4">
+            <span className="text-destructive">*</span> Indicates mandatory fields
+          </p>
+          <div className="space-y-5">
             <div className="space-y-2">
               <Label htmlFor="ack-type">
                 Acknowledgement Type <span className="text-destructive">*</span>
@@ -734,24 +723,7 @@ export default function SupplierBidView() {
               </Label>
             </div>
           </div>
-          <SheetFooter className="gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setAckSheetOpen(false)}
-              data-testid="button-cancel-ack"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={() => acknowledgeMutation.mutate()}
-              disabled={acknowledgeMutation.isPending || !ackType || !ackNotes.trim() || !ackTermsAccepted}
-              data-testid="button-submit-ack"
-            >
-              {acknowledgeMutation.isPending ? "Processing..." : "Submit"}
-            </Button>
-          </SheetFooter>
-        </SheetContent>
-      </Sheet>
+      </FormSheet>
 
     </div>
   );

@@ -35,7 +35,7 @@ class InvoiceApprovedPOHandler extends BaseEmailHandler<InvoiceApprovedPOEvent> 
       description: event.description,
       supplierName: event.supplierName,
       linkUrl: appUrl,
-      orgName: event.orgName || "Prokraya",
+      orgName: event.orgName || "S2P Labs",
       orgLogoPath: event.orgLogoPath || '',
     };
   }

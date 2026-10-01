@@ -108,7 +108,7 @@ function ApplicationForm() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-10">
           <h2 className="text-3xl font-bold text-gray-900 mb-2">Join us</h2>
-          <p className="text-gray-500 text-sm mb-7">Send us your details and we'll be in touch about opportunities at Prokraya.</p>
+          <p className="text-gray-500 text-sm mb-7">Send us your details and we'll be in touch about opportunities at S2P Labs.</p>
         </div>
         <div className="container mx-auto max-w-7xl px-4">
 
@@ -241,17 +241,17 @@ export function WorkCulturePage() {
           async
           src="https://www.googletagmanager.com/gtag/js?id=G-KDV6R2SDN2"
         ></script>
-        <meta property="og:title" content="Careers at Prokraya | Life & Culture" />
-        <meta property="og:description" content="Join a team transforming procurement through AI. Discover our culture, values, benefits, and career opportunities." />
+        <meta property="og:title" content="Careers at S2P Labs | Life & Culture" />
+        <meta property="og:description" content="Join a team transforming procurement. Discover our culture, values, benefits, and career opportunities." />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://prokraya.ai/work-culture" />
-        <meta property="og:site_name" content="Prokraya" />
+        <meta property="og:site_name" content="S2P Labs" />
         <meta property="og:image" content={LogoBlack} />
         <meta name="twitter:card" content={LogoBlack} />
         <meta name="twitter:site" content="@prokraya" />
-        <title>Careers at Prokraya | Work & Culture in AI Procurement Innovation</title>
-        <meta name="description" content="Explore careers at Prokraya. Join a team building the future of AI-powered procurement with a culture focused on innovation, collaboration, growth, and impact." />
-        <meta name="keywords" content="Prokraya careers, procurement technology jobs, AI software careers, product management jobs, engineering careers, SaaS careers, procurement innovation, work culture" />
+        <title>Careers at S2P Labs | Work & Culture in Procurement Innovation</title>
+        <meta name="description" content="Explore careers at S2P Labs. Join a team building the future of procurement with a culture focused on innovation, collaboration, growth, and impact." />
+        <meta name="keywords" content="S2P Labs careers, procurement technology jobs, software careers, product management jobs, engineering careers, SaaS careers, procurement innovation, work culture" />
       </Helmet>
 
       <div className="flex flex-col">
@@ -260,9 +260,9 @@ export function WorkCulturePage() {
           <div className="absolute inset-0 bg-[linear-gradient(to_right,#7c3aed08_1px,transparent_1px),linear-gradient(to_bottom,#7c3aed08_1px,transparent_1px)] bg-[size:5rem_5rem]" />
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 pt-20 text-center">
             <span className="inline-block px-3 py-1 text-xs font-semibold text-violet-700 bg-violet-50 rounded-full mb-5 uppercase tracking-wider">Work & Culture</span>
-            <h1 className="text-4xl lg:text-5xl font-extrabold text-gray-900 leading-tight mb-5">Life at Prokraya</h1>
+            <h1 className="text-4xl lg:text-5xl font-extrabold text-gray-900 leading-tight mb-5">Life at S2P Labs</h1>
             <p className="text-lg text-gray-500 max-w-2xl mx-auto">
-              Join a team that's passionate about transforming procurement through AI while fostering a culture of innovation, collaboration, and growth
+              Join a team that's passionate about transforming procurement while fostering a culture of innovation, collaboration, and growth
             </p>
           </div>
         </section>

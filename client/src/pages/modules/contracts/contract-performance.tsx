@@ -228,7 +228,7 @@ export default function ContractPerformance({ refNo: refNoProp }: { refNo?: stri
             <BarChart3 className="h-4 w-4 text-primary" />
           </div>
           <div>
-            <h1 className="text-xl font-semibold" data-testid="text-page-title">Contract Performance</h1>
+            <h1 className="text-xl font-semibold text-primary" data-testid="text-page-title">Contract Performance</h1>
             <p className="text-xs text-muted-foreground">Financial, obligation and risk overview</p>
           </div>
         </div>

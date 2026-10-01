@@ -21,8 +21,6 @@ import { getTenantSubdomain } from "./lib/utils";
 
 // website routes
 import { Layout } from "@/website/components/Layout";
-import { AIAgentsPage } from "@/website/pages/AIAgentsPage";
-import { AIFeaturesPage } from "@/website/pages/AIFeaturesPage";
 import { AboutUsPage } from "@/website/pages/AboutUsPage";
 import { BlogDetailsPage } from "@/website/pages/BlogDetailsPage";
 import { BlogsPage } from "@/website/pages/BlogsPage";
@@ -196,8 +194,6 @@ function AppRouter({ auth, setAuth, onLogin, onLogout }: {
         {/* website routes */}
         <Switch>
           {renderWebsiteRoute("/", HomePage)}
-          {renderWebsiteRoute("/ai-agents", AIAgentsPage)}
-          {renderWebsiteRoute("/ai-features", AIFeaturesPage)}
           {renderWebsiteRoute("/about-us", AboutUsPage)}
           {renderWebsiteRoute("/work-culture", WorkCulturePage)}
           {renderWebsiteRoute("/supplier-relationship-management", SupplierManagementPage)}

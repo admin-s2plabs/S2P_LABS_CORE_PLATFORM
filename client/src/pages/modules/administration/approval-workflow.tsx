@@ -6,8 +6,8 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
+import { FormSheet } from "@/components/form-sheet";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
@@ -1122,169 +1122,146 @@ export default function ApprovalWorkflowPage() {
         )}
       </div>
 
-      {/* Step Name Sheet (Create/Edit Step) */}
-      <Sheet open={isStepSheetOpen} onOpenChange={setIsStepSheetOpen}>
-        <SheetContent className="w-[400px] sm:max-w-[400px] overflow-y-auto p-4">
-          <SheetHeader className="space-y-1 pb-3">
-            <SheetTitle className="text-base">{editingStep ? "Edit Step" : "Create New Step"}</SheetTitle>
-          </SheetHeader>
-
-          <div className="space-y-4 pt-2 pb-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="stepName" className="text-sm">Step Name <span className="text-destructive">*</span></Label>
-              <Input
-                id="stepName"
-                value={stepName}
-                onChange={(e) => setStepName(e.target.value)}
-                placeholder="Enter step name"
-                data-testid="input-step-name"
-              />
-            </div>
+      {/* Step Name FormSheet (Create/Edit Step) */}
+      <FormSheet
+        open={isStepSheetOpen}
+        onOpenChange={setIsStepSheetOpen}
+        title={editingStep ? "Edit Step" : "Create New Step"}
+        onCancel={handleCloseStepSheet}
+        onSubmit={handleSaveStep}
+        submitLabel={editingStep ? "Update" : "Create"}
+        isSubmitting={createStepMutation.isPending || updateStepMutation.isPending}
+        widthClassName="sm:max-w-md"
+      >
+        <p className="text-xs text-muted-foreground mb-4"><span className="text-destructive">*</span> Indicates mandatory fields</p>
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="stepName" className="text-sm">Step Name <span className="text-destructive">*</span></Label>
+            <Input
+              id="stepName"
+              value={stepName}
+              onChange={(e) => setStepName(e.target.value)}
+              placeholder="Enter step name"
+              data-testid="input-step-name"
+            />
           </div>
+        </div>
+      </FormSheet>
 
-          <SheetFooter>
-            <Button variant="outline" onClick={handleCloseStepSheet} data-testid="button-cancel-step">
-              CANCEL
-            </Button>
-            <Button
-              onClick={handleSaveStep}
-              disabled={createStepMutation.isPending || updateStepMutation.isPending}
-              data-testid="button-save-step"
-            >
-              {(createStepMutation.isPending || updateStepMutation.isPending) && (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              )}
-              {editingStep ? "UPDATE" : "CREATE"}
-            </Button>
-          </SheetFooter>
-        </SheetContent>
-      </Sheet>
-
-      {/* Add Assignee Sheet (Separate Sheet) */}
-      <Sheet open={isAssigneeSheetOpen} onOpenChange={setIsAssigneeSheetOpen}>
-        <SheetContent className="w-[50vw] sm:max-w-[50vw] overflow-y-auto p-4">
-          <SheetHeader className="space-y-1 pb-3">
-            <SheetTitle className="text-base">{assigneeAddEditMode === "add" ? "Add" : "Edit"} Assignee</SheetTitle>
-            {assigneeStep && (
-              <p className="text-xs text-muted-foreground">Step: {assigneeStep.name}</p>
-            )}
-          </SheetHeader>
-
-          <div className="space-y-4 pt-2 pb-4">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-sm">Assignee Type <span className="text-destructive">*</span></Label>
-                <Select
-                  value={currentAssignment.assignment_type}
-                  onValueChange={(value) => setCurrentAssignment({
-                    ...currentAssignment,
-                    assignment_type: value,
-                    assignment_expression: "",
-                  })}
-                >
-                  <SelectTrigger data-testid="select-assignee-type">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="USER">User</SelectItem>
-                    <SelectItem value="ROLE">Role</SelectItem>
-                    <SelectItem value="USER_HIERARCHY">User Hierarchy</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {(currentAssignment.assignment_type === "USER" || currentAssignment.assignment_type === "ROLE") && (
-                <div className="space-y-1.5">
-                  <Label className="text-sm">
-                    Select {getAssigneeTypeLabel(currentAssignment.assignment_type)} <span className="text-destructive">*</span>
-                  </Label>
-                  {currentAssignment.assignment_type === "USER" && (
-                    <Select
-                      value={currentAssignment.assignment_expression}
-                      onValueChange={(value) => setCurrentAssignment({
-                        ...currentAssignment,
-                        assignment_expression: value,
-                      })}
-                    >
-                      <SelectTrigger data-testid="select-assignee-value">
-                        <SelectValue placeholder="Select user" >
-                          {
-                            users.find(
-                              (user) => user.email_id === currentAssignment.assignment_expression
-                            )?.name
-                          }
-                        </SelectValue>
-                      </SelectTrigger>
-                      <SelectContent>
-                        {users.map((user) => (
-                          <SelectItem key={user.id} value={user.email_id}>
-                            {user.name} ({user.email_id})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                  {currentAssignment.assignment_type === "ROLE" && (
-                    <Select
-                      value={currentAssignment.assignment_expression}
-                      onValueChange={(value) => setCurrentAssignment({
-                        ...currentAssignment,
-                        assignment_expression: value,
-                      })}
-                    >
-                      <SelectTrigger data-testid="select-assignee-value">
-                        <SelectValue placeholder="Select role" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {roles.map((role) => (
-                          <SelectItem key={role.id} value={role.role_name}>
-                            {role.role_name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                </div>
-              )}
-
-              {currentAssignment.assignment_type === "AMOUNT_BASED_HIERARCHY" && (
-                <div className="p-3 bg-orange-50 dark:bg-orange-950 border border-orange-200 dark:border-orange-800 rounded-md text-orange-700 dark:text-orange-300 text-sm">
-                  For amount based hierarchy approval workflow, Please make sure approver's are added in Setup Approvers under Administration tab.
-                </div>
-              )}
-            </div>
-
+      {/* Add Assignee FormSheet */}
+      <FormSheet
+        open={isAssigneeSheetOpen}
+        onOpenChange={setIsAssigneeSheetOpen}
+        title={`${assigneeAddEditMode === "add" ? "Add" : "Edit"} Assignee`}
+        description={assigneeStep ? `Step: ${assigneeStep.name}` : undefined}
+        onCancel={handleCloseAssigneeSheet}
+        onSubmit={handleSaveAssignee}
+        submitLabel={assigneeAddEditMode === "add" ? "Add" : "Update"}
+        isSubmitting={addAssigneeMutation.isPending || updateAssigneeMutation.isPending}
+        widthClassName="sm:max-w-2xl"
+      >
+        {assigneeStep && (
+          <p className="text-xs text-muted-foreground mb-1">Step: {assigneeStep.name}</p>
+        )}
+        <p className="text-xs text-muted-foreground mb-4"><span className="text-destructive">*</span> Indicates mandatory fields</p>
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label className="text-sm">Step Conditions</Label>
-              <ConditionBuilder
-                condition={currentAssignment.conditionData || { logic: "AND", rules: [] }}
-                onChange={(cond) => setCurrentAssignment({
+              <Label className="text-sm">Assignee Type <span className="text-destructive">*</span></Label>
+              <Select
+                value={currentAssignment.assignment_type}
+                onValueChange={(value) => setCurrentAssignment({
                   ...currentAssignment,
-                  conditionData: cond,
+                  assignment_type: value,
+                  assignment_expression: "",
                 })}
-                organizations={organizations}
-                departments={departments}
-              />
+              >
+                <SelectTrigger data-testid="select-assignee-type">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="USER">User</SelectItem>
+                  <SelectItem value="ROLE">Role</SelectItem>
+                  <SelectItem value="USER_HIERARCHY">User Hierarchy</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
+
+            {(currentAssignment.assignment_type === "USER" || currentAssignment.assignment_type === "ROLE") && (
+              <div className="space-y-1.5">
+                <Label className="text-sm">
+                  Select {getAssigneeTypeLabel(currentAssignment.assignment_type)} <span className="text-destructive">*</span>
+                </Label>
+                {currentAssignment.assignment_type === "USER" && (
+                  <Select
+                    value={currentAssignment.assignment_expression}
+                    onValueChange={(value) => setCurrentAssignment({
+                      ...currentAssignment,
+                      assignment_expression: value,
+                    })}
+                  >
+                    <SelectTrigger data-testid="select-assignee-value">
+                      <SelectValue placeholder="Select user" >
+                        {
+                          users.find(
+                            (user) => user.email_id === currentAssignment.assignment_expression
+                          )?.name
+                        }
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {users.map((user) => (
+                        <SelectItem key={user.id} value={user.email_id}>
+                          {user.name} ({user.email_id})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+                {currentAssignment.assignment_type === "ROLE" && (
+                  <Select
+                    value={currentAssignment.assignment_expression}
+                    onValueChange={(value) => setCurrentAssignment({
+                      ...currentAssignment,
+                      assignment_expression: value,
+                    })}
+                  >
+                    <SelectTrigger data-testid="select-assignee-value">
+                      <SelectValue placeholder="Select role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {roles.map((role) => (
+                        <SelectItem key={role.id} value={role.role_name}>
+                          {role.role_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+            )}
+
+            {currentAssignment.assignment_type === "AMOUNT_BASED_HIERARCHY" && (
+              <div className="p-3 bg-orange-50 dark:bg-orange-950 border border-orange-200 dark:border-orange-800 rounded-md text-orange-700 dark:text-orange-300 text-sm">
+                For amount based hierarchy approval workflow, Please make sure approver's are added in Setup Approvers under Administration tab.
+              </div>
+            )}
           </div>
 
-          <SheetFooter>
-            <Button variant="outline" onClick={handleCloseAssigneeSheet} data-testid="button-cancel-assignee">
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSaveAssignee}
-              disabled={addAssigneeMutation.isPending || updateAssigneeMutation.isPending}
-              data-testid="button-add-assignee"
-            >
-              {(addAssigneeMutation.isPending || updateAssigneeMutation.isPending) && (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              )}
-              {assigneeAddEditMode === "add" ? "Add" : "Update"}
-            </Button>
-          </SheetFooter>
-        </SheetContent>
-      </Sheet>
+          <div className="space-y-1.5">
+            <Label className="text-sm">Step Conditions</Label>
+            <ConditionBuilder
+              condition={currentAssignment.conditionData || { logic: "AND", rules: [] }}
+              onChange={(cond) => setCurrentAssignment({
+                ...currentAssignment,
+                conditionData: cond,
+              })}
+              organizations={organizations}
+              departments={departments}
+            />
+          </div>
+        </div>
+      </FormSheet>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteStepId !== null} onOpenChange={() => setDeleteStepId(null)}>

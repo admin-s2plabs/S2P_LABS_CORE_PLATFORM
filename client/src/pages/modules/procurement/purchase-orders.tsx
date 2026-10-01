@@ -1,4 +1,5 @@
 import { StatusCountBadges } from "@/components/status-count-badges";
+import { FormSheet } from "@/components/form-sheet";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -18,14 +19,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -952,7 +945,7 @@ export default function PurchaseOrders() {
     <div className="p-4 space-y-3">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold" data-testid="text-page-title">
+          <h1 className="text-xl font-bold text-primary" data-testid="text-page-title">
             Purchase Orders
           </h1>
           <p className="text-sm text-muted-foreground">
@@ -960,21 +953,36 @@ export default function PurchaseOrders() {
           </p>
         </div>
         {!isSupplier && (
-          <Sheet open={createDialogOpen} onOpenChange={handleOpenCreateDialog}>
-            <SheetTrigger asChild>
-              <Button size="sm" data-testid="button-create-po">
-                <Plus className="h-4 w-4 mr-2" />
-                Create PO
-              </Button>
-            </SheetTrigger>
-            <SheetContent className="w-[50vw] sm:max-w-[50vw] overflow-y-auto">
-              <SheetHeader>
-                <SheetTitle>Create Purchase Order</SheetTitle>
-                <SheetDescription>
-                  <span className="text-destructive">*</span> Indicates
-                  mandatory fields
-                </SheetDescription>
-              </SheetHeader>
+          <>
+          <Button size="sm" onClick={() => handleOpenCreateDialog(true)} data-testid="button-create-po">
+            <Plus className="h-4 w-4 mr-2" />
+            Create PO
+          </Button>
+          <FormSheet
+            open={createDialogOpen}
+            onOpenChange={handleOpenCreateDialog}
+            title="Create Purchase Order"
+            onSubmit={handleCreatePO}
+            submitLabel={createPOMutation.isPending ? "Creating..." : "Create"}
+            isSubmitting={createPOMutation.isPending}
+            submitDisabled={
+              createPOMutation.isPending ||
+              !newPO.description ||
+              !newPO.supplierId ||
+              !newPO.deliveryLocation ||
+              !newPO.requiredDate ||
+              !newPO.requestorId ||
+              !newPO.requestorDepartment ||
+              !newPO.orgId ||
+              !newPO.currency ||
+              !newPO.budgetId ||
+              !newPO.paymentTermsId
+            }
+            widthClassName="w-full sm:max-w-3xl"
+          >
+              <p className="text-xs text-muted-foreground mb-4">
+                <span className="text-destructive">*</span> Indicates mandatory fields
+              </p>
               <div className="mt-2">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="col-span-2 space-y-2">
@@ -1393,40 +1401,8 @@ export default function PurchaseOrders() {
                   </div>
                 </div>
               </div>
-
-              <div className="flex justify-end gap-2 mt-6 pt-4">
-                <Button
-                  variant="outline"
-                  onClick={() => setCreateDialogOpen(false)}
-                  data-testid="button-cancel-po"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleCreatePO}
-                  disabled={
-                    createPOMutation.isPending ||
-                    !newPO.description ||
-                    !newPO.supplierId ||
-                    !newPO.deliveryLocation ||
-                    !newPO.requiredDate ||
-                    !newPO.requestorId ||
-                    !newPO.requestorDepartment ||
-                    !newPO.orgId ||
-                    !newPO.currency ||
-                    !newPO.budgetId ||
-                    !newPO.paymentTermsId
-                  }
-                  data-testid="button-save-po"
-                >
-                  {createPOMutation.isPending && (
-                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                  )}
-                  Create
-                </Button>
-              </div>
-            </SheetContent>
-          </Sheet>
+          </FormSheet>
+          </>
         )}
       </div>
 

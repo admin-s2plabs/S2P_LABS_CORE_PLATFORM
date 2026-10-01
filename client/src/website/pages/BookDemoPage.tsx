@@ -22,9 +22,9 @@ export function BookDemoPage() {
             <Sparkles className="w-3.5 h-3.5" />
             Book a Demo
           </span>
-          <h1 className="text-4xl lg:text-5xl font-extrabold text-gray-900 leading-tight mb-5">See Prokraya in Action</h1>
+          <h1 className="text-4xl lg:text-5xl font-extrabold text-gray-900 leading-tight mb-5">See S2P Labs in Action</h1>
           <p className="text-lg text-gray-500 max-w-xl mx-auto">
-            Schedule a personalized demo and discover how AI-powered procurement can transform your organization
+            Schedule a personalized demo and discover how modern procurement can transform your organization
           </p>
         </div>
       </section>
@@ -79,7 +79,7 @@ export function BookDemoPage() {
             {[
               { step: "1", title: "Confirmation", description: "You'll receive an email confirmation with a calendar invite for your demo" },
               { step: "2", title: "Preparation", description: "Our team will review your requirements to personalize your demo experience" },
-              { step: "3", title: "Demo Day", description: "Join a 30-minute live demo showcasing Prokraya's AI-powered capabilities" },
+              { step: "3", title: "Demo Day", description: "Join a 30-minute live demo showcasing S2P Labs' capabilities" },
             ].map((item, index) => (
               <div key={index} className="text-center">
                 <div className="w-14 h-14 bg-gradient-to-br from-violet-600 to-teal-500 rounded-2xl flex items-center justify-center text-white font-bold text-xl mx-auto mb-4">
@@ -98,7 +98,7 @@ export function BookDemoPage() {
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <p className="text-3xl text-white/30 mb-4">"</p>
           <blockquote className="text-lg font-medium mb-6 text-gray-200">
-            The demo convinced us immediately. Seeing our actual procurement challenges solved in real-time by Prokraya's AI agents was game-changing.
+            The demo convinced us immediately. Seeing our actual procurement challenges solved in real-time by S2P Labs was game-changing.
           </blockquote>
           <div className="flex items-center justify-center gap-3">
             <div className="w-10 h-10 bg-gradient-to-br from-violet-500 to-teal-500 rounded-full flex items-center justify-center text-white text-sm font-bold">VM</div>

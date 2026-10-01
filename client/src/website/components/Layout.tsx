@@ -1,9 +1,8 @@
-import { CheckCircle, ChevronDown, Facebook, Instagram, Linkedin, LogIn, MapPin, Menu, Shield, Twitter, X, Youtube } from "lucide-react";
+import { CheckCircle, ChevronDown, Facebook, Instagram, Linkedin, LogIn, Menu, Shield, Twitter, X, Youtube } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
-import LogoBlack from "../../assets/images/Prokraya_Logo_main_black.png";
-import LogoWhite from "../../assets/images/Prokraya_White_logo.png";
-import { ChatBot } from "./ChatBot";
+import LogoBlack from "../../assets/images/s2plabs_logo.jpeg";
+import LogoWhite from "../../assets/images/s2plabs_logo.jpeg";
 import { ImageWithFallback } from "./ImageWithFallback";
 
 export function Layout({ children }: any) {
@@ -44,11 +43,6 @@ export function Layout({ children }: any) {
     { name: "Spend Analytics", path: "/spend-analytics-software" },
   ];
 
-  const aiLinks = [
-    { name: "AI Agents", path: "/ai-agents" },
-    { name: "AI Features", path: "/ai-features" },
-  ];
-
   const resourceLinks = [
     { name: "Blogs", path: "/blogs" },
     { name: "Success Stories", path: "/success-stories" },
@@ -58,7 +52,6 @@ export function Layout({ children }: any) {
   const navGroups = [
     { label: "Company", key: "company", links: companyLinks },
     { label: "Product", key: "product", links: productLinks },
-    { label: "Procurement AI", key: "ai", links: aiLinks },
     { label: "Resources", key: "resources", links: resourceLinks },
   ];
 
@@ -76,7 +69,7 @@ export function Layout({ children }: any) {
             <Link href="/" className="flex items-center">
               <ImageWithFallback
                 src={LogoBlack}
-                alt="Prokraya"
+                alt="S2P Labs"
                 className="h-8 w-auto"
               />
             </Link>
@@ -133,12 +126,6 @@ export function Layout({ children }: any) {
                 Login
               </Link>
 
-              <Link
-                href="/book-demo"
-                className="ml-2 px-5 py-2 bg-violet-600 text-white text-sm font-semibold rounded-lg hover:bg-violet-700 transition-colors shadow-sm"
-              >
-                Book a Demo
-              </Link>
             </div>
 
             {/* Mobile Toggle */}
@@ -214,13 +201,6 @@ export function Layout({ children }: any) {
                   Login
                 </Link>
 
-                <Link
-                  href="/book-demo"
-                  className="mx-4 mt-2 px-5 py-2.5 bg-violet-600 text-white text-sm font-semibold rounded-lg text-center"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Book a Demo
-                </Link>
               </div>
             </div>
           )}
@@ -236,15 +216,15 @@ export function Layout({ children }: any) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-14 pb-10">
 
           {/* Main grid */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 mb-12">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8 mb-12">
 
             {/* Brand */}
             <div className="col-span-2 md:col-span-3 lg:col-span-2">
               <Link href="/" className="inline-flex mb-4">
-                <ImageWithFallback src={LogoWhite} alt="Prokraya" className="h-9 w-auto" />
+                <ImageWithFallback src={LogoWhite} alt="S2P Labs" className="h-9 w-auto" />
               </Link>
               <p className="text-gray-400 text-sm leading-relaxed mb-5 max-w-xs">
-                AI-first Source-to-Pay platform that automates the entire procurement lifecycle, from sourcing to payments.
+                Source-to-Pay platform that automates the entire procurement lifecycle, from sourcing to payments.
               </p>
               <div className="flex gap-2 mb-6">
                 <span className="flex items-center gap-1.5 px-2.5 py-1 bg-white/10 rounded-md text-xs text-gray-300">
@@ -257,22 +237,20 @@ export function Layout({ children }: any) {
               {/* Social links */}
               <div className="flex items-center gap-2 mt-6">
                 {[
-                  { icon: Linkedin, href: "https://www.linkedin.com/company/prokraya", label: "LinkedIn" },
-                  { icon: Youtube, href: "https://www.youtube.com/@prokraya", label: "YouTube" },
-                  { icon: Twitter, href: "https://x.com/prokraya", label: "X (Twitter)" },
-                  { icon: Instagram, href: "https://www.instagram.com/prokraya", label: "Instagram" },
-                  { icon: Facebook, href: "https://www.facebook.com/prokraya", label: "Facebook" },
-                ].map(({ icon: Icon, href, label }) => (
-                  <a
+                  { icon: Linkedin, label: "LinkedIn" },
+                  { icon: Youtube, label: "YouTube" },
+                  { icon: Twitter, label: "X (Twitter)" },
+                  { icon: Instagram, label: "Instagram" },
+                  { icon: Facebook, label: "Facebook" },
+                ].map(({ icon: Icon, label }) => (
+                  <button
+                    type="button"
                     key={label}
-                    href={href}
-                    target="_blank"
-                    rel="noopener noreferrer"
                     aria-label={label}
                     className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/10 hover:bg-violet-600 text-gray-400 hover:text-white transition-all"
                   >
                     <Icon className="w-3.5 h-3.5" />
-                  </a>
+                  </button>
                 ))}
               </div>
             </div>
@@ -308,67 +286,24 @@ export function Layout({ children }: any) {
               </ul>
             </div>
 
-            {/* Procurement AI + Resources stacked */}
-            <div className="space-y-7">
-              <div>
-                <h3 className="text-xs font-semibold text-white mb-4 uppercase tracking-widest">Procurement AI</h3>
-                <ul className="space-y-2.5">
-                  {aiLinks.map((link) => (
-                    <li key={link.name}>
-                      <Link href={link.path} className="text-gray-400 hover:text-violet-400 transition-colors text-sm">
-                        {link.name}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div>
-                <h3 className="text-xs font-semibold text-white mb-4 uppercase tracking-widest">Resources</h3>
-                <ul className="space-y-2.5">
-                  {resourceLinks.map((link) => (
-                    <li key={link.name}>
-                      <Link href={link.path} className="text-gray-400 hover:text-violet-400 transition-colors text-sm">
-                        {link.name}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+            <div>
+              <h3 className="text-xs font-semibold text-white mb-4 uppercase tracking-widest">Resources</h3>
+              <ul className="space-y-2.5">
+                {resourceLinks.map((link) => (
+                  <li key={link.name}>
+                    <Link href={link.path} className="text-gray-400 hover:text-violet-400 transition-colors text-sm">
+                      {link.name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
             </div>
 
-          </div>
-
-          {/* Locations */}
-          <div className="border-t border-white/10 pt-10 mb-8">
-            <h3 className="text-xs font-semibold text-white mb-5 uppercase tracking-widest">Locations</h3>
-            <div className="grid md:grid-cols-3 gap-6">
-              <div className="flex gap-3">
-                <MapPin className="w-4 h-4 text-violet-400 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-white text-xs font-semibold mb-1">PROKRAYA TECH PRIVATE LIMITED</p>
-                  <p className="text-gray-400 text-xs leading-relaxed">Plot No. 5, Ground Floor, North Block, JVP Building, Software Units Layout, Madhapur, Hyderabad – 500081</p>
-                </div>
-              </div>
-              <div className="flex gap-3">
-                <MapPin className="w-4 h-4 text-violet-400 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-white text-xs font-semibold mb-1">PROKRAYA AI TECHNOLOGIES - FZO</p>
-                  <p className="text-gray-400 text-xs leading-relaxed">Building A2, Dubai Digital Park, Dubai Silicon Oasis, Dubai, United Arab Emirates</p>
-                </div>
-              </div>
-              <div className="flex gap-3">
-                <MapPin className="w-4 h-4 text-violet-400 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-white text-xs font-semibold mb-1">PROKRAYA AI INC</p>
-                  <p className="text-gray-400 text-xs leading-relaxed">4750 willow road, suite 250 Pleasanton, CA 94588</p>
-                </div>
-              </div>
-            </div>
           </div>
 
           {/* Bottom bar */}
           <div className="border-t border-white/10 pt-6 flex flex-col sm:flex-row justify-between items-center gap-3">
-            <p className="text-gray-500 text-xs">&copy; 2026 Prokraya. All rights reserved.</p>
+            <p className="text-gray-500 text-xs">&copy; 2026 S2P Labs. All rights reserved.</p>
             <div className="flex items-center gap-4 text-xs text-gray-500">
               <Link href="/privacy-policy" className="hover:text-gray-300 transition-colors">Privacy Policy</Link>
               <Link href="/terms-of-service" className="hover:text-gray-300 transition-colors">Terms of Service</Link>
@@ -383,9 +318,6 @@ export function Layout({ children }: any) {
 
         </div>
       </footer>
-
-      {/* AI Chatbot — rendered on every page */}
-      <ChatBot />
     </div>
   );
 }

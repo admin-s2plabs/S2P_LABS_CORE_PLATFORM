@@ -580,7 +580,7 @@ export async function getDepartments() {
 
 export async function getUserMenuFunctions(userId: string) {
   const result = await getPool().query(`
-    SELECT DISTINCT f.id, f.function_name, f.description, f.module_name, f.function_url, f.category, f.icon_name
+    SELECT DISTINCT f.id, f.function_name, f.description, f.module_name, f.function_url, f.category, f.icon_name, f.parent_function_id
     FROM dbo.um_role_functions_map_dtls rfm
     JOIN dbo.um_user_roles_map_dtls urm ON rfm.role_id = urm.role_id
     JOIN dbo.um_functions_dtls f ON rfm.function_id = f.id
@@ -591,17 +591,45 @@ export async function getUserMenuFunctions(userId: string) {
 }
 
 export async function getUserCounts() {
-  const [totalUsersResult, orgUsersResult, supplierUsersResult] = await Promise.all([
-    getPool().query(`SELECT COUNT(*) as count FROM dbo.um_user_dtls WHERE user_status = 1`),
-    getPool().query(`SELECT COUNT(*) as count FROM dbo.um_user_dtls WHERE user_status = 1 AND user_type = 0`),
-    getPool().query(`SELECT COUNT(*) as count FROM dbo.um_user_dtls WHERE user_status = 1 AND user_type = 1`),
+  const breakdown = (typeFilter: string) => getPool().query(`
+    SELECT
+      COUNT(*) FILTER (WHERE user_status = 1) as active,
+      COUNT(*) FILTER (WHERE creation_date >= now() - interval '30 days') as new
+    FROM dbo.um_user_dtls
+    WHERE 1=1 ${typeFilter}
+  `);
+
+  const [total, org, supplier] = await Promise.all([
+    breakdown(""),
+    breakdown("AND user_type = 0"),
+    breakdown("AND user_type = 1"),
   ]);
 
   return {
-    totalUsers: parseInt(totalUsersResult.rows[0]?.count || '0'),
-    organizationUsers: parseInt(orgUsersResult.rows[0]?.count || '0'),
-    supplierUsers: parseInt(supplierUsersResult.rows[0]?.count || '0'),
+    totalUsers: parseInt(total.rows[0]?.active || '0'),
+    totalUsersNew: parseInt(total.rows[0]?.new || '0'),
+    organizationUsers: parseInt(org.rows[0]?.active || '0'),
+    organizationUsersNew: parseInt(org.rows[0]?.new || '0'),
+    supplierUsers: parseInt(supplier.rows[0]?.active || '0'),
+    supplierUsersNew: parseInt(supplier.rows[0]?.new || '0'),
   };
+}
+
+export async function getSuppliersSpendChart(limit = 5) {
+  const result = await getPool().query(`
+    SELECT COALESCE(supplier_name, 'Unknown') as name,
+           SUM(CAST(invoice_amount AS NUMERIC) + COALESCE(CAST(tax_amount AS NUMERIC), 0)) as amount
+    FROM dbo.supp_invoice_dtls
+    WHERE supplier_name IS NOT NULL
+    GROUP BY supplier_name
+    ORDER BY amount DESC
+    LIMIT $1
+  `, [limit]);
+
+  return result.rows.map(r => ({
+    name: r.name,
+    amount: parseFloat(r.amount || '0'),
+  }));
 }
 
 export async function getSupplierStats(supplierId: string) {

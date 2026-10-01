@@ -18,11 +18,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -45,14 +40,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { FormSheet } from "@/components/form-sheet";
 import { Separator } from "@/components/ui/separator";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -64,7 +53,6 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { useAISettings } from "@/hooks/use-ai-settings";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency, formatDate } from "@/lib/common-functions";
 import { generateTablePdf } from "@/lib/generate-table-pdf";
@@ -90,16 +78,14 @@ import {
   MessageSquare,
   Pencil,
   Plus,
-  RefreshCw,
   Search,
   Send,
-  Sparkles,
   Trash2,
   Upload,
   User,
   Wallet,
   X,
-  XCircle
+  XCircle,
 } from "lucide-react";
 import { useEffect, useRef, useState, ReactNode } from "react";
 import { Link, useLocation, useRoute } from "wouter";
@@ -625,7 +611,6 @@ const preventInvalidNumberKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
 export default function BudgetDetailPage() {
   const [, params] = useRoute("/app/budgets/:id");
   const budgetId = params?.id;
-  const { isAIEnabled } = useAISettings();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
@@ -675,84 +660,6 @@ export default function BudgetDetailPage() {
   const [linesImportPreview, setLinesImportPreview] = useState<BulkLinesImportPreview | null>(null);
   const [linesImportResults, setLinesImportResults] = useState<BulkLinesImportResponse | null>(null);
   const linesImportFileRef = useRef<HTMLInputElement>(null);
-
-  // AI Amount Suggestion state
-  const [amountSuggestion, setAmountSuggestion] = useState<{
-    suggestion: number | null;
-    confidence: number;
-    reasoning: string;
-    basedOn: string[];
-    message: string;
-    currency?: string;
-    periodName?: string;
-    costCenterName?: string;
-    statistics?: { average: number; min: number; max: number; count: number };
-    historicalAllocations?: Array<{
-      budgetName: string;
-      amount: number;
-      consumed?: number;
-      reserved?: number;
-      available?: number;
-      utilizationPct?: number;
-      status: string;
-      sourceCurrency?: string;
-      sourcePeriodName?: string;
-      originalAmount?: number;
-      periodScaled?: boolean;
-    }>;
-  } | null>(null);
-  const [isFetchingSuggestion, setIsFetchingSuggestion] = useState(false);
-  const [suggestionError, setSuggestionError] = useState<string | null>(null);
-  const [suggestionDetailsOpen, setSuggestionDetailsOpen] = useState(false);
-
-  const fetchAmountSuggestion = async (
-    costCenterCode: string,
-    opts?: {
-      currency?: string | null;
-      periodMstId?: string | null;
-      startDate?: string | null;
-      endDate?: string | null;
-      businessEntity?: string | null;
-      locationIds?: number[];
-      departmentIds?: number[];
-    },
-  ) => {
-    if (!costCenterCode) return;
-    setIsFetchingSuggestion(true);
-    setAmountSuggestion(null);
-    setSuggestionError(null);
-    setSuggestionDetailsOpen(false);
-    try {
-      const params = new URLSearchParams();
-      if (opts?.currency?.trim()) params.set("currency", opts.currency.trim());
-      if (opts?.periodMstId != null && String(opts.periodMstId).trim()) {
-        params.set("periodMstId", String(opts.periodMstId).trim());
-      }
-      if (opts?.startDate?.trim()) params.set("startDate", opts.startDate.trim());
-      if (opts?.endDate?.trim()) params.set("endDate", opts.endDate.trim());
-      if (opts?.businessEntity?.trim()) {
-        params.set("businessEntity", opts.businessEntity.trim());
-      }
-      if (opts?.locationIds?.length) {
-        params.set("locationIds", opts.locationIds.join(","));
-      }
-      if (opts?.departmentIds?.length) {
-        params.set("departmentIds", opts.departmentIds.join(","));
-      }
-      const query = params.toString() ? `?${params.toString()}` : "";
-      const response = await apiRequest(
-        "GET",
-        `/api/budgets/suggest-amount/${costCenterCode}${query}`,
-      );
-      const suggestionData = await response.json();
-      setAmountSuggestion(suggestionData);
-    } catch (error) {
-      console.error("Failed to fetch amount suggestion:", error);
-      setSuggestionError("Failed to generate amount suggestion. Please try again.");
-    } finally {
-      setIsFetchingSuggestion(false);
-    }
-  };
 
   // Approval confirmation dialog state
   const [approvalDialogOpen, setApprovalDialogOpen] = useState(false);
@@ -1529,21 +1436,6 @@ export default function BudgetDetailPage() {
   }
 
   const { header, lines, departmentMappings, locationMappings } = data;
-
-  const buildSuggestionOpts = (line: typeof lineFormData = lineFormData) => ({
-    currency: header.budget_curr,
-    periodMstId: header.period_mst_id,
-    startDate: header.start_date,
-    endDate: header.end_date,
-    businessEntity: header.business_entity,
-    locationIds: line.location_ids?.length ? line.location_ids : undefined,
-    departmentIds: line.department_ids?.length ? line.department_ids : undefined,
-  });
-
-  const refreshAmountSuggestion = async (line: typeof lineFormData = lineFormData) => {
-    if (!isAIEnabled("AI_BUDGET_AMOUNT_SUGGESTION") || !line.cost_center_code) return;
-    await fetchAmountSuggestion(line.cost_center_code, buildSuggestionOpts(line));
-  };
 
   const summaryRowsDetail = [buildBudgetDetailSummaryRow(header)];
   const lineRowsFlatDetail = buildBudgetDetailLineRowsFlat(
@@ -2474,14 +2366,18 @@ export default function BudgetDetailPage() {
         onCountsChange={(counts) => setCollaborationCount(counts.totalCount)}
       />
 
-      <Sheet open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <SheetContent className="sm:max-w-md overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle>Edit Budget</SheetTitle>
-            <SheetDescription>
-              <span className="text-destructive">*</span> Indicates mandatory fields
-            </SheetDescription>
-          </SheetHeader>
+      <FormSheet
+        open={isEditOpen}
+        onOpenChange={setIsEditOpen}
+        title="Edit Budget"
+        onSubmit={handleSave}
+        submitLabel="Save Changes"
+        isSubmitting={updateMutation.isPending}
+        widthClassName="sm:max-w-md"
+      >
+        <p className="text-xs text-muted-foreground mb-4">
+          <span className="text-destructive">*</span> Indicates mandatory fields
+        </p>
           <div className="space-y-4 mt-2">
             <div className="space-y-2">
               <Label htmlFor="budget_name">
@@ -2683,292 +2579,21 @@ export default function BudgetDetailPage() {
               )}
             </div>
           </div>
+      </FormSheet>
 
-          <div className="flex justify-end gap-2 mt-6 pt-4">
-            <Button
-              variant="outline"
-              onClick={() => setIsEditOpen(false)}
-              disabled={updateMutation.isPending}
-              data-testid="button-edit-cancel"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSave}
-              disabled={updateMutation.isPending}
-              data-testid="button-edit-save"
-            >
-              {updateMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Save Changes
-            </Button>
-          </div>
-        </SheetContent>
-      </Sheet>
-
-      <Sheet open={isAddLineOpen} onOpenChange={setIsAddLineOpen}>
-        <SheetContent className="sm:max-w-2xl overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle>Add Budget Line</SheetTitle>
-            <SheetDescription>
-              Add a new budget line item with cost centre allocation.
-            </SheetDescription>
-          </SheetHeader>
-
-          {/* AI Amount Suggestion - Horizontal below header */}
-          {isAIEnabled('AI_BUDGET_AMOUNT_SUGGESTION') && lineFormData.cost_center_code && (() => {
-            const suggestionCurrency =
-              amountSuggestion?.currency || header.budget_curr || "AED";
-            const confidencePct = amountSuggestion
-              ? Math.round((amountSuggestion.confidence ?? 0) * 100)
-              : 0;
-            const tier =
-              confidencePct >= 80
-                ? "high"
-                : confidencePct >= 60
-                  ? "medium"
-                  : "low";
-            const badgeLabel = {
-              high: "High Confidence",
-              medium: "Medium Confidence",
-              low: "Low Confidence",
-            } as const;
-            const basedOnLabel = (amountSuggestion?.basedOn ?? [])
-              .map((b) =>
-                b
-                  .split("_")
-                  .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-                  .join(" "),
-              )
-              .join(", ");
-            const primaryText =
-              amountSuggestion?.reasoning?.trim() ||
-              amountSuggestion?.message ||
-              "";
-            const hasDetails =
-              !!amountSuggestion?.statistics ||
-              (amountSuggestion?.historicalAllocations?.length ?? 0) > 0;
-
-            return (
-              <div className="mt-4 space-y-2">
-                <div className="rounded-lg border bg-muted/30 p-3 flex items-start justify-between gap-4">
-                  <div className="flex items-start gap-3 flex-1 min-w-0">
-                    <div className="flex items-center justify-center h-8 w-8 rounded-full bg-primary/10 shrink-0 mt-0.5">
-                      <Sparkles className="h-4 w-4 text-primary" />
-                    </div>
-                    {isFetchingSuggestion ? (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Generating recommendation...
-                      </div>
-                    ) : suggestionError ? (
-                      <div className="space-y-1">
-                        <p className="text-sm text-destructive">{suggestionError}</p>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="gap-1"
-                          onClick={() => refreshAmountSuggestion()}
-                          data-testid="button-retry-suggestion"
-                        >
-                          <RefreshCw className="h-3 w-3" />
-                          Retry
-                        </Button>
-                      </div>
-                    ) : amountSuggestion ? (
-                      <div className="space-y-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-sm font-medium">AI Amount Suggestion</span>
-                          {amountSuggestion.suggestion != null && (
-                            <Badge
-                              variant={
-                                tier === "high"
-                                  ? "default"
-                                  : tier === "medium"
-                                    ? "outline"
-                                    : "destructive"
-                              }
-                              className="text-xs"
-                              data-testid="badge-suggestion-confidence"
-                            >
-                              {badgeLabel[tier]} ({confidencePct}%)
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="text-sm text-muted-foreground">{primaryText}</p>
-                        {basedOnLabel && (
-                          <p className="text-xs text-muted-foreground">
-                            <span className="font-medium">Based On: </span>
-                            {basedOnLabel}
-                          </p>
-                        )}
-                      </div>
-                    ) : null}
-                  </div>
-                  {!isFetchingSuggestion && !suggestionError && amountSuggestion?.suggestion != null && (
-                    <div className="flex items-center gap-2 shrink-0">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="gap-1"
-                        onClick={() => refreshAmountSuggestion()}
-                        data-testid="button-regenerate-suggestion"
-                      >
-                        <RefreshCw className="h-3 w-3" />
-                        Regenerate
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setLineFormData({
-                            ...lineFormData,
-                            amount: String(amountSuggestion.suggestion),
-                          });
-                        }}
-                        className="gap-1"
-                        data-testid="button-apply-suggestion"
-                      >
-                        <Sparkles className="h-3 w-3" />
-                        Apply {formatCurrency(amountSuggestion.suggestion, suggestionCurrency)}
-                      </Button>
-                    </div>
-                  )}
-                </div>
-
-                {!isFetchingSuggestion && !suggestionError && amountSuggestion && hasDetails && (
-                  <Collapsible open={suggestionDetailsOpen} onOpenChange={setSuggestionDetailsOpen}>
-                    <CollapsibleTrigger asChild>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="gap-1 px-2 h-8 text-muted-foreground"
-                        data-testid="button-view-suggestion-details"
-                      >
-                        <ChevronDown
-                          className={`h-3.5 w-3.5 transition-transform ${suggestionDetailsOpen ? "rotate-180" : ""}`}
-                        />
-                        View details
-                      </Button>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent className="rounded-lg border bg-muted/20 p-3 space-y-3">
-                      {(amountSuggestion.periodName || header.period_name) && (
-                        <p className="text-xs text-muted-foreground">
-                          Normalized to current period:{" "}
-                          <span className="font-medium text-foreground">
-                            {amountSuggestion.periodName || header.period_name}
-                          </span>
-                        </p>
-                      )}
-                      {amountSuggestion.statistics && (
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
-                          <div>
-                            <p className="text-xs text-muted-foreground">Average</p>
-                            <p className="font-medium">
-                              {formatCurrency(amountSuggestion.statistics.average, suggestionCurrency)}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-muted-foreground">Min</p>
-                            <p className="font-medium">
-                              {formatCurrency(amountSuggestion.statistics.min, suggestionCurrency)}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-muted-foreground">Max</p>
-                            <p className="font-medium">
-                              {formatCurrency(amountSuggestion.statistics.max, suggestionCurrency)}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-muted-foreground">Samples</p>
-                            <p className="font-medium">{amountSuggestion.statistics.count}</p>
-                          </div>
-                        </div>
-                      )}
-                      {(amountSuggestion.historicalAllocations?.length ?? 0) > 0 && (
-                        <div className="rounded-md border overflow-hidden">
-                          <Table>
-                            <TableHeader>
-                              <TableRow>
-                                <TableHead>Budget</TableHead>
-                                <TableHead className="text-right">
-                                  Allocated
-                                </TableHead>
-                                <TableHead className="text-right">
-                                  Spent
-                                </TableHead>
-                                <TableHead className="text-right">
-                                  Util %
-                                </TableHead>
-                                <TableHead>Status</TableHead>
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {amountSuggestion.historicalAllocations!.map((row, idx) => (
-                                <TableRow key={`${row.budgetName}-${idx}`}>
-                                  <TableCell className="text-sm">{row.budgetName}</TableCell>
-                                  <TableCell className="text-sm text-right">
-                                    {formatCurrency(row.amount, suggestionCurrency)}
-                                    {(row.sourceCurrency &&
-                                      row.sourceCurrency !== suggestionCurrency) ||
-                                    row.periodScaled ? (
-                                      <span className="block text-xs text-muted-foreground">
-                                        {[
-                                          row.sourceCurrency &&
-                                          row.sourceCurrency !== suggestionCurrency
-                                            ? `from ${row.sourceCurrency}`
-                                            : null,
-                                          row.periodScaled &&
-                                          row.originalAmount != null &&
-                                          row.sourcePeriodName
-                                            ? `scaled from ${formatCurrency(
-                                                row.originalAmount,
-                                                suggestionCurrency,
-                                              )} (${row.sourcePeriodName})`
-                                            : row.sourcePeriodName
-                                              ? row.sourcePeriodName
-                                              : null,
-                                        ]
-                                          .filter(Boolean)
-                                          .join(" · ")}
-                                      </span>
-                                    ) : row.sourcePeriodName ? (
-                                      <span className="block text-xs text-muted-foreground">
-                                        {row.sourcePeriodName}
-                                      </span>
-                                    ) : null}
-                                  </TableCell>
-                                  <TableCell className="text-sm text-right">
-                                    {formatCurrency(row.consumed ?? 0, suggestionCurrency)}
-                                    {row.reserved != null && row.reserved > 0 && (
-                                      <span className="block text-xs text-muted-foreground">
-                                        reserved {formatCurrency(row.reserved, suggestionCurrency)}
-                                      </span>
-                                    )}
-                                  </TableCell>
-                                  <TableCell className="text-sm text-right">
-                                    {row.utilizationPct != null
-                                      ? `${row.utilizationPct.toFixed(1)}%`
-                                      : "—"}
-                                  </TableCell>
-                                  <TableCell className="text-sm">{row.status}</TableCell>
-                                </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
-                        </div>
-                      )}
-                    </CollapsibleContent>
-                  </Collapsible>
-                )}
-              </div>
-            );
-          })()}
-
+      <FormSheet
+        open={isAddLineOpen}
+        onOpenChange={setIsAddLineOpen}
+        title="Add Budget Line"
+        description="Add a new budget line item with cost centre allocation."
+        onSubmit={handleAddLine}
+        submitLabel="Add Line"
+        isSubmitting={addLineMutation.isPending}
+        widthClassName="sm:max-w-2xl"
+      >
+        <p className="text-xs text-muted-foreground mb-4">
+          <span className="text-destructive">*</span> Indicates mandatory fields
+        </p>
           <div className="space-y-1.5 mt-4">
             <Label>Description</Label>
             <Textarea
@@ -2986,7 +2611,7 @@ export default function BudgetDetailPage() {
                 <Label>Cost Centre <span className="text-destructive">*</span></Label>
                 <Select
                   value={lineFormData.cost_center_id}
-                  onValueChange={async (value) => {
+                  onValueChange={(value) => {
                     const cc = costCenters?.find(c => String(c.id) === value);
                     setLineFormData({
                       ...lineFormData,
@@ -2994,18 +2619,6 @@ export default function BudgetDetailPage() {
                       cost_center_code: cc?.code || "",
                       cost_center_name: cc?.name || "",
                     });
-
-                    if (cc?.code) {
-                      await fetchAmountSuggestion(cc.code, buildSuggestionOpts({
-                        ...lineFormData,
-                        cost_center_id: value,
-                        cost_center_code: cc.code,
-                        cost_center_name: cc.name || "",
-                      }));
-                    } else {
-                      setAmountSuggestion(null);
-                      setSuggestionError(null);
-                    }
                   }}
                   data-testid="select-line-cost-center"
                 >
@@ -3061,7 +2674,6 @@ export default function BudgetDetailPage() {
                                     location_ids: lineFormData.location_ids.filter(id => id !== locId),
                                   };
                                   setLineFormData(nextLine);
-                                  void refreshAmountSuggestion(nextLine);
                                 }}
                                 className="ml-1 hover:bg-muted rounded-full p-0.5"
                                 data-testid={`remove-location-${locId}`}
@@ -3118,7 +2730,6 @@ export default function BudgetDetailPage() {
                                 setLineFormData(nextLine);
                                 setShowLocationDropdown(false);
                                 setLocationSearch("");
-                                void refreshAmountSuggestion(nextLine);
                               }}
                               className="w-full text-left px-2 py-1.5 text-sm hover:bg-accent rounded"
                               data-testid={`select-location-${loc.id}`}
@@ -3171,7 +2782,6 @@ export default function BudgetDetailPage() {
                                     department_ids: lineFormData.department_ids.filter(id => id !== deptId),
                                   };
                                   setLineFormData(nextLine);
-                                  void refreshAmountSuggestion(nextLine);
                                 }}
                                 className="ml-1 hover:bg-muted rounded-full p-0.5"
                                 data-testid={`remove-department-${deptId}`}
@@ -3228,7 +2838,6 @@ export default function BudgetDetailPage() {
                                 setLineFormData(nextLine);
                                 setShowDepartmentDropdown(false);
                                 setDepartmentSearch("");
-                                void refreshAmountSuggestion(nextLine);
                               }}
                               className="w-full text-left px-2 py-1.5 text-sm hover:bg-accent rounded"
                               data-testid={`select-department-${dept.id}`}
@@ -3310,47 +2919,32 @@ export default function BudgetDetailPage() {
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 mt-6 pt-4">
-            <Button
-              variant="outline"
-              onClick={() => setIsAddLineOpen(false)}
-              disabled={addLineMutation.isPending}
-              data-testid="button-add-line-cancel"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleAddLine}
-              disabled={addLineMutation.isPending}
-              data-testid="button-add-line-save"
-            >
-              {addLineMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Add Line
-            </Button>
-          </div>
-        </SheetContent>
-      </Sheet>
+      </FormSheet>
 
       {/* Edit Line Sheet */}
-      <Sheet open={isEditLineOpen} onOpenChange={(open) => {
-        setIsEditLineOpen(open);
-        if (!open) {
-          setEditingLine(null);
-          resetLineForm();
-          setShowEditLocationDropdown(false);
-          setShowEditDepartmentDropdown(false);
-          setEditLocationSearch("");
-          setEditDepartmentSearch("");
-        }
-      }}>
-        <SheetContent className="sm:max-w-2xl overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle>Edit Budget Line</SheetTitle>
-            <SheetDescription>
-              Update budget line item with cost centre allocation.
-            </SheetDescription>
-          </SheetHeader>
-
+      <FormSheet
+        open={isEditLineOpen}
+        onOpenChange={(open) => {
+          setIsEditLineOpen(open);
+          if (!open) {
+            setEditingLine(null);
+            resetLineForm();
+            setShowEditLocationDropdown(false);
+            setShowEditDepartmentDropdown(false);
+            setEditLocationSearch("");
+            setEditDepartmentSearch("");
+          }
+        }}
+        title="Edit Budget Line"
+        description="Update budget line item with cost centre allocation."
+        onSubmit={handleUpdateLine}
+        submitLabel="Update Line"
+        isSubmitting={updateLineMutation.isPending}
+        widthClassName="sm:max-w-2xl"
+      >
+        <p className="text-xs text-muted-foreground mb-4">
+          <span className="text-destructive">*</span> Indicates mandatory fields
+        </p>
           <div className="space-y-1.5 mt-2">
             <Label>Description</Label>
             <Textarea
@@ -3670,34 +3264,7 @@ export default function BudgetDetailPage() {
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 mt-6 pt-4">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setIsEditLineOpen(false);
-                setEditingLine(null);
-                resetLineForm();
-                setShowEditLocationDropdown(false);
-                setShowEditDepartmentDropdown(false);
-                setEditLocationSearch("");
-                setEditDepartmentSearch("");
-              }}
-              disabled={updateLineMutation.isPending}
-              data-testid="button-edit-line-cancel"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleUpdateLine}
-              disabled={updateLineMutation.isPending}
-              data-testid="button-edit-line-save"
-            >
-              {updateLineMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Update Line
-            </Button>
-          </div>
-        </SheetContent>
-      </Sheet>
+      </FormSheet>
 
       {/* Delete Line Confirmation Dialog */}
       <AlertDialog open={!!lineToDelete} onOpenChange={(open) => !open && setLineToDelete(null)}>

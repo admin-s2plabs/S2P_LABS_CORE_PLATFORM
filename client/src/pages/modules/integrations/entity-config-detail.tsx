@@ -673,7 +673,7 @@ export default function EntityConfigDetail({ entityKey }: { entityKey: string })
                           <TableHead className="h-9 py-2 text-xs font-medium">
                             <span className="flex items-center gap-1.5">
                               <Database className="h-3.5 w-3.5" />
-                              Prokraya Column
+                              S2P Labs Column
                             </span>
                           </TableHead>
                           <TableHead className="h-9 py-2 text-xs font-medium w-[40px]"></TableHead>
@@ -704,7 +704,7 @@ export default function EntityConfigDetail({ entityKey }: { entityKey: string })
                                     className={row.prokrayaColumn ? "border-emerald-300 dark:border-emerald-700" : ""}
                                     data-testid={`select-prokraya-${idx}`}
                                   >
-                                    <SelectValue placeholder="Select Prokraya column..." />
+                                    <SelectValue placeholder="Select S2P Labs column..." />
                                   </SelectTrigger>
                                   <SelectContent>
                                     <SelectItem value="__clear__">— None —</SelectItem>
@@ -827,7 +827,7 @@ export default function EntityConfigDetail({ entityKey }: { entityKey: string })
                     </div>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1.5 ml-6">
-                    Uses the visual field mapping configuration above. Best for simple entities with one-to-one field mapping between ERP and Prokraya.
+                    Uses the visual field mapping configuration above. Best for simple entities with one-to-one field mapping between ERP and S2P Labs.
                   </p>
                 </div>
 

@@ -1,5 +1,4 @@
-import prokrayaLogoDark from "@/assets/images/prokraya-logo-dark.png";
-import prokrayaLogoLight from "@/assets/images/prokraya-logo-light.png";
+import s2pLabsLogo from "@/assets/images/s2plabs_logo.jpeg";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -43,21 +42,6 @@ type ForgotFormData = z.infer<typeof forgotSchema>;
 
 // ── Side-panel features ───────────────────────────────────────────
 const features = [
-  {
-    icon: Bot,
-    title: "6 Specialized AI Agents",
-    description: "Sourcing, Vendor, Contract, Invoice, Spend & Compliance agents working together",
-  },
-  {
-    icon: Workflow,
-    title: "Agentic Workflows",
-    description: "Configure trigger-based automation that executes procurement tasks autonomously",
-  },
-  {
-    icon: Zap,
-    title: "Natural Language Interface",
-    description: "Describe what you need in plain English — AI handles the execution",
-  },
   {
     icon: Shield,
     title: "Enterprise Ready",
@@ -166,7 +150,7 @@ export default function ForgotPassword() {
                 <span className="text-sm opacity-70 group-hover:opacity-100 transition-opacity">Back to home</span>
               </div>
             </Link>
-            <img src={prokrayaLogoLight} alt="Prokraya" className="h-10 object-contain object-left" />
+            <img src={s2pLabsLogo} alt="S2P Labs" className="h-10 object-contain object-left" />
             <span className="text-xs text-white/90 font-semibold uppercase tracking-wider ml-[48px] mt-1">
               AI Agentic Procurement
             </span>
@@ -197,8 +181,6 @@ export default function ForgotPassword() {
           </div>
 
           <div className="flex items-center gap-8 pt-6 border-t border-white/20">
-            <div><p className="text-2xl font-bold">6</p><p className="text-sm text-white/70">AI Agents</p></div>
-            <div><p className="text-2xl font-bold">35+</p><p className="text-sm text-white/70">Workflow Templates</p></div>
             <div><p className="text-2xl font-bold">24/7</p><p className="text-sm text-white/70">Autonomous Execution</p></div>
           </div>
         </div>
@@ -210,7 +192,7 @@ export default function ForgotPassword() {
         <header className="lg:hidden flex items-center justify-between px-6 py-4 border-b">
           <Link href="/">
             <div className="flex flex-col cursor-pointer">
-              <img src={prokrayaLogoDark} alt="Prokraya" className="h-8 object-contain object-left" />
+              <img src={s2pLabsLogo} alt="S2P Labs" className="h-8 object-contain object-left" />
               <span className="text-[10px] text-primary font-semibold uppercase tracking-wider ml-[38px] bg-primary/10 px-2 py-0.5 rounded">
                 AI-Powered S2P
               </span>
@@ -391,7 +373,7 @@ export default function ForgotPassword() {
                 <span>|</span>
                 <a href="#" className="hover:text-foreground hover:underline">Security</a>
               </div>
-              <p>Copyright © 2026 Prokraya Tech Private Limited, All rights reserved.</p>
+              <p>Copyright © 2026 S2P Labs Tech Private Limited, All rights reserved.</p>
             </div>
           </div>
         </main>

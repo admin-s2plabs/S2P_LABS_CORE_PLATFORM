@@ -1,10 +1,35 @@
 import { useState, useCallback, useEffect } from "react";
-import { 
-  Workflow, Save, Play, ArrowLeft, Zap, Users, Brain, FileText, 
-  TrendingUp, GitBranch, Bell, Clock, CheckCircle2, AlertCircle,
-  Settings, Trash2, Copy, MoreVertical, GripVertical, Plus,
-  ShieldCheck, X, ChevronRight, Sparkles, Loader2, Wand2,
-  Hand, Shield, Eye, Lock, UserCheck, AlertTriangle, Pause
+import {
+  Workflow,
+  Save,
+  Play,
+  ArrowLeft,
+  Zap,
+  Users,
+  Brain,
+  FileText,
+  TrendingUp,
+  GitBranch,
+  Bell,
+  Clock,
+  CheckCircle2,
+  AlertCircle,
+  Settings,
+  Trash2,
+  Copy,
+  MoreVertical,
+  GripVertical,
+  Plus,
+  ShieldCheck,
+  X,
+  ChevronRight,
+  Hand,
+  Shield,
+  Eye,
+  Lock,
+  UserCheck,
+  AlertTriangle,
+  Pause,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,8 +40,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Link, useSearch } from "wouter";
-import { useMutation } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
 interface WorkflowNode {
@@ -617,8 +640,6 @@ export default function WorkflowBuilder() {
   const [workflowName, setWorkflowName] = useState(isNewWorkflow ? "" : sampleWorkflows[initialKey].name);
   const [workflowDescription, setWorkflowDescription] = useState(isNewWorkflow ? "" : sampleWorkflows[initialKey].description);
   const [expandedPalette, setExpandedPalette] = useState<string>("agents");
-  const [aiPrompt, setAiPrompt] = useState("");
-  const [showAiPanel, setShowAiPanel] = useState(true);
   
   // Governance Controls State
   const [executionMode, setExecutionMode] = useState<"auto" | "approval" | "simulation">("approval");
@@ -651,32 +672,6 @@ export default function WorkflowBuilder() {
     }
   }, [searchString]);
 
-  const generateWorkflowMutation = useMutation({
-    mutationFn: async (prompt: string) => {
-      const res = await apiRequest("POST", "/api/workflows/generate", { prompt });
-      return res.json();
-    },
-    onSuccess: (data) => {
-      setNodes(data.nodes as WorkflowNode[]);
-      setConnections(data.connections);
-      setWorkflowName(data.name);
-      setWorkflowDescription(data.description);
-      setAiPrompt("");
-      setShowAiPanel(false);
-      toast({
-        title: "Workflow Generated",
-        description: `Created "${data.name}" with ${data.nodes.length} steps`,
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Generation Failed",
-        description: "Could not generate workflow. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
-  
   const handleWorkflowChange = (key: WorkflowKey) => {
     setSelectedWorkflow(key);
     const workflow = sampleWorkflows[key];
@@ -735,11 +730,6 @@ export default function WorkflowBuilder() {
     });
   };
 
-  const handleGenerateWorkflow = () => {
-    if (!aiPrompt.trim()) return;
-    generateWorkflowMutation.mutate(aiPrompt);
-  };
-  
   const selectedNodeData = nodes.find(n => n.id === selectedNode);
   
   return (
@@ -909,106 +899,8 @@ export default function WorkflowBuilder() {
         </div>
       )}
       
-      {showAiPanel && (
-        <div className="border-b bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/30 dark:to-blue-950/30">
-          <div className="p-4">
-            <div className="flex items-start gap-4">
-              <div className="flex items-center gap-2 shrink-0">
-                <div className="p-2 bg-purple-100 dark:bg-purple-900/50 rounded-lg">
-                  <Sparkles className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-sm">AI Workflow Generator</h3>
-                  <p className="text-xs text-muted-foreground">Describe your workflow in plain English</p>
-                </div>
-              </div>
-              
-              <div className="flex-1 flex gap-3">
-                <Textarea
-                  placeholder="Example: When a PR over ₹10 lakhs is approved, find top 3 vendors, create an RFQ, send it to them, and notify the buyer"
-                  value={aiPrompt}
-                  onChange={(e) => setAiPrompt(e.target.value)}
-                  className="text-sm min-h-[60px] max-h-[80px] resize-none bg-background flex-1"
-                  data-testid="textarea-ai-prompt"
-                />
-                <div className="flex flex-col gap-2">
-                  <Button 
-                    size="sm"
-                    onClick={handleGenerateWorkflow}
-                    disabled={generateWorkflowMutation.isPending || !aiPrompt.trim()}
-                    data-testid="button-generate-workflow"
-                  >
-                    {generateWorkflowMutation.isPending ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
-                        Generating...
-                      </>
-                    ) : (
-                      <>
-                        <Wand2 className="h-4 w-4 mr-1.5" />
-                        Generate
-                      </>
-                    )}
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="ghost"
-                    onClick={() => setShowAiPanel(false)}
-                    data-testid="button-close-ai-panel"
-                  >
-                    <X className="h-4 w-4 mr-1" />
-                    Close
-                  </Button>
-                </div>
-              </div>
-              
-              <div className="shrink-0 border-l pl-4">
-                <p className="text-[10px] text-muted-foreground font-medium mb-1">Quick examples:</p>
-                <div className="flex flex-col gap-1">
-                  <button 
-                    className="text-[11px] text-left text-purple-600 dark:text-purple-400 hover:underline"
-                    onClick={() => setAiPrompt("When a PR over ₹10 lakhs is approved, find top 3 qualified vendors, create an RFQ, send it to them, and notify the buyer")}
-                    data-testid="button-example-1"
-                  >
-                    Auto-source high-value PRs
-                  </button>
-                  <button 
-                    className="text-[11px] text-left text-purple-600 dark:text-purple-400 hover:underline"
-                    onClick={() => setAiPrompt("Every day at 9 AM, check for vendors with expired documents, suspend them if expired, and alert the compliance team")}
-                    data-testid="button-example-2"
-                  >
-                    Daily compliance monitoring
-                  </button>
-                  <button 
-                    className="text-[11px] text-left text-purple-600 dark:text-purple-400 hover:underline"
-                    onClick={() => setAiPrompt("When a new vendor registers, validate their documents, auto-approve if valid, otherwise send for manual review")}
-                    data-testid="button-example-3"
-                  >
-                    Vendor onboarding automation
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-      
       <div className="flex-1 flex overflow-hidden">
         <div className="w-56 border-r bg-muted/30 overflow-y-auto flex flex-col">
-          {!showAiPanel && (
-            <div className="p-2 border-b">
-              <Button 
-                size="sm" 
-                variant="outline" 
-                className="w-full text-xs"
-                onClick={() => setShowAiPanel(true)}
-                data-testid="button-show-ai-panel"
-              >
-                <Sparkles className="h-3 w-3 mr-1.5 text-purple-500" />
-                Generate with AI
-              </Button>
-            </div>
-          )}
           <div className="p-3 border-b">
             <Label className="text-xs text-muted-foreground">Load Example Workflow</Label>
             <Select value={selectedWorkflow ?? ""} onValueChange={(v) => handleWorkflowChange(v as WorkflowKey)}>

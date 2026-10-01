@@ -8,15 +8,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { FormSheet } from "@/components/form-sheet";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -39,7 +34,7 @@ import {
   FileDown,
   FileSpreadsheet,
   Key,
-  Loader2, Plus,
+  Plus,
   Search,
   Shield,
   Trash2,
@@ -537,14 +532,22 @@ export default function ManageRoles() {
         </CardContent>
       </Card>
 
-      {/* Edit Role Sheet */}
-      <Sheet open={!!editingRole} onOpenChange={(open) => !open && handleCloseEdit()}>
-        <SheetContent className="w-[50vw] sm:max-w-[50vw] overflow-y-auto p-4">
-          <SheetHeader className="space-y-0 pb-1">
-            <SheetTitle className="text-base">Edit Role</SheetTitle>
-          </SheetHeader>
-          {editingRole && (
-            <div className="space-y-4 mt-4">
+      {/* Edit Role FormSheet */}
+      <FormSheet
+        open={!!editingRole}
+        onOpenChange={(open) => !open && handleCloseEdit()}
+        title="Edit Role"
+        widthClassName="sm:max-w-4xl"
+        onCancel={handleCloseEdit}
+        onSubmit={handleSaveRole}
+        submitLabel="Update"
+        isSubmitting={updateRoleMutation.isPending || updateRoleFunctionsMutation.isPending}
+      >
+        {editingRole && (
+            <div className="space-y-4">
+              <p className="text-xs text-muted-foreground mb-2">
+                <span className="text-destructive">*</span> Indicates mandatory fields
+              </p>
               {/* Role Basic Info */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
@@ -684,36 +687,26 @@ export default function ManageRoles() {
                   </div>
                 </div>
               </div>
-
-              {/* Action Buttons */}
-              <div className="flex justify-end gap-3 pt-4">
-                <Button variant="outline" onClick={handleCloseEdit} data-testid="button-cancel-edit">
-                  CANCEL
-                </Button>
-                <Button
-                  onClick={handleSaveRole}
-                  disabled={updateRoleMutation.isPending || updateRoleFunctionsMutation.isPending}
-                  data-testid="button-save-role"
-                >
-                  {(updateRoleMutation.isPending || updateRoleFunctionsMutation.isPending) && (
-                    <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
-                  )}
-                  UPDATE
-                </Button>
-              </div>
             </div>
           )}
-        </SheetContent>
-      </Sheet>
+      </FormSheet>
 
-      {/* Create Role Sheet */}
-      <Sheet open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-        <SheetContent className="w-[50vw] sm:max-w-[50vw] overflow-y-auto p-4">
-          <SheetHeader className="space-y-0 pb-1">
-            <SheetTitle className="text-base">Create New Role</SheetTitle>
-          </SheetHeader>
-
-          <div className="space-y-4 mt-2">
+      {/* Create Role FormSheet */}
+      <FormSheet
+        open={isCreateOpen}
+        onOpenChange={(open) => (open ? setIsCreateOpen(true) : handleCloseCreate())}
+        title="Create New Role"
+        widthClassName="sm:max-w-4xl"
+        onCancel={handleCloseCreate}
+        onSubmit={handleCreateRole}
+        submitLabel="Create"
+        isSubmitting={createRoleMutation.isPending}
+        submitDisabled={!newRoleName.trim() || !newDisplayName.trim()}
+      >
+          <p className="text-xs text-muted-foreground mb-4">
+            <span className="text-destructive">*</span> Indicates mandatory fields
+          </p>
+          <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label className="text-xs">Role Name <span className="text-destructive">*</span></Label>
@@ -866,29 +859,8 @@ export default function ManageRoles() {
                 </div>
               </div>
             </div>
-
-            <div className="flex justify-end gap-3 pt-4">
-              <Button
-                variant="outline"
-                onClick={handleCloseCreate}
-                data-testid="button-cancel-create"
-              >
-                CANCEL
-              </Button>
-              <Button
-                onClick={handleCreateRole}
-                disabled={createRoleMutation.isPending || !newRoleName.trim() || !newDisplayName.trim()}
-                data-testid="button-save-new-role"
-              >
-                {createRoleMutation.isPending && (
-                  <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
-                )}
-                CREATE
-              </Button>
-            </div>
           </div>
-        </SheetContent>
-      </Sheet>
+      </FormSheet>
     </div>
   );
 }

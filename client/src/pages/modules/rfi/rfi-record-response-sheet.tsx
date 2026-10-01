@@ -1,16 +1,7 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Check, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { FormSheet } from "@/components/form-sheet";
 import { Label } from "@/components/ui/label";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { RfiAnswerField } from "./rfi-answer-field";
@@ -102,15 +93,24 @@ export function RfiRecordResponseSheet({
     return q.required && (v === undefined || v === null || v === "");
   });
 
-  return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-[640px] overflow-y-auto">
-        <SheetHeader>
-          <SheetTitle>{isEdit ? "Edit Recorded Response" : "Record Response"}</SheetTitle>
-          <SheetDescription>On behalf of {supplier.supplierName}</SheetDescription>
-        </SheetHeader>
+  const handleSubmit = () => {
+    setTouched(true);
+    if (missingRequired.length > 0) return;
+    saveMutation.mutate();
+  };
 
-        <div className="mt-6 space-y-7">
+  return (
+    <FormSheet
+      open={open}
+      onOpenChange={onOpenChange}
+      title={isEdit ? "Edit Recorded Response" : "Record Response"}
+      description={`On behalf of ${supplier.supplierName}`}
+      onSubmit={handleSubmit}
+      submitLabel={isEdit ? "Save Changes" : "Save Response"}
+      isSubmitting={saveMutation.isPending}
+      widthClassName="sm:max-w-2xl"
+    >
+        <div className="space-y-7">
           {questions.map((q, index) => {
             const value = answers[q.id];
             const showError = touched && q.required && (value === undefined || value === null || value === "");
@@ -139,29 +139,6 @@ export function RfiRecordResponseSheet({
           {questions.filter((q) => q.required).length} required question(s) ·{" "}
           {missingRequired.length === 0 ? "ready to save" : `${missingRequired.length} still to answer`}
         </div>
-
-        <SheetFooter className="mt-4">
-          <Button variant="outline" onClick={() => onOpenChange(false)} data-testid="button-cancel-response">
-            Cancel
-          </Button>
-          <Button
-            onClick={() => {
-              setTouched(true);
-              if (missingRequired.length > 0) return;
-              saveMutation.mutate();
-            }}
-            disabled={saveMutation.isPending}
-            data-testid="button-save-response"
-          >
-            {saveMutation.isPending ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <Check className="h-4 w-4 mr-2" />
-            )}
-            {isEdit ? "Save Changes" : "Save Response"}
-          </Button>
-        </SheetFooter>
-      </SheetContent>
-    </Sheet>
+    </FormSheet>
   );
 }

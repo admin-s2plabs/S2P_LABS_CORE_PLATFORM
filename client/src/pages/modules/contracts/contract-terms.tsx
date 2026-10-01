@@ -9,6 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { FormSheet } from "@/components/form-sheet";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -22,7 +23,6 @@ import {
   Sheet,
   SheetContent,
   SheetDescription,
-  SheetFooter,
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
@@ -515,17 +515,24 @@ export default function ContractTerms() {
         </CardContent>
       </Card>
 
-      {/* Add / Edit Sheet */}
-      <Sheet open={showSheet} onOpenChange={setShowSheet}>
-        <SheetContent className="w-[65vw] sm:max-w-[65vw] overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle>{editingTerm ? "Edit Term" : "New Term"}</SheetTitle>
-            <SheetDescription>
-              {editingTerm
-                ? "Update this contract term. A version snapshot is saved automatically."
-                : "Add a new reusable contract term or condition."}
-            </SheetDescription>
-          </SheetHeader>
+      {/* Add / Edit Form */}
+      <FormSheet
+        open={showSheet}
+        onOpenChange={setShowSheet}
+        title={editingTerm ? "Edit Term" : "New Term"}
+        description={
+          editingTerm
+            ? "Update this contract term. A version snapshot is saved automatically."
+            : "Add a new reusable contract term or condition."
+        }
+        onSubmit={handleSubmit}
+        submitLabel={editingTerm ? "Save Changes" : "Create Term"}
+        isSubmitting={isPending}
+        widthClassName="sm:max-w-4xl"
+      >
+        <p className="text-xs text-muted-foreground mb-4">
+          <span className="text-destructive">*</span> Indicates mandatory fields
+        </p>
 
           <div className="space-y-4 py-4">
             <div className="grid grid-cols-2 gap-4">
@@ -664,23 +671,7 @@ export default function ContractTerms() {
 
             </div>
           </div>
-
-          <SheetFooter className="flex justify-end gap-2 pt-4">
-            <Button
-              variant="outline"
-              onClick={() => setShowSheet(false)}
-              disabled={isPending}
-              data-testid="button-cancel-term"
-            >
-              Cancel
-            </Button>
-            <Button onClick={handleSubmit} disabled={isPending} data-testid="button-save-term">
-              {isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              {editingTerm ? "Save Changes" : "Create Term"}
-            </Button>
-          </SheetFooter>
-        </SheetContent>
-      </Sheet>
+      </FormSheet>
 
       {/* Delete Confirmation */}
       <AlertDialog open={!!deletingTerm} onOpenChange={() => setDeletingTerm(null)}>

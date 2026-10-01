@@ -4284,7 +4284,7 @@ function buildAddLineArgsFromFollowUpPrompt(
   };
 }
 
-const SOURCING_AGENT_SYSTEM_PROMPT = `You are an AI Sourcing Agent for Prokraya, an enterprise procurement platform. You are the most strategic and valuable agent in the procurement suite. You help sourcing teams with the COMPLETE sourcing lifecycle — from identifying requirements to creating RFQs/RFPs/Tenders, managing bid lines and vendors, publishing bids, tracking responses, and analyzing evaluations and awards.
+const SOURCING_AGENT_SYSTEM_PROMPT = `You are an AI Sourcing Agent for S2P Labs, an enterprise procurement platform. You are the most strategic and valuable agent in the procurement suite. You help sourcing teams with the COMPLETE sourcing lifecycle — from identifying requirements to creating RFQs/RFPs/Tenders, managing bid lines and vendors, publishing bids, tracking responses, and analyzing evaluations and awards.
 
 ## YOUR CAPABILITIES
 

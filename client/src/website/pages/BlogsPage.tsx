@@ -22,17 +22,17 @@ export function BlogsPage() {
           async
           src="https://www.googletagmanager.com/gtag/js?id=G-KDV6R2SDN2"
         ></script>
-        <meta property="og:title" content="Prokraya Procurement Blog" />
-        <meta property="og:description" content="Insights, best practices, and the latest trends in AI-powered procurement, sourcing, supplier management, and spend analytics." />
+        <meta property="og:title" content="S2P Labs Procurement Blog" />
+        <meta property="og:description" content="Insights, best practices, and the latest trends in modern procurement, sourcing, supplier management, and spend analytics." />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://prokraya.ai/blogs" />
-        <meta property="og:site_name" content="Prokraya" />
+        <meta property="og:site_name" content="S2P Labs" />
         <meta property="og:image" content={LogoBlack} />
         <meta name="twitter:card" content={LogoBlack} />
         <meta name="twitter:site" content="@prokraya" />
-        <title>Procurement Blog | AI Procurement Insights, Trends & Best Practices | Prokraya</title>
-        <meta name="description" content="Explore expert insights on procurement, sourcing, supplier management, spend analytics, AI in procurement, contract management, and digital transformation from the Prokraya team." />
-        <meta name="keywords" content="procurement blog, AI procurement, sourcing best practices, supplier management, spend analytics, procurement automation, source to pay, procurement trends, procurement technology" />
+        <title>Procurement Blog | Procurement Insights, Trends & Best Practices | S2P Labs</title>
+        <meta name="description" content="Explore expert insights on procurement, sourcing, supplier management, spend analytics, procurement automation, contract management, and digital transformation from the S2P Labs team." />
+        <meta name="keywords" content="procurement blog, procurement technology, sourcing best practices, supplier management, spend analytics, procurement automation, source to pay, procurement trends, procurement technology" />
       </Helmet>
 
       <div className="flex flex-col">
@@ -41,8 +41,8 @@ export function BlogsPage() {
           <div className="absolute inset-0 bg-[linear-gradient(to_right,#7c3aed08_1px,transparent_1px),linear-gradient(to_bottom,#7c3aed08_1px,transparent_1px)] bg-[size:5rem_5rem]" />
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 pt-20 text-center">
             <span className="inline-block px-3 py-1 text-xs font-semibold text-violet-700 bg-violet-50 rounded-full mb-5 uppercase tracking-wider">Blog</span>
-            <h1 className="text-4xl lg:text-5xl font-extrabold text-gray-900 leading-tight mb-4">Prokraya Blog</h1>
-            <p className="text-lg text-gray-500 mb-8">Insights, best practices, and the latest trends in AI-powered procurement</p>
+            <h1 className="text-4xl lg:text-5xl font-extrabold text-gray-900 leading-tight mb-4">S2P Labs Blog</h1>
+            <p className="text-lg text-gray-500 mb-8">Insights, best practices, and the latest trends in modern procurement</p>
             {/* <div className="max-w-lg mx-auto relative">
             <input type="text" placeholder="Search articles..." className="w-full px-5 py-3 pr-12 border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-violet-500 focus:border-transparent outline-none text-sm" />
             <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />

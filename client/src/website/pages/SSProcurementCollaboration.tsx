@@ -26,7 +26,7 @@ const solutionsList = [
     {
         id: 1,
         content:
-            "Automation enabled 88% increase in greater collaboration between suppliers and employees enhancing, and enriching digital experience. Seamless flow of data between Oracle and Prokraya.",
+            "Automation enabled 88% increase in greater collaboration between suppliers and employees enhancing, and enriching digital experience. Seamless flow of data between Oracle and S2P Labs.",
     },
     {
         id: 2,
@@ -261,7 +261,7 @@ export const SSProcurementCollaboration = () => {
                         Challenges
                     </h3>
                     <p className="mx-auto max-w-4xl text-gray-600 pb-10">
-                        Prokraya worked in conjunction with the organization's leadership team
+                        S2P Labs worked in conjunction with the organization's leadership team
                         and business stakeholders to pinpoint the following areas of concern
                         that require attention.
                     </p>
@@ -362,7 +362,7 @@ export const SSProcurementCollaboration = () => {
                 <div className="max-w-6xl mx-auto">
                     <h2 className="text-[40px] font-semibold text-[#1c2045] leading-[1.4] tracking-[1.2px text-center mb-5">Conclusion</h2>
                     <p className="text-center text-[22px] text-[#3c4043]">
-                        Prokraya played a pivotal role in resolving the organization's challenges, introducing heightened transparency, visibility, and operational efficiency. This transformation resulted in improved decision-making and compliance adherence. The implementation of workflow automation strategically allocated employee time, redirecting their focus towards more strategic tasks. Consequently, overall efficiency increased.
+                        S2P Labs played a pivotal role in resolving the organization's challenges, introducing heightened transparency, visibility, and operational efficiency. This transformation resulted in improved decision-making and compliance adherence. The implementation of workflow automation strategically allocated employee time, redirecting their focus towards more strategic tasks. Consequently, overall efficiency increased.
                     </p>
                 </div>
             </div>

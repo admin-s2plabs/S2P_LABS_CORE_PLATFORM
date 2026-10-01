@@ -92,7 +92,7 @@ export default function RfiCampaigns() {
     <div className="p-6 space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold" data-testid="text-page-title">RFI Campaigns</h1>
+          <h1 className="text-2xl font-bold text-primary" data-testid="text-page-title">RFI Campaigns</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Launch and track supplier information requests
           </p>

@@ -1,4 +1,4 @@
-import { ArrowRight, BarChart3, FileText, Sparkles, Target, TrendingDown, Users, Zap } from "lucide-react";
+import { BarChart3, FileText, Sparkles, Target, TrendingDown, Users, Zap } from "lucide-react";
 import { Helmet } from "react-helmet-async";
 import { Link } from "wouter";
 import { CommonShortForm } from "../components/CommonShortForm";
@@ -6,9 +6,9 @@ import { LogoBlack } from "../components/LogoImport";
 
 export function ESourcingPage() {
   const features = [
-    { icon: Sparkles, title: "AI-Powered RFx", description: "Create RFQs, RFPs, and RFIs with AI assistance in minutes", color: "bg-violet-50 text-violet-600" },
+    { icon: Sparkles, title: "Smart RFx", description: "Create RFQs, RFPs, and RFIs in minutes", color: "bg-violet-50 text-violet-600" },
     { icon: Users, title: "Vendor Portal", description: "Self-service portal for vendors to submit bids and track status", color: "bg-teal-50 text-teal-600" },
-    { icon: BarChart3, title: "Bid Analysis", description: "Automated bid comparison and scoring with AI recommendations", color: "bg-blue-50 text-blue-600" },
+    { icon: BarChart3, title: "Bid Analysis", description: "Automated bid comparison and scoring with recommendations", color: "bg-blue-50 text-blue-600" },
     { icon: Target, title: "Auction Management", description: "Run forward and reverse auctions with real-time bidding", color: "bg-orange-50 text-orange-600" },
     { icon: FileText, title: "Document Management", description: "Centralized repository for all sourcing documents and bids", color: "bg-indigo-50 text-indigo-600" },
     { icon: TrendingDown, title: "Cost Optimization", description: "Identify savings opportunities and negotiate better terms", color: "bg-teal-50 text-teal-600" },
@@ -21,16 +21,16 @@ export function ESourcingPage() {
           async
           src="https://www.googletagmanager.com/gtag/js?id=G-KDV6R2SDN2"
         ></script>
-        <meta property="og:title" content="AI-Powered eSourcing Software | Prokraya" />
-        <meta property="og:description" content="Transform sourcing with automated RFQs, bid analysis, supplier selection, auctions, and AI-powered sourcing intelligence." />
+        <meta property="og:title" content="eSourcing Software | S2P Labs" />
+        <meta property="og:description" content="Transform sourcing with automated RFQs, bid analysis, supplier selection, auctions, and sourcing intelligence." />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://prokraya.ai/esourcing" />
-        <meta property="og:site_name" content="Prokraya" />
+        <meta property="og:site_name" content="S2P Labs" />
         <meta property="og:image" content={LogoBlack} />
         <meta name="twitter:card" content={LogoBlack} />
         <meta name="twitter:site" content="@prokraya" />
-        <title>eSourcing Software | AI-Powered Strategic Sourcing Platform | Prokraya</title>
-        <meta name="description" content="Automate RFQs, RFPs, bid analysis, supplier selection, and sourcing events with AI-powered eSourcing software. Reduce sourcing cycles and achieve better procurement outcomes." />
+        <title>eSourcing Software | Strategic Sourcing Platform | S2P Labs</title>
+        <meta name="description" content="Automate RFQs, RFPs, bid analysis, supplier selection, and sourcing events with eSourcing software. Reduce sourcing cycles and achieve better procurement outcomes." />
         <meta name="keywords" content="eSourcing software, strategic sourcing software, RFQ software, RFP management software, sourcing automation, bid management software, supplier sourcing platform, procurement sourcing software" />
       </Helmet>
 
@@ -45,12 +45,9 @@ export function ESourcingPage() {
               Software
             </h1>
             <p className="text-lg text-gray-500 max-w-2xl mx-auto mb-8">
-              Transform your sourcing process with AI-powered RFx management, automated bid analysis, and intelligent vendor selection. Reduce sourcing cycles by 70% and increase bid participation by 3x.
+              Transform your sourcing process with smart RFx management, automated bid analysis, and intelligent vendor selection. Reduce sourcing cycles by 70% and increase bid participation by 3x.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Link href="/book-demo" className="inline-flex items-center justify-center gap-2 px-7 py-3 bg-violet-600 text-white font-semibold rounded-lg hover:bg-violet-700 transition-colors">
-                Request Demo <ArrowRight className="w-4 h-4" />
-              </Link>
               <Link href="/contact-us" className="inline-flex items-center justify-center px-7 py-3 border border-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors">
                 Contact Sales
               </Link>
@@ -98,7 +95,7 @@ export function ESourcingPage() {
           </div>
         </section>
 
-        {/* AI Sourcing Agent */}
+        {/* Sourcing Agent */}
         <section className="py-20 bg-gray-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid lg:grid-cols-2 gap-12 items-start">
@@ -107,7 +104,7 @@ export function ESourcingPage() {
                   <div className="w-11 h-11 bg-violet-50 rounded-xl flex items-center justify-center">
                     <Sparkles className="w-5 h-5 text-violet-600" />
                   </div>
-                  <h2 className="text-2xl font-bold text-gray-900">AI Sourcing Agent</h2>
+                  <h2 className="text-2xl font-bold text-gray-900">Sourcing Agent</h2>
                 </div>
                 <p className="text-gray-500 mb-6 leading-relaxed">
                   Your 24/7 sourcing assistant that creates RFQs, analyzes bids, and recommends vendors through natural conversation.
@@ -137,17 +134,6 @@ export function ESourcingPage() {
         </section>
 
         <CommonShortForm reactedPage="E Sourcing" />
-
-        {/* CTA */}
-        <section className="py-20 bg-gradient-to-br from-slate-900 via-violet-950 to-slate-900 text-white">
-          <div className="max-w-2xl mx-auto px-4 text-center">
-            <h2 className="text-3xl font-bold mb-3">Ready to Revolutionize Your Sourcing?</h2>
-            <p className="text-gray-400 mb-8">Join leading organizations saving time and money with AI sourcing</p>
-            <Link href="/book-demo" className="inline-flex items-center gap-2 px-7 py-3 bg-violet-600 text-white font-semibold rounded-lg hover:bg-violet-700 transition-colors">
-              Schedule a Demo <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-        </section>
       </div>
     </>
   );

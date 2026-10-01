@@ -8,6 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { FormSheet } from "@/components/form-sheet";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -2251,95 +2252,94 @@ export default function CreateAuctions() {
         </SheetContent>
       </Sheet>
 
-      <Dialog open={extensionOpen} onOpenChange={setExtensionOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Event extension</DialogTitle>
-            <DialogDescription>
-              If a supplier bids in the last window below, extend the auction by the second window (legacy
-              auctions.js).
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-sm">If the supplier bids in last</span>
-              <Input
-                className="w-20 h-9"
-                type="number"
-                min={1}
-                value={formData.eventExtensionLast}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, eventExtensionLast: e.target.value }))
-                }
-              />
-              <Select
-                value={formData.eventExtensionLastUnit}
-                onValueChange={(v) =>
-                  setFormData((prev) => ({ ...prev, eventExtensionLastUnit: v }))
-                }
-              >
-                <SelectTrigger className="w-[120px] h-9">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {formData.eventOpts.map((o) => (
-                    <SelectItem key={o.value} value={o.value}>
-                      {o.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-sm">Then extend by</span>
-              <Input
-                className="w-20 h-9"
-                type="number"
-                min={1}
-                value={formData.eventExtend}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, eventExtend: e.target.value }))
-                }
-              />
-              <Select
-                value={formData.eventExtensionExtendUnit}
-                onValueChange={(v) =>
-                  setFormData((prev) => ({ ...prev, eventExtensionExtendUnit: v }))
-                }
-              >
-                <SelectTrigger className="w-[120px] h-9">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {formData.eventOpts.map((o) => (
-                    <SelectItem key={o.value} value={o.value}>
-                      {o.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+      <FormSheet
+        open={extensionOpen}
+        onOpenChange={setExtensionOpen}
+        title="Event extension"
+        description="If a supplier bids in the last window below, extend the auction by the second window (legacy auctions.js)."
+        onSubmit={saveEventExtension}
+        submitLabel="Confirm"
+        widthClassName="sm:max-w-md"
+      >
+        <p className="text-sm text-muted-foreground mb-4">
+          If a supplier bids in the last window below, extend the auction by the second window
+          (legacy auctions.js).
+        </p>
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-sm">If the supplier bids in last</span>
+            <Input
+              className="w-20 h-9"
+              type="number"
+              min={1}
+              value={formData.eventExtensionLast}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, eventExtensionLast: e.target.value }))
+              }
+            />
+            <Select
+              value={formData.eventExtensionLastUnit}
+              onValueChange={(v) =>
+                setFormData((prev) => ({ ...prev, eventExtensionLastUnit: v }))
+              }
+            >
+              <SelectTrigger className="w-[120px] h-9">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {formData.eventOpts.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-          <DialogFooter className="gap-2">
-            <Button type="button" variant="outline" onClick={() => setExtensionOpen(false)}>
-              Cancel
-            </Button>
-            <Button type="button" onClick={saveEventExtension}>
-              Confirm
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-sm">Then extend by</span>
+            <Input
+              className="w-20 h-9"
+              type="number"
+              min={1}
+              value={formData.eventExtend}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, eventExtend: e.target.value }))
+              }
+            />
+            <Select
+              value={formData.eventExtensionExtendUnit}
+              onValueChange={(v) =>
+                setFormData((prev) => ({ ...prev, eventExtensionExtendUnit: v }))
+              }
+            >
+              <SelectTrigger className="w-[120px] h-9">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {formData.eventOpts.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </FormSheet>
 
-      <Dialog open={savingsOpen} onOpenChange={setSavingsOpen}>
-        <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Savings</DialogTitle>
-            <DialogDescription>
-              Choose how savings are measured (base price per line vs gross), and optional reference budget.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
+      <FormSheet
+        open={savingsOpen}
+        onOpenChange={setSavingsOpen}
+        title="Savings"
+        description="Choose how savings are measured (base price per line vs gross), and optional reference budget."
+        onSubmit={() => setSavingsOpen(false)}
+        submitLabel="Done"
+        widthClassName="sm:max-w-lg"
+      >
+        <p className="text-sm text-muted-foreground mb-4">
+          Choose how savings are measured (base price per line vs gross), and optional reference budget.
+        </p>
+        <div className="space-y-4">
             <RadioGroup
               value={formData.savingsValue}
               onValueChange={(v) =>
@@ -2441,27 +2441,23 @@ export default function CreateAuctions() {
                 />
               </div>
             )}
-          </div>
-          <DialogFooter className="gap-2">
-            <Button type="button" variant="outline" onClick={() => setSavingsOpen(false)}>
-              Cancel
-            </Button>
-            <Button type="button" onClick={() => setSavingsOpen(false)}>
-              Done
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </div>
+      </FormSheet>
 
-      <Dialog open={priceCapOpen} onOpenChange={setPriceCapOpen}>
-        <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Supplier wise price cap</DialogTitle>
-            <DialogDescription>
-              Pick a supplier, enter a max price per line item (C1), then add to attach caps to that supplier.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
+      <FormSheet
+        open={priceCapOpen}
+        onOpenChange={setPriceCapOpen}
+        title="Supplier wise price cap"
+        description="Pick a supplier, enter a max price per line item (C1), then add to attach caps to that supplier."
+        onSubmit={supplierWisePriceCapSave}
+        submitLabel="Add price cap"
+        submitDisabled={!selectedSuppPCSupplier}
+        widthClassName="sm:max-w-lg"
+      >
+        <p className="text-sm text-muted-foreground mb-4">
+          Pick a supplier, enter a max price per line item (C1), then add to attach caps to that supplier.
+        </p>
+        <div className="space-y-4">
             <div>
               <Label>Supplier</Label>
               <Select
@@ -2538,19 +2534,8 @@ export default function CreateAuctions() {
                 </table>
               </div>
             )}
-          </div>
-          <DialogFooter className="gap-2 flex-col sm:flex-row">
-            <Button type="button" variant="outline" onClick={() => setPriceCapOpen(false)}>
-              Close
-            </Button>
-            {selectedSuppPCSupplier && (
-              <Button type="button" onClick={supplierWisePriceCapSave}>
-                Add price cap
-              </Button>
-            )}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </div>
+      </FormSheet>
 
       <Dialog open={tncOpen} onOpenChange={setTncOpen}>
         <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -2645,25 +2630,27 @@ export default function CreateAuctions() {
         </DialogContent>
       </Dialog>
 
-      <Dialog
+      <FormSheet
         open={createTemplateOpen}
         onOpenChange={(next) => {
           if (!next) closeCreateTemplateBuilder();
         }}
+        title="Create template"
+        description="Define column layout for auction line items. The Total column requires a formula. Drag rows to reorder."
+        onSubmit={saveNewTemplate}
+        submitLabel="Save template"
+        isSubmitting={createTemplateMutation.isPending}
+        widthClassName="max-w-5xl"
       >
-        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Create template</DialogTitle>
-            <DialogDescription>
-              Define column layout for auction line items. The Total column requires a formula. Drag rows to reorder.
-            </DialogDescription>
-          </DialogHeader>
+        <p className="text-sm text-muted-foreground mb-4">
+          Define column layout for auction line items. The Total column requires a formula. Drag rows to reorder.
+        </p>
           {createTemplateMutation.isPending ? (
             <div className="flex justify-center py-12">
               <Loader2 className="h-10 w-10 animate-spin text-muted-foreground" />
             </div>
           ) : (
-            <div className="space-y-4 py-2">
+            <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <Label htmlFor="template-builder-name">Template name *</Label>
@@ -2841,28 +2828,23 @@ export default function CreateAuctions() {
               </div>
             </div>
           )}
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button type="button" variant="outline" onClick={closeCreateTemplateBuilder}>
-              Cancel
-            </Button>
-            <Button type="button" onClick={saveNewTemplate} disabled={createTemplateMutation.isPending}>
-              Save template
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      </FormSheet>
 
       {/* Upload Excel Dialog */}
-      <Dialog open={uploadExcelOpen} onOpenChange={(o) => { setUploadExcelOpen(o); if (!o) { setImportFileName(""); setImportedFile(null); } }}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Import Excel</DialogTitle>
-            <DialogDescription>
-              Follow the steps below to import line items from an Excel file.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4 py-2 text-sm">
+      <FormSheet
+        open={uploadExcelOpen}
+        onOpenChange={(o) => { setUploadExcelOpen(o); if (!o) { setImportFileName(""); setImportedFile(null); } }}
+        title="Import Excel"
+        description="Follow the steps below to import line items from an Excel file."
+        onSubmit={handleImportProceed}
+        submitLabel="Proceed"
+        submitDisabled={!importedFile}
+        widthClassName="sm:max-w-md"
+      >
+          <p className="text-sm text-muted-foreground mb-4">
+            Follow the steps below to import line items from an Excel file.
+          </p>
+          <div className="space-y-4 text-sm">
             <ol className="list-decimal list-inside space-y-2 text-muted-foreground">
               <li>Download the template for this auction template.</li>
               <li>
@@ -2907,21 +2889,7 @@ export default function CreateAuctions() {
               </div>
             </div>
           </div>
-
-          <DialogFooter className="gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => { setUploadExcelOpen(false); setImportFileName(""); setImportedFile(null); }}
-            >
-              Cancel
-            </Button>
-            <Button type="button" onClick={handleImportProceed} disabled={!importedFile}>
-              Proceed
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      </FormSheet>
     </>
   );
 }

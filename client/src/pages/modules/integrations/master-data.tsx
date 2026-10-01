@@ -3,11 +3,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { FormSheet } from "@/components/form-sheet";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -978,7 +978,7 @@ export default function ManageMasterData() {
     <div className="p-4 space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
-          <h1 className="text-xl font-bold flex items-center gap-2" data-testid="text-page-title">
+          <h1 className="text-xl font-bold flex items-center gap-2 text-primary" data-testid="text-page-title">
             <Database className="h-5 w-5 text-primary" />
             Manage Master Data
           </h1>
@@ -1195,18 +1195,18 @@ export default function ManageMasterData() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <Sheet open={!!editEntity} onOpenChange={(open) => !open && setEditEntity(null)}>
-        <SheetContent className="sm:max-w-md overflow-y-auto" data-testid="sheet-edit-entity">
-          <SheetHeader>
-            <SheetTitle className="flex items-center gap-2">
-              <Pencil className="h-4 w-4" />
-              Edit Entity
-            </SheetTitle>
-            <SheetDescription>
-              {editEntity ? formatEntityName(editEntity.business_entity) : ""}
-            </SheetDescription>
-          </SheetHeader>
-          <div className="py-4 space-y-4">
+      <FormSheet
+        open={!!editEntity}
+        onOpenChange={(open) => !open && setEditEntity(null)}
+        title="Edit Entity"
+        description={editEntity ? formatEntityName(editEntity.business_entity) : ""}
+        onSubmit={handleSaveEntity}
+        submitLabel="Save Changes"
+        isSubmitting={updateEntityMutation.isPending}
+        submitDisabled={updateEntityMutation.isPending}
+        widthClassName="sm:max-w-md"
+      >
+          <div className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="edit-entity-key" className="text-xs text-muted-foreground">Entity Key</Label>
               <Input
@@ -1255,38 +1255,29 @@ export default function ManageMasterData() {
               <p className="text-xs text-muted-foreground">The ERP API endpoint for syncing data</p>
             </div>
           </div>
-          <SheetFooter className="gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setEditEntity(null)}
-              data-testid="button-cancel-edit"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSaveEntity}
-              disabled={updateEntityMutation.isPending}
-              data-testid="button-save-entity"
-            >
-              {updateEntityMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Save Changes
-            </Button>
-          </SheetFooter>
-        </SheetContent>
-      </Sheet>
+      </FormSheet>
 
-      <Sheet open={addEntityOpen} onOpenChange={setAddEntityOpen}>
-        <SheetContent className="sm:max-w-md overflow-y-auto" data-testid="sheet-add-entity">
-          <SheetHeader>
-            <SheetTitle className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Add New Entity
-            </SheetTitle>
-            <SheetDescription>
-              Create a new master data entity configuration for ERP integration
-            </SheetDescription>
-          </SheetHeader>
-          <div className="py-4 space-y-4">
+      <FormSheet
+        open={addEntityOpen}
+        onOpenChange={setAddEntityOpen}
+        title="Add New Entity"
+        description="Create a new master data entity configuration for ERP integration"
+        onSubmit={handleCreateEntity}
+        submitLabel="Create Entity"
+        isSubmitting={createEntityMutation.isPending}
+        submitDisabled={!newEntityKey.trim() || createEntityMutation.isPending}
+        onCancel={() => {
+          setAddEntityOpen(false);
+          setNewEntityKey("");
+          setNewEntityDescription("");
+          setNewEntityTargetTable("");
+        }}
+        widthClassName="sm:max-w-md"
+      >
+          <p className="text-xs text-muted-foreground mb-4">
+            <span className="text-destructive">*</span> Indicates mandatory fields
+          </p>
+          <div className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="new-entity-key">Entity Key <span className="text-destructive">*</span></Label>
               <Input
@@ -1329,30 +1320,7 @@ export default function ManageMasterData() {
               <p className="text-xs text-muted-foreground">ERP Endpoint and field mappings can be configured during implementation</p>
             </div>
           </div>
-          <SheetFooter className="gap-2">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setAddEntityOpen(false);
-                setNewEntityKey("");
-                setNewEntityDescription("");
-                setNewEntityTargetTable("");
-              }}
-              data-testid="button-cancel-add-entity"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleCreateEntity}
-              disabled={!newEntityKey.trim() || createEntityMutation.isPending}
-              data-testid="button-save-new-entity"
-            >
-              {createEntityMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Create Entity
-            </Button>
-          </SheetFooter>
-        </SheetContent>
-      </Sheet>
+      </FormSheet>
     </div>
   );
 }

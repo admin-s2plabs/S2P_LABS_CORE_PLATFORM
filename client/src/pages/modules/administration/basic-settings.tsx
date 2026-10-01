@@ -1,4 +1,4 @@
-import prokrayaLogo from "@/assets/images/prokraya-logo-light.png";
+import s2pLabsLogo from "@/assets/images/s2plabs_logo.jpeg";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,12 +34,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { FormSheet } from "@/components/form-sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -76,7 +71,6 @@ import {
   Save,
   Search,
   Settings,
-  Sparkles,
   Trash2,
   Upload,
   X,
@@ -86,7 +80,6 @@ import { Controller, useForm } from "react-hook-form";
 import { Link } from "wouter";
 import { z } from "zod";
 import { base64ToBlobUrl, TnCData } from "../common/terms-conditions";
-import { BASIC_SETTINGS_SERVICE_KEYS, type AIServiceSetting } from "./ai-service-settings";
 
 const orgInfoSchema = z.object({
   organization_name: z.string().min(1, "Name is required"),
@@ -519,6 +512,28 @@ export default function BasicSettings() {
       currency: sub.currency || "",
     });
     setShowSubsidiarySheet(true);
+  };
+
+  const handleResetSubsidiaryForm = () => {
+    setSubsidiaryForm({
+      name: "",
+      legal_name: "",
+      business_registration_no: "",
+      legal_address: "",
+      city: "",
+      state: "",
+      country: orgDetails?.org_country || "",
+      postal_code: "",
+      phone: "",
+      email: "",
+      date_format: "",
+      number_format: "",
+      rounding_precision: "",
+      payment_terms: "",
+      tax_rate: "",
+      currency: "",
+    });
+    setSubsidiaryErrors({});
   };
 
   const createSubsidiaryMutation = useMutation({
@@ -972,39 +987,6 @@ export default function BasicSettings() {
       toast({
         title: "Error",
         description: "Failed to update location status",
-        variant: "destructive",
-      });
-    },
-  });
-
-const toggleChatBotMutation = useMutation({
-      mutationFn: async ({ id, chatBot }: { id: number; chatBot: string }) => {
-          const response = await apiRequest(
-              "PATCH",
-              `/api/org-details/${id}/${chatBot}`
-          );
-
-          const data = await response.json();
-
-          if (!response.ok) {
-              throw new Error(data);
-          }
-
-          return data;
-      },
-
-     onSuccess: async () => {
-      localStorage.removeItem("orgDetails");
-      await queryClient.invalidateQueries({ queryKey: ["/api/org-details"] });
-      toast({
-        title: "Success",
-        description: "Chat bot details updated successfully",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to update chat bot details",
         variant: "destructive",
       });
     },
@@ -2109,29 +2091,6 @@ const toggleChatBotMutation = useMutation({
     },
   });
 
-  const { data: aiServiceSettings = [], isLoading: isLoadingAiServiceSettings } = useQuery<
-    AIServiceSetting[]
-  >({
-    queryKey: ["/api/ai-service-settings"],
-    enabled: activeTab === "services",
-  });
-
-  const toggleAiServiceMutation = useMutation({
-    mutationFn: async ({ featureKey, isEnabled }: { featureKey: string; isEnabled: boolean }) => {
-      await apiRequest("PUT", `/api/ai-service-settings/${featureKey}`, { isEnabled });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/ai-service-settings"] });
-    },
-    onError: () => {
-      toast({ title: "Failed to update setting", variant: "destructive" });
-    },
-  });
-
-  const servicesTabSettings = BASIC_SETTINGS_SERVICE_KEYS.map((key) =>
-    aiServiceSettings.find((s) => s.feature_key === key)
-  ).filter((s): s is AIServiceSetting => !!s);
-
   const tabs = [
     { id: "information", label: "Information" },
     { id: "subsidiaries", label: "Subsidiaries" },
@@ -2143,7 +2102,6 @@ const toggleChatBotMutation = useMutation({
     { id: "prefix", label: "Prefix" },
     { id: "exchange-rates", label: "Exchange Rates" },
     { id: "system", label: "System" },
-    { id: "services", label: "Services" },
   ];
 
   if (isLoading) {
@@ -2163,7 +2121,7 @@ const toggleChatBotMutation = useMutation({
     <div className="p-4 space-y-3">
        <div className="flex items-start justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold" data-testid="text-page-title">
+          <h1 className="text-xl font-bold text-primary" data-testid="text-page-title">
             Application Settings
           </h1>
           <p className="text-sm text-muted-foreground">
@@ -2268,7 +2226,7 @@ const toggleChatBotMutation = useMutation({
                           src={
                             logoPreview ||
                             orgDetails?.org_logo_path ||
-                            prokrayaLogo
+                            s2pLabsLogo
                           }
                           alt="Logo"
                           className="max-w-full max-h-full object-contain"
@@ -2312,18 +2270,6 @@ const toggleChatBotMutation = useMutation({
                           <X className="h-4 w-4" />
                         </Button>
                       )}
-                    </div>
-                    <div className="flex items-center gap-2 mt-2">
-                    <Switch
-                      checked={orgDetails?.attribute_10 === "Y" ? true : false}
-                      onCheckedChange={(checked) => {
-                          toggleChatBotMutation.mutate({
-                              id: orgDetails?.id!,
-                              chatBot: checked ? "Y" : "N",
-                          });
-                      }}
-                      data-testid="chat-bot-enabled"
-                    /> Chat Bot Show
                     </div>
                   </div>
                 </CardContent>
@@ -3633,114 +3579,91 @@ const toggleChatBotMutation = useMutation({
             </CardContent>
           </Card>
 
-          {/* Add/Edit Lookup Sheet */}
-          <Sheet open={showLookupSheet} onOpenChange={setShowLookupSheet}>
-            <SheetContent className="w-[50vw] sm:max-w-[50vw]">
-              <SheetHeader className="space-y-1 pb-3">
-                <SheetTitle className="text-base">
-                  {editingLookup
-                    ? "Edit Lookup Property"
-                    : "Add Lookup Property"}
-                </SheetTitle>
-                <p className="text-xs text-muted-foreground">
-                  <span className="text-destructive">*</span> Indicates mandatory fields
-                </p>
-              </SheetHeader>
-              <div className="mt-2 space-y-4">
-                <div className="space-y-2">
-                  <Label className="text-sm">
-                    Property Name <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    className="h-8 text-sm"
-                    value={lookupForm.property_name}
-                    onChange={(e) =>
-                      setLookupForm({
-                        ...lookupForm,
-                        property_name: e.target.value,
-                      })
-                    }
-                    placeholder="Enter property name"
-                    data-testid="input-lookup-property-name"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-sm">
-                    Key <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    className="h-8 text-sm"
-                    value={lookupForm.lookup_key}
-                    onChange={(e) =>
-                      setLookupForm({
-                        ...lookupForm,
-                        lookup_key: e.target.value,
-                      })
-                    }
-                    placeholder="Enter key"
-                    data-testid="input-lookup-key"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-sm">
-                    Value <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    className="h-8 text-sm"
-                    value={lookupForm.lookup_value}
-                    onChange={(e) =>
-                      setLookupForm({
-                        ...lookupForm,
-                        lookup_value: e.target.value,
-                      })
-                    }
-                    placeholder="Enter value"
-                    data-testid="input-lookup-value"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-sm">
-                    Description <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    className="h-8 text-sm"
-                    value={lookupForm.description}
-                    onChange={(e) =>
-                      setLookupForm({
-                        ...lookupForm,
-                        description: e.target.value,
-                      })
-                    }
-                    placeholder="Enter description"
-                    data-testid="input-lookup-description"
-                  />
-                </div>
-                <div className="flex justify-end gap-3 pt-4">
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowLookupSheet(false)}
-                    data-testid="button-cancel-lookup"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={handleSaveLookup}
-                    disabled={
-                      createLookupMutation.isPending ||
-                      updateLookupMutation.isPending
-                    }
-                    data-testid="button-save-lookup"
-                  >
-                    {(createLookupMutation.isPending ||
-                      updateLookupMutation.isPending) && (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      )}
-                    {editingLookup ? "Update" : "Add"}
-                  </Button>
-                </div>
+          {/* Add/Edit Lookup FormSheet */}
+          <FormSheet
+            open={showLookupSheet}
+            onOpenChange={setShowLookupSheet}
+            title={editingLookup ? "Edit Lookup Property" : "Add Lookup Property"}
+            onCancel={() => setShowLookupSheet(false)}
+            onSubmit={handleSaveLookup}
+            submitLabel={editingLookup ? "Update" : "Add"}
+            isSubmitting={createLookupMutation.isPending || updateLookupMutation.isPending}
+            widthClassName="sm:max-w-2xl"
+          >
+            <p className="text-xs text-muted-foreground mb-4">
+              <span className="text-destructive">*</span> Indicates mandatory fields
+            </p>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label className="text-sm">
+                  Property Name <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  className="h-8 text-sm"
+                  value={lookupForm.property_name}
+                  onChange={(e) =>
+                    setLookupForm({
+                      ...lookupForm,
+                      property_name: e.target.value,
+                    })
+                  }
+                  placeholder="Enter property name"
+                  data-testid="input-lookup-property-name"
+                />
               </div>
-            </SheetContent>
-          </Sheet>
+              <div className="space-y-2">
+                <Label className="text-sm">
+                  Key <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  className="h-8 text-sm"
+                  value={lookupForm.lookup_key}
+                  onChange={(e) =>
+                    setLookupForm({
+                      ...lookupForm,
+                      lookup_key: e.target.value,
+                    })
+                  }
+                  placeholder="Enter key"
+                  data-testid="input-lookup-key"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm">
+                  Value <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  className="h-8 text-sm"
+                  value={lookupForm.lookup_value}
+                  onChange={(e) =>
+                    setLookupForm({
+                      ...lookupForm,
+                      lookup_value: e.target.value,
+                    })
+                  }
+                  placeholder="Enter value"
+                  data-testid="input-lookup-value"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm">
+                  Description <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  className="h-8 text-sm"
+                  value={lookupForm.description}
+                  onChange={(e) =>
+                    setLookupForm({
+                      ...lookupForm,
+                      description: e.target.value,
+                    })
+                  }
+                  placeholder="Enter description"
+                  data-testid="input-lookup-description"
+                />
+              </div>
+            </div>
+          </FormSheet>
 
           {/* Delete Lookup Confirmation */}
           <AlertDialog
@@ -4025,82 +3948,56 @@ const toggleChatBotMutation = useMutation({
             </CardContent>
           </Card>
 
-          <Sheet
+          <FormSheet
             open={showPaymentTermSheet}
             onOpenChange={setShowPaymentTermSheet}
+            title={editingPaymentTerm ? "Edit Payment Term" : "Add Payment Term"}
+            onCancel={() => setShowPaymentTermSheet(false)}
+            onSubmit={handleSavePaymentTerm}
+            submitLabel={editingPaymentTerm ? "Update" : "Add"}
+            isSubmitting={createPaymentTermMutation.isPending || updatePaymentTermMutation.isPending}
+            widthClassName="sm:max-w-2xl"
           >
-            <SheetContent style={{ width: "50vw", maxWidth: "50vw" }}>
-              <SheetHeader className="space-y-1 pb-3">
-                <SheetTitle className="text-base">
-                  {editingPaymentTerm
-                    ? "Edit Payment Term"
-                    : "Add Payment Term"}
-                </SheetTitle>
-                <p className="text-xs text-muted-foreground">
-                  <span className="text-destructive">*</span> Indicates mandatory fields
-                </p>
-              </SheetHeader>
-              <div className="mt-2 space-y-4">
-                <div className="space-y-2">
-                  <Label className="text-sm">
-                    Terms Name <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    className="h-8 text-sm"
-                    value={paymentTermForm.terms_name}
-                    onChange={(e) =>
-                      setPaymentTermForm({
-                        ...paymentTermForm,
-                        terms_name: e.target.value,
-                      })
-                    }
-                    placeholder="Enter terms name"
-                    data-testid="input-payment-term-name"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-sm">
-                    Description <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    className="h-8 text-sm"
-                    value={paymentTermForm.description}
-                    onChange={(e) =>
-                      setPaymentTermForm({
-                        ...paymentTermForm,
-                        description: e.target.value,
-                      })
-                    }
-                    placeholder="Enter description"
-                    data-testid="input-payment-term-description"
-                  />
-                </div>
-                <div className="flex justify-end gap-3 pt-4">
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowPaymentTermSheet(false)}
-                    data-testid="button-cancel-payment-term"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={handleSavePaymentTerm}
-                    disabled={
-                      createPaymentTermMutation.isPending ||
-                      updatePaymentTermMutation.isPending
-                    }
-                    data-testid="button-save-payment-term"
-                  >
-                    {(createPaymentTermMutation.isPending ||
-                      updatePaymentTermMutation.isPending) && (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      )}
-                    {editingPaymentTerm ? "Update" : "Add"}
-                  </Button>
-                </div>
+            <p className="text-xs text-muted-foreground mb-4">
+              <span className="text-destructive">*</span> Indicates mandatory fields
+            </p>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label className="text-sm">
+                  Terms Name <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  className="h-8 text-sm"
+                  value={paymentTermForm.terms_name}
+                  onChange={(e) =>
+                    setPaymentTermForm({
+                      ...paymentTermForm,
+                      terms_name: e.target.value,
+                    })
+                  }
+                  placeholder="Enter terms name"
+                  data-testid="input-payment-term-name"
+                />
               </div>
-            </SheetContent>
-          </Sheet>
+              <div className="space-y-2">
+                <Label className="text-sm">
+                  Description <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  className="h-8 text-sm"
+                  value={paymentTermForm.description}
+                  onChange={(e) =>
+                    setPaymentTermForm({
+                      ...paymentTermForm,
+                      description: e.target.value,
+                    })
+                  }
+                  placeholder="Enter description"
+                  data-testid="input-payment-term-description"
+                />
+              </div>
+            </div>
+          </FormSheet>
 
           <AlertDialog
             open={deletePaymentTermId !== null}
@@ -4389,103 +4286,83 @@ const toggleChatBotMutation = useMutation({
             </CardContent>
           </Card>
 
-          <Sheet open={showTaxSheet} onOpenChange={setShowTaxSheet}>
-            <SheetContent style={{ width: "50vw", maxWidth: "50vw" }}>
-              <SheetHeader className="space-y-1 pb-3">
-                <SheetTitle className="text-base">
-                  {editingTax ? "Edit Tax" : "Add Tax"}
-                </SheetTitle>
-                <p className="text-xs text-muted-foreground">
-                  <span className="text-destructive">*</span> Indicates mandatory fields
-                </p>
-              </SheetHeader>
-              <div className="mt-2 space-y-4">
+          <FormSheet
+            open={showTaxSheet}
+            onOpenChange={setShowTaxSheet}
+            title={editingTax ? "Edit Tax" : "Add Tax"}
+            onCancel={() => setShowTaxSheet(false)}
+            onSubmit={handleSaveTax}
+            submitLabel={editingTax ? "Update" : "Add"}
+            isSubmitting={createTaxMutation.isPending || updateTaxMutation.isPending}
+            widthClassName="sm:max-w-2xl"
+          >
+            <p className="text-xs text-muted-foreground mb-4">
+              <span className="text-destructive">*</span> Indicates mandatory fields
+            </p>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label className="text-sm">
+                  Tax Code <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  className="h-8 text-sm"
+                  value={taxForm.tax_code}
+                  onChange={(e) =>
+                    setTaxForm({ ...taxForm, tax_code: e.target.value })
+                  }
+                  placeholder="e.g., VAT5%"
+                  data-testid="input-tax-code"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm">
+                  Description <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  className="h-8 text-sm"
+                  value={taxForm.tax_code_desc}
+                  onChange={(e) =>
+                    setTaxForm({ ...taxForm, tax_code_desc: e.target.value })
+                  }
+                  placeholder="Enter description"
+                  data-testid="input-tax-description"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label className="text-sm">
-                    Tax Code <span className="text-destructive">*</span>
+                    Tax Rate (%) <span className="text-destructive">*</span>
                   </Label>
                   <Input
                     className="h-8 text-sm"
-                    value={taxForm.tax_code}
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={taxForm.tax_rate}
                     onChange={(e) =>
-                      setTaxForm({ ...taxForm, tax_code: e.target.value })
+                      setTaxForm({ ...taxForm, tax_rate: e.target.value })
                     }
-                    placeholder="e.g., VAT5%"
-                    data-testid="input-tax-code"
+                    placeholder="e.g., 5"
+                    data-testid="input-tax-rate"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm">
-                    Description <span className="text-destructive">*</span>
+                    Tax Type <span className="text-destructive">*</span>
                   </Label>
                   <Input
                     className="h-8 text-sm"
-                    value={taxForm.tax_code_desc}
+                    value={taxForm.tax_type}
                     onChange={(e) =>
-                      setTaxForm({ ...taxForm, tax_code_desc: e.target.value })
+                      setTaxForm({ ...taxForm, tax_type: e.target.value })
                     }
-                    placeholder="Enter description"
-                    data-testid="input-tax-description"
+                    placeholder="e.g., VAT"
+                    data-testid="input-tax-type"
                   />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-sm">
-                      Tax Rate (%) <span className="text-destructive">*</span>
-                    </Label>
-                    <Input
-                      className="h-8 text-sm"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={taxForm.tax_rate}
-                      onChange={(e) =>
-                        setTaxForm({ ...taxForm, tax_rate: e.target.value })
-                      }
-                      placeholder="e.g., 5"
-                      data-testid="input-tax-rate"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-sm">
-                      Tax Type <span className="text-destructive">*</span>
-                    </Label>
-                    <Input
-                      className="h-8 text-sm"
-                      value={taxForm.tax_type}
-                      onChange={(e) =>
-                        setTaxForm({ ...taxForm, tax_type: e.target.value })
-                      }
-                      placeholder="e.g., VAT"
-                      data-testid="input-tax-type"
-                    />
-                  </div>
-                </div>
-                <div className="flex justify-end gap-3 pt-4">
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowTaxSheet(false)}
-                    data-testid="button-cancel-tax"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={handleSaveTax}
-                    disabled={
-                      createTaxMutation.isPending || updateTaxMutation.isPending
-                    }
-                    data-testid="button-save-tax"
-                  >
-                    {(createTaxMutation.isPending ||
-                      updateTaxMutation.isPending) && (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      )}
-                    {editingTax ? "Update" : "Add"}
-                  </Button>
                 </div>
               </div>
-            </SheetContent>
-          </Sheet>
+            </div>
+          </FormSheet>
 
           <AlertDialog
             open={deleteTaxId !== null}
@@ -5185,76 +5062,30 @@ const toggleChatBotMutation = useMutation({
             </CardContent>
           </Card>
         </TabsContent>
-
-        <TabsContent value="services" className="mt-4">
-          <Card>
-            <CardHeader className="pb-3">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded bg-primary/10 flex items-center justify-center">
-                  <Sparkles className="h-4 w-4 text-primary" />
-                </div>
-                <div>
-                  <CardTitle className="text-sm font-medium">Services</CardTitle>
-                  <p className="text-xs text-muted-foreground">
-                    Enable or disable individual AI-powered procurement and catalog services
-                  </p>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-0 space-y-3">
-              {isLoadingAiServiceSettings ? (
-                <div className="space-y-3">
-                  <Skeleton className="h-10 w-full" />
-                  <Skeleton className="h-10 w-full" />
-                  <Skeleton className="h-10 w-full" />
-                </div>
-              ) : (
-                servicesTabSettings.map((feature) => (
-                  <div
-                    key={feature.feature_key}
-                    className="flex items-center justify-between gap-4 rounded-md border p-3"
-                  >
-                    <div>
-                      <p className="text-sm font-medium">{feature.feature_name}</p>
-                      <p className="text-xs text-muted-foreground">{feature.description}</p>
-                    </div>
-                    <Switch
-                      checked={feature.is_enabled}
-                      onCheckedChange={(checked) =>
-                        toggleAiServiceMutation.mutate({
-                          featureKey: feature.feature_key,
-                          isEnabled: checked,
-                        })
-                      }
-                      disabled={toggleAiServiceMutation.isPending}
-                      data-testid={`switch-feature-${feature.feature_key}`}
-                    />
-                  </div>
-                ))
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
       </Tabs>
 
       {/* Add/Edit Subsidiary Sheet */}
-      <Sheet open={showSubsidiarySheet} onOpenChange={(open) => {
-        setShowSubsidiarySheet(open);
-        if (!open) {
-          setSubsidiaryLogoPreview(null);
-          setStagedLogoFile(null);
-          setSubsidiaryErrors({});
+      <FormSheet
+        open={showSubsidiarySheet}
+        onOpenChange={(open: boolean) => {
+          setShowSubsidiarySheet(open);
+          if (!open) {
+            setSubsidiaryLogoPreview(null);
+            setStagedLogoFile(null);
+            setSubsidiaryErrors({});
+          }
+        }}
+        title={editingSubsidiary ? "Edit Subsidiary" : "Add Subsidiary"}
+        onSubmit={handleSaveSubsidiary}
+        submitLabel={editingSubsidiary ? "Update" : "Add"}
+        isSubmitting={
+          createSubsidiaryMutation.isPending || updateSubsidiaryMutation.isPending
         }
-      }}>
-        <SheetContent className="w-[50vw] sm:max-w-[50vw] overflow-y-auto p-4">
-          <SheetHeader className="space-y-1 pb-3">
-            <SheetTitle className="text-base">
-              {editingSubsidiary ? "Edit Subsidiary" : "Add Subsidiary"}
-            </SheetTitle>
-            <p className="text-xs text-muted-foreground">
-              <span className="text-destructive">*</span> Indicates mandatory fields
-            </p>
-          </SheetHeader>
+        widthClassName="w-[50vw] sm:max-w-[50vw]"
+      >
+          <p className="text-xs text-muted-foreground -mt-2 mb-2">
+            <span className="text-destructive">*</span> Indicates mandatory fields
+          </p>
 
           <div className="space-y-4 mt-2">
             <div className="space-y-1">
@@ -5600,169 +5431,106 @@ const toggleChatBotMutation = useMutation({
                 )}
               </div>
             </div> */}
-
-            <div className="flex justify-end gap-3 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setShowSubsidiarySheet(false);
-                  setSubsidiaryErrors({});
-                }}
-                disabled={
-                  createSubsidiaryMutation.isPending ||
-                  updateSubsidiaryMutation.isPending
-                }
-                data-testid="button-cancel-subsidiary"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleSaveSubsidiary}
-                disabled={
-                  createSubsidiaryMutation.isPending ||
-                  updateSubsidiaryMutation.isPending
-                }
-                data-testid="button-save-subsidiary"
-              >
-                {(createSubsidiaryMutation.isPending ||
-                  updateSubsidiaryMutation.isPending) && (
-                    <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
-                  )}
-                {editingSubsidiary ? "Update" : "Add"}
-              </Button>
-            </div>
           </div>
-        </SheetContent>
-      </Sheet>
+      </FormSheet>
 
-      {/* Add/Edit Location Sheet */}
-      <Sheet open={showLocationSheet} onOpenChange={setShowLocationSheet}>
-        <SheetContent className="w-[50vw] sm:max-w-[50vw] overflow-y-auto p-4">
-          <SheetHeader className="space-y-1 pb-3">
-            <SheetTitle className="text-base">
-              {editingLocation ? "Edit Location" : "Add Location"}
-            </SheetTitle>
-            <p className="text-xs text-muted-foreground">
-              <span className="text-destructive">*</span> Indicates mandatory fields
-            </p>
-          </SheetHeader>
-
-          <div className="space-y-4 mt-2">
-            <div className="space-y-1">
-              <Label className="text-sm">
-                Business Entity <span className="text-destructive">*</span>
-              </Label>
-              <Select
-                value={locationForm.org_id}
-                onValueChange={(val) =>
-                  setLocationForm({ ...locationForm, org_id: val })
-                }
+      {/* Add/Edit Location FormSheet */}
+      <FormSheet
+        open={showLocationSheet}
+        onOpenChange={setShowLocationSheet}
+        title={editingLocation ? "Edit Location" : "Add Location"}
+        onCancel={() => setShowLocationSheet(false)}
+        onSubmit={handleSaveLocation}
+        submitLabel={editingLocation ? "Update" : "Add"}
+        isSubmitting={createLocationMutation.isPending || updateLocationMutation.isPending}
+        widthClassName="sm:max-w-2xl"
+      >
+        <p className="text-xs text-muted-foreground mb-4">
+          <span className="text-destructive">*</span> Indicates mandatory fields
+        </p>
+        <div className="space-y-4">
+          <div className="space-y-1">
+            <Label className="text-sm">
+              Business Entity <span className="text-destructive">*</span>
+            </Label>
+            <Select
+              value={locationForm.org_id}
+              onValueChange={(val) =>
+                setLocationForm({ ...locationForm, org_id: val })
+              }
+            >
+              <SelectTrigger
+                className={`h-8 text-sm${locationErrors.org_id ? " border-destructive" : ""}`}
+                data-testid="select-location-subsidiary"
               >
-                <SelectTrigger
-                  className={`h-8 text-sm${locationErrors.org_id ? " border-destructive" : ""}`}
-                  data-testid="select-location-subsidiary"
-                >
-                  <SelectValue placeholder="Select subsidiary" />
-                </SelectTrigger>
-                <SelectContent>
-                  {organizations.map((org) => (
-                    <SelectItem key={org.id} value={String(org.id)}>
-                      {org.organization_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {locationErrors.org_id && <p className="text-xs text-destructive mt-1">{locationErrors.org_id}</p>}
-            </div>
-            <div className="space-y-1">
-              <Label className="text-sm">
-                Location Name <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                value={locationForm.location_name}
-                onChange={(e) =>
-                  setLocationForm({
-                    ...locationForm,
-                    location_name: e.target.value,
-                  })
-                }
-                className={`h-8 text-sm${locationErrors.location_name ? " border-destructive" : ""}`}
-                placeholder="e.g., Head Quarters - Dubai"
-                data-testid="input-location-name"
-              />
-              {locationErrors.location_name && <p className="text-xs text-destructive mt-1">{locationErrors.location_name}</p>}
-            </div>
-
-
-
-            <div className="space-y-1">
-              <Label className="text-sm">
-                Billing Address <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                value={locationForm.billto_address}
-                onChange={(e) =>
-                  setLocationForm({
-                    ...locationForm,
-                    billto_address: e.target.value,
-                  })
-                }
-                className={`h-8 text-sm${locationErrors.billto_address ? " border-destructive" : ""}`}
-                data-testid="input-location-billing-address"
-              />
-              {locationErrors.billto_address && <p className="text-xs text-destructive mt-1">{locationErrors.billto_address}</p>}
-            </div>
-
-            <div className="space-y-1">
-              <Label className="text-sm">
-                Shipping Address <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                value={locationForm.shipto_address}
-                onChange={(e) =>
-                  setLocationForm({
-                    ...locationForm,
-                    shipto_address: e.target.value,
-                  })
-                }
-                className={`h-8 text-sm${locationErrors.shipto_address ? " border-destructive" : ""}`}
-                data-testid="input-location-shipping-address"
-              />
-              {locationErrors.shipto_address && <p className="text-xs text-destructive mt-1">{locationErrors.shipto_address}</p>}
-            </div>
-
-            <div className="flex justify-end gap-3 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setShowLocationSheet(false)}
-                disabled={
-                  createLocationMutation.isPending ||
-                  updateLocationMutation.isPending
-                }
-                data-testid="button-cancel-location"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleSaveLocation}
-                disabled={
-                  createLocationMutation.isPending ||
-                  updateLocationMutation.isPending
-                }
-                data-testid="button-save-location"
-              >
-                {(createLocationMutation.isPending ||
-                  updateLocationMutation.isPending) && (
-                    <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
-                  )}
-                {editingLocation ? "Update" : "Add"}
-              </Button>
-            </div>
+                <SelectValue placeholder="Select subsidiary" />
+              </SelectTrigger>
+              <SelectContent>
+                {organizations.map((org) => (
+                  <SelectItem key={org.id} value={String(org.id)}>
+                    {org.organization_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {locationErrors.org_id && <p className="text-xs text-destructive mt-1">{locationErrors.org_id}</p>}
           </div>
-        </SheetContent>
-      </Sheet>
+          <div className="space-y-1">
+            <Label className="text-sm">
+              Location Name <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              value={locationForm.location_name}
+              onChange={(e) =>
+                setLocationForm({
+                  ...locationForm,
+                  location_name: e.target.value,
+                })
+              }
+              className={`h-8 text-sm${locationErrors.location_name ? " border-destructive" : ""}`}
+              placeholder="e.g., Head Quarters - Dubai"
+              data-testid="input-location-name"
+            />
+            {locationErrors.location_name && <p className="text-xs text-destructive mt-1">{locationErrors.location_name}</p>}
+          </div>
+
+          <div className="space-y-1">
+            <Label className="text-sm">
+              Billing Address <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              value={locationForm.billto_address}
+              onChange={(e) =>
+                setLocationForm({
+                  ...locationForm,
+                  billto_address: e.target.value,
+                })
+              }
+              className={`h-8 text-sm${locationErrors.billto_address ? " border-destructive" : ""}`}
+              data-testid="input-location-billing-address"
+            />
+            {locationErrors.billto_address && <p className="text-xs text-destructive mt-1">{locationErrors.billto_address}</p>}
+          </div>
+
+          <div className="space-y-1">
+            <Label className="text-sm">
+              Shipping Address <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              value={locationForm.shipto_address}
+              onChange={(e) =>
+                setLocationForm({
+                  ...locationForm,
+                  shipto_address: e.target.value,
+                })
+              }
+              className={`h-8 text-sm${locationErrors.shipto_address ? " border-destructive" : ""}`}
+              data-testid="input-location-shipping-address"
+            />
+            {locationErrors.shipto_address && <p className="text-xs text-destructive mt-1">{locationErrors.shipto_address}</p>}
+          </div>
+        </div>
+      </FormSheet>
 
       {/* Delete Location Confirmation Dialog */}
       <AlertDialog
@@ -5799,132 +5567,107 @@ const toggleChatBotMutation = useMutation({
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Add/Edit Prefix Sheet */}
-      <Sheet open={showPrefixSheet} onOpenChange={setShowPrefixSheet}>
-        <SheetContent className="w-[50vw] sm:max-w-[50vw] overflow-y-auto">
-          <SheetHeader className="space-y-1 pb-3">
-            <SheetTitle className="text-base">
-              {editingPrefix ? "Edit Prefix" : "Add Prefix"}
-            </SheetTitle>
-            <p className="text-xs text-muted-foreground">
-              <span className="text-destructive">*</span> Indicates mandatory fields
-            </p>
-          </SheetHeader>
-
-          <div className="mt-2 space-y-4">
-            <div className="space-y-2">
-              <Label className="text-sm" htmlFor="prefix-name">
-                Prefix Name <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="prefix-name"
-                value={prefixForm.prefix_name}
-                onChange={(e) =>
-                  setPrefixForm({ ...prefixForm, prefix_name: e.target.value })
-                }
-                placeholder="e.g., PURCHASE ORDER"
-                data-testid="input-prefix-name"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm" htmlFor="prefix-value">
-                Prefix Value <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="prefix-value"
-                value={prefixForm.prefix_value}
-                onChange={(e) =>
-                  setPrefixForm({ ...prefixForm, prefix_value: e.target.value })
-                }
-                placeholder="e.g., PO"
-                data-testid="input-prefix-value"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm" htmlFor="prefix-key">
-                Prefix Key <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="prefix-key"
-                value={prefixForm.prefix_key}
-                onChange={(e) =>
-                  setPrefixForm({ ...prefixForm, prefix_key: e.target.value })
-                }
-                placeholder="e.g., PO"
-                data-testid="input-prefix-key"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm" htmlFor="prefix-description">
-                Description
-              </Label>
-              <Input
-                id="prefix-description"
-                value={prefixForm.prefix_description}
-                onChange={(e) =>
-                  setPrefixForm({
-                    ...prefixForm,
-                    prefix_description: e.target.value,
-                  })
-                }
-                placeholder="e.g., Prefix for Purchase Orders"
-                data-testid="input-prefix-description"
-              />
-            </div>
-
-            <div className="flex justify-end gap-3 pt-4">
-              <Button
-                variant="outline"
-                onClick={() => setShowPrefixSheet(false)}
-                disabled={
-                  createPrefixMutation.isPending ||
-                  updatePrefixMutation.isPending
-                }
-                data-testid="button-cancel-prefix"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleSavePrefix}
-                disabled={
-                  createPrefixMutation.isPending ||
-                  updatePrefixMutation.isPending
-                }
-                data-testid="button-save-prefix"
-              >
-                {(createPrefixMutation.isPending ||
-                  updatePrefixMutation.isPending) && (
-                    <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
-                  )}
-                {editingPrefix ? "Update" : "Add"}
-              </Button>
-            </div>
+      {/* Add/Edit Prefix FormSheet */}
+      <FormSheet
+        open={showPrefixSheet}
+        onOpenChange={setShowPrefixSheet}
+        title={editingPrefix ? "Edit Prefix" : "Add Prefix"}
+        onCancel={() => setShowPrefixSheet(false)}
+        onSubmit={handleSavePrefix}
+        submitLabel={editingPrefix ? "Update" : "Add"}
+        isSubmitting={createPrefixMutation.isPending || updatePrefixMutation.isPending}
+        widthClassName="sm:max-w-2xl"
+      >
+        <p className="text-xs text-muted-foreground mb-4">
+          <span className="text-destructive">*</span> Indicates mandatory fields
+        </p>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label className="text-sm" htmlFor="prefix-name">
+              Prefix Name <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id="prefix-name"
+              value={prefixForm.prefix_name}
+              onChange={(e) =>
+                setPrefixForm({ ...prefixForm, prefix_name: e.target.value })
+              }
+              placeholder="e.g., PURCHASE ORDER"
+              data-testid="input-prefix-name"
+            />
           </div>
-        </SheetContent>
-      </Sheet>
 
-      <Sheet open={showExRateSheet} onOpenChange={setShowExRateSheet}>
-        <SheetContent className="w-[50vw] sm:max-w-[50vw] overflow-y-auto p-4">
-          <SheetHeader className="space-y-1 pb-3">
-            <SheetTitle className="text-base">
-              {editingExRate ? "Edit exchange rate" : "Add exchange rate"}
-            </SheetTitle>
-            <p className="text-xs text-muted-foreground">
-              Amount in <strong>From</strong> multiplied by this rate equals
-              amount in <strong>To</strong>. Currencies come from the{" "}
-              <strong>BASE_CURRENCY</strong> lookup. The effective date (UTC) is
-              set automatically on save.{" "}
-              {editingExRate
-                ? "Updating adds a new history row; previous rates stay in the history table."
-                : "Add creates the first rate for this pair."}
-            </p>
-          </SheetHeader>
+          <div className="space-y-2">
+            <Label className="text-sm" htmlFor="prefix-value">
+              Prefix Value <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id="prefix-value"
+              value={prefixForm.prefix_value}
+              onChange={(e) =>
+                setPrefixForm({ ...prefixForm, prefix_value: e.target.value })
+              }
+              placeholder="e.g., PO"
+              data-testid="input-prefix-value"
+            />
+          </div>
 
-          <div className="mt-2 space-y-4">
-            {editingExRate ? (
+          <div className="space-y-2">
+            <Label className="text-sm" htmlFor="prefix-key">
+              Prefix Key <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id="prefix-key"
+              value={prefixForm.prefix_key}
+              onChange={(e) =>
+                setPrefixForm({ ...prefixForm, prefix_key: e.target.value })
+              }
+              placeholder="e.g., PO"
+              data-testid="input-prefix-key"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-sm" htmlFor="prefix-description">
+              Description
+            </Label>
+            <Input
+              id="prefix-description"
+              value={prefixForm.prefix_description}
+              onChange={(e) =>
+                setPrefixForm({
+                  ...prefixForm,
+                  prefix_description: e.target.value,
+                })
+              }
+              placeholder="e.g., Prefix for Purchase Orders"
+              data-testid="input-prefix-description"
+            />
+          </div>
+        </div>
+      </FormSheet>
+
+      <FormSheet
+        open={showExRateSheet}
+        onOpenChange={setShowExRateSheet}
+        title={editingExRate ? "Edit exchange rate" : "Add exchange rate"}
+        onCancel={() => setShowExRateSheet(false)}
+        onSubmit={handleSaveExRate}
+        submitLabel={editingExRate ? "Update" : "Add"}
+        isSubmitting={createExRateMutation.isPending || updateExRateMutation.isPending}
+        widthClassName="sm:max-w-2xl"
+      >
+        <p className="text-xs text-muted-foreground mb-4">
+          Amount in <strong>From</strong> multiplied by this rate equals
+          amount in <strong>To</strong>. Currencies come from the{" "}
+          <strong>BASE_CURRENCY</strong> lookup. The effective date (UTC) is
+          set automatically on save.{" "}
+          {editingExRate
+            ? "Updating adds a new history row; previous rates stay in the history table."
+            : "Add creates the first rate for this pair."}
+        </p>
+        <div className="space-y-4">
+          {editingExRate ? (
               <div className="rounded-md border bg-muted/40 p-3 space-y-1.5 text-sm">
                 <p>
                   <span className="text-muted-foreground">From: </span>
@@ -6028,39 +5771,8 @@ const toggleChatBotMutation = useMutation({
                 data-testid="input-exchange-rate"
               />
             </div>
-
-            <div className="flex justify-end gap-3 pt-4">
-              <Button
-                variant="outline"
-                type="button"
-                onClick={() => setShowExRateSheet(false)}
-                disabled={
-                  createExRateMutation.isPending ||
-                  updateExRateMutation.isPending
-                }
-                data-testid="button-cancel-exchange-rate"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="button"
-                onClick={handleSaveExRate}
-                disabled={
-                  createExRateMutation.isPending ||
-                  updateExRateMutation.isPending
-                }
-                data-testid="button-save-exchange-rate"
-              >
-                {(createExRateMutation.isPending ||
-                  updateExRateMutation.isPending) && (
-                  <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
-                )}
-                {editingExRate ? "Update" : "Add"}
-              </Button>
-            </div>
-          </div>
-        </SheetContent>
-      </Sheet>
+        </div>
+      </FormSheet>
 
       <Dialog
         open={exHistoryOpen}
@@ -6160,88 +5872,88 @@ const toggleChatBotMutation = useMutation({
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Add/Edit Terms & Conditions Sheet */}
-      <Sheet open={showTncSheet} onOpenChange={setShowTncSheet}>
-        <SheetContent className="w-[50vw] sm:max-w-[50vw] overflow-y-auto">
-          <SheetHeader className="space-y-1 pb-3">
-            <SheetTitle className="text-base">
-              {editingTnc
-                ? "Edit Terms & Conditions"
-                : "Add Terms & Conditions"}
-            </SheetTitle>
-            <p className="text-xs text-muted-foreground">
-              <span className="text-destructive">*</span> Indicates mandatory fields
-            </p>
-          </SheetHeader>
-
-          <div className="mt-2 space-y-4">
-            <div className="space-y-2">
-              <Label className="text-sm" htmlFor="tnc-module">
-                Module Name <span className="text-destructive">*</span>
-              </Label>
-              <Select
-                value={tncForm.module_name}
-                onValueChange={(val) =>
-                  setTncForm({ ...tncForm, module_name: val })
-                }
-              >
-                <SelectTrigger id="tnc-module" data-testid="select-tnc-module">
-                  <SelectValue placeholder="Select module" />
-                </SelectTrigger>
-                <SelectContent>
-                  {(() => {
-                    let filteredList = [];
-                    if (tncForm?.module_name) {
-                      filteredList = modulesList?.filter(
-                        (item) => item.value === tncForm.module_name
-                      );
-                    } else {
-                      filteredList = modulesList?.filter(
-                        (item) =>
-                          !termsConditions?.some(
-                            (tc) => tc.module_name === item.value
-                          )
-                      );
-                    }
-                    return filteredList?.length > 0 ? (
-                      filteredList.map((item) => (
-                        <SelectItem key={item.key} value={item.value}>
-                          {item.value}
-                        </SelectItem>
-                      ))
-                    ) : (
-                      <SelectItem disabled value="no-data">
-                        No records found
-                      </SelectItem>
+      {/* Add/Edit Terms & Conditions FormSheet */}
+      <FormSheet
+        open={showTncSheet}
+        onOpenChange={setShowTncSheet}
+        title={editingTnc ? "Edit Terms & Conditions" : "Add Terms & Conditions"}
+        onCancel={() => setShowTncSheet(false)}
+        onSubmit={handleSaveTnc}
+        submitLabel={editingTnc ? "Update" : "Add"}
+        isSubmitting={createTncMutation.isPending || updateTncMutation.isPending || uploadTncDocumentMutation.isPending}
+        widthClassName="sm:max-w-2xl"
+      >
+        <p className="text-xs text-muted-foreground mb-4">
+          <span className="text-destructive">*</span> Indicates mandatory fields
+        </p>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label className="text-sm" htmlFor="tnc-module">
+              Module Name <span className="text-destructive">*</span>
+            </Label>
+            <Select
+              value={tncForm.module_name}
+              onValueChange={(val) =>
+                setTncForm({ ...tncForm, module_name: val })
+              }
+            >
+              <SelectTrigger id="tnc-module" data-testid="select-tnc-module">
+                <SelectValue placeholder="Select module" />
+              </SelectTrigger>
+              <SelectContent>
+                {(() => {
+                  let filteredList = [];
+                  if (tncForm?.module_name) {
+                    filteredList = modulesList?.filter(
+                      (item) => item.value === tncForm.module_name
                     );
-                  })()}
-                </SelectContent>
-              </Select>
-            </div>
+                  } else {
+                    filteredList = modulesList?.filter(
+                      (item) =>
+                        !termsConditions?.some(
+                          (tc) => tc.module_name === item.value
+                        )
+                    );
+                  }
+                  return filteredList?.length > 0 ? (
+                    filteredList.map((item) => (
+                      <SelectItem key={item.key} value={item.value}>
+                        {item.value}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem disabled value="no-data">
+                      No records found
+                    </SelectItem>
+                  );
+                })()}
+              </SelectContent>
+            </Select>
+          </div>
 
-            <div className="space-y-2">
-              <Label className="text-sm" htmlFor="tnc-text">
-                Terms Text <span className="text-destructive">*</span>
-              </Label>
-              <textarea
-                id="tnc-text"
-                value={tncForm.tnc_text}
-                onChange={(e) =>
-                  setTncForm({ ...tncForm, tnc_text: e.target.value })
-                }
-                placeholder="Enter the terms and conditions text..."
-                rows={6}
-                className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                data-testid="input-tnc-text"
-              />
-            </div>
+          <div className="space-y-2">
+            <Label className="text-sm" htmlFor="tnc-text">
+              Terms Text <span className="text-destructive">*</span>
+            </Label>
+            <textarea
+              id="tnc-text"
+              value={tncForm.tnc_text}
+              onChange={(e) =>
+                setTncForm({ ...tncForm, tnc_text: e.target.value })
+              }
+              placeholder="Enter the terms and conditions text..."
+              rows={6}
+              className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              data-testid="input-tnc-text"
+            />
+          </div>
 
-            {/* Document Section */}
-            <div className="space-y-2 pt-2 border-t">
-              <Label className="text-sm">Document</Label>
-              {tncDocument ? (
-                <div className="space-y-2">
-                  {/* {tncDocument.preview_image ? (
+          {/* Document Section */}
+          <div className="space-y-2 pt-2 border-t">
+            <Label className="text-sm">Document</Label>
+            {tncDocument ? (
+              <div className="space-y-2">
+                {/* {tncDocument.preview_image ? (
                     <div className="border rounded-md overflow-hidden bg-muted/30">
                       <img
                         src={tncDocument.preview_image}
@@ -6251,31 +5963,48 @@ const toggleChatBotMutation = useMutation({
                       />
                     </div>
                   ) : null} */}
-                  {termsConditionsRecord?.data && termsConditionsRecord.filetype ? (
-                    <object
-                      aria-label="terms-conditions-document"
-                      data={base64ToBlobUrl(termsConditionsRecord.data, termsConditionsRecord.filetype)}
-                      width="100%"
-                      height="500"
-                    />
-                  ) : (
-                    <div className="text-center py-8 text-muted-foreground text-sm">
-                      No terms &amp; conditions document uploaded!
-                    </div>
-                  )}
-                  <div className="flex items-center gap-2 p-2 border rounded-md bg-muted/50">
-                    <FileText className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">
-                        {tncDocument.filename}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Uploaded document
-                      </p>
-                    </div>
+                {termsConditionsRecord?.data && termsConditionsRecord.filetype ? (
+                  <object
+                    aria-label="terms-conditions-document"
+                    data={base64ToBlobUrl(termsConditionsRecord.data, termsConditionsRecord.filetype)}
+                    width="100%"
+                    height="500"
+                  />
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground text-sm">
+                    No terms &amp; conditions document uploaded!
                   </div>
+                )}
+                <div className="flex items-center gap-2 p-2 border rounded-md bg-muted/50">
+                  <FileText className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">
+                      {tncDocument.filename}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Uploaded document
+                    </p>
+                  </div>
+                  {editingTnc && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 flex-shrink-0 text-destructive hover:text-destructive"
+                      onClick={() => deleteTncDocumentMutation.mutate(editingTnc.id)}
+                      disabled={deleteTncDocumentMutation.isPending}
+                      data-testid="button-delete-tnc-document-footer"
+                    >
+                      {deleteTncDocumentMutation.isPending ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-3.5 w-3.5" />
+                      )}
+                      <span className="sr-only">Delete Document</span>
+                    </Button>
+                  )}
                 </div>
-              ) : (
+              </div>
+            ) : (
                 <div className="space-y-3">
                   <input
                     type="file"
@@ -6335,52 +6064,9 @@ const toggleChatBotMutation = useMutation({
                   </p>
                 </div>
               )}
-            </div>
-
-            <div className="flex justify-end gap-3 pt-4">
-              {editingTnc && tncDocument && (
-                <Button
-                  variant="destructive"
-                  onClick={() => deleteTncDocumentMutation.mutate(editingTnc.id)}
-                  disabled={deleteTncDocumentMutation.isPending}
-                  data-testid="button-delete-tnc-document-footer"
-                >
-                  {deleteTncDocumentMutation.isPending ? (
-                    <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
-                  ) : (
-                    <Trash2 className="h-4 w-4 mr-1.5" />
-                  )}
-                  Delete Document
-                </Button>
-              )}
-              <Button
-                variant="outline"
-                onClick={() => setShowTncSheet(false)}
-                disabled={
-                  createTncMutation.isPending || updateTncMutation.isPending || uploadTncDocumentMutation.isPending
-                }
-                data-testid="button-cancel-tnc"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleSaveTnc}
-                disabled={
-                  createTncMutation.isPending || updateTncMutation.isPending || uploadTncDocumentMutation.isPending
-                }
-                data-testid="button-save-tnc"
-              >
-                {(createTncMutation.isPending ||
-                  updateTncMutation.isPending ||
-                  uploadTncDocumentMutation.isPending) && (
-                    <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
-                  )}
-                {editingTnc ? "Update" : "Add"}
-              </Button>
-            </div>
           </div>
-        </SheetContent>
-      </Sheet>
+        </div>
+      </FormSheet>
 
       {/* Delete Terms & Conditions Confirmation Dialog */}
       <AlertDialog

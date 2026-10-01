@@ -3,10 +3,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { FormSheet } from "@/components/form-sheet";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
@@ -150,22 +150,28 @@ export function CreatePOFromContractSheet({ contractId, refNo, open, onOpenChang
   };
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-[55vw] sm:max-w-[55vw] overflow-y-auto">
-        <SheetHeader>
-          <SheetTitle>Create PO from Contract {refNo}</SheetTitle>
-          <SheetDescription>
-            Auto-filled from the contract's Scope of Work. Select a supplier and review details.
-          </SheetDescription>
-        </SheetHeader>
-
+    <FormSheet
+      open={open}
+      onOpenChange={onOpenChange}
+      title={`Create PO from Contract ${refNo}`}
+      description="Auto-filled from the contract's Scope of Work. Select a supplier and review details."
+      onSubmit={handleCreatePOFromContract}
+      submitLabel="Create PO"
+      isSubmitting={createPOFromContractMutation.isPending}
+      submitDisabled={!selectedPOVendorId}
+      onCancel={() => onOpenChange(false)}
+      widthClassName="sm:max-w-4xl"
+    >
         {!contractDetailsForPO ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             <span className="ml-2 text-sm text-muted-foreground">Loading contract details...</span>
           </div>
         ) : (
-          <div className="mt-4 space-y-4">
+          <div className="space-y-4">
+            <p className="text-xs text-muted-foreground mb-0">
+              <span className="text-destructive">*</span> Indicates mandatory fields
+            </p>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground">Title</Label>
@@ -457,23 +463,8 @@ export function CreatePOFromContractSheet({ contractId, refNo, open, onOpenChang
                 </div>
               </div>
             </div>
-
-            <div className="flex justify-end gap-2 pt-4 border-t">
-              <Button variant="outline" onClick={() => onOpenChange(false)} data-testid="button-cancel-po-from-contract">
-                Cancel
-              </Button>
-              <Button
-                onClick={handleCreatePOFromContract}
-                disabled={createPOFromContractMutation.isPending || !selectedPOVendorId}
-                data-testid="button-create-po-from-contract-submit"
-              >
-                {createPOFromContractMutation.isPending && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
-                Create PO
-              </Button>
-            </div>
           </div>
         )}
-      </SheetContent>
-    </Sheet>
+    </FormSheet>
   );
 }

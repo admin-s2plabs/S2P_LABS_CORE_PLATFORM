@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { FormSheet } from "@/components/form-sheet";
 import {
   Form,
   FormControl,
@@ -23,12 +24,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -45,7 +40,6 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   ArrowLeft,
   Building2,
-  Loader2,
   Pencil,
   Plus,
   Trash2,
@@ -642,7 +636,7 @@ export default function VendorContacts() {
         </CardContent>
       </Card>
 
-      <Sheet
+      <FormSheet
         open={sheetOpen}
         onOpenChange={(open) => {
           setSheetOpen(open);
@@ -651,13 +645,15 @@ export default function VendorContacts() {
             form.reset();
           }
         }}
+        title={editingContact ? "Edit Contact" : "Add Contact"}
+        onCancel={() => setSheetOpen(false)}
+        onSubmit={form.handleSubmit(onSubmit)}
+        submitLabel={`${editingContact ? "Update" : "Add"} Contact`}
+        isSubmitting={createMutation.isPending || updateMutation.isPending}
       >
-        <SheetContent className="w-[50vw] sm:max-w-[50vw] overflow-y-auto p-4">
-          <SheetHeader className="mb-3">
-            <SheetTitle className="text-base">
-              {editingContact ? "Edit Contact" : "Add Contact"}
-            </SheetTitle>
-          </SheetHeader>
+          <p className="text-xs text-muted-foreground mb-4">
+            <span className="text-destructive">*</span> Indicates mandatory fields
+          </p>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
               <FormField
@@ -825,33 +821,11 @@ export default function VendorContacts() {
                   )}
                 />
               </div>
-              <div className="flex justify-end gap-2 mt-4 pt-3 border-t">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setSheetOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={
-                    createMutation.isPending || updateMutation.isPending
-                  }
-                  data-testid="button-save-contact"
-                >
-                  {(createMutation.isPending || updateMutation.isPending) && (
-                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                  )}
-                  {editingContact ? "Update" : "Add"} Contact
-                </Button>
-              </div>
             </form>
           </Form>
-        </SheetContent>
-      </Sheet>
+      </FormSheet>
 
-      <Sheet
+      <FormSheet
         open={refSheetOpen}
         onOpenChange={(open) => {
           setRefSheetOpen(open);
@@ -860,13 +834,15 @@ export default function VendorContacts() {
             refForm.reset();
           }
         }}
+        title={editingRef ? "Edit Reference" : "Add Reference"}
+        onCancel={() => setRefSheetOpen(false)}
+        onSubmit={refForm.handleSubmit(onRefSubmit)}
+        submitLabel={`${editingRef ? "Update" : "Add"} Reference`}
+        isSubmitting={createRefMutation.isPending || updateRefMutation.isPending}
       >
-        <SheetContent className="w-[50vw] sm:max-w-[50vw] overflow-y-auto p-4">
-          <SheetHeader className="mb-3">
-            <SheetTitle className="text-base">
-              {editingRef ? "Edit Reference" : "Add Reference"}
-            </SheetTitle>
-          </SheetHeader>
+          <p className="text-xs text-muted-foreground mb-4">
+            <span className="text-destructive">*</span> Indicates mandatory fields
+          </p>
           <Form {...refForm}>
             <form
               onSubmit={refForm.handleSubmit(onRefSubmit)}
@@ -968,32 +944,9 @@ export default function VendorContacts() {
                   </FormItem>
                 )}
               />
-              <div className="flex justify-end gap-2 mt-4 pt-3 border-t">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setRefSheetOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={
-                    createRefMutation.isPending || updateRefMutation.isPending
-                  }
-                  data-testid="button-save-reference"
-                >
-                  {(createRefMutation.isPending ||
-                    updateRefMutation.isPending) && (
-                      <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                    )}
-                  {editingRef ? "Update" : "Add"} Reference
-                </Button>
-              </div>
             </form>
           </Form>
-        </SheetContent>
-      </Sheet>
+      </FormSheet>
     </div>
   );
 }

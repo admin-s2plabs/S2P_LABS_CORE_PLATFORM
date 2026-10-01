@@ -52,7 +52,7 @@ export default function PrivacyPolicy(props: { className?: string, dataTestId?: 
                   <ul className="list-disc pl-5 space-y-2">
                     <li><strong>Account:</strong> means a unique account created for You to access our Service or parts of our Service.</li>
                     <li><strong>Affiliate:</strong> means an entity that controls, is controlled by or is under common control with a party, where "control" means ownership of 50% or more of the shares, equity interest or other securities entitled to vote for election of directors or other managing authority.</li>
-                    <li><strong>Company:</strong> (referred to as either "the Company", "We", "Us" or "Our" in this Agreement) refers to Prokraya, J V P Soft Pvt Ltd, North Block, Plot No. 5, Ground Floor, JVP, Software Units Layout, Madhapur, Telangana 500081.</li>
+                    <li><strong>Company:</strong> (referred to as either "the Company", "We", "Us" or "Our" in this Agreement) refers to S2P Labs, J V P Soft Pvt Ltd, North Block, Plot No. 5, Ground Floor, JVP, Software Units Layout, Madhapur, Telangana 500081.</li>
                     <li><strong>Cookies:</strong> are small files that are placed on Your computer, mobile device or any other device by a website, containing the details of Your browsing history on that website among its many uses.</li>
                     <li><strong>Country:</strong> refers to: Telangana, India</li>
                     <li><strong>Device:</strong> means any device that can access the Service such as a computer, a cellphone or a digital tablet.</li>

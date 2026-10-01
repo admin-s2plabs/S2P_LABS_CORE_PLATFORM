@@ -30,7 +30,6 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
@@ -43,12 +42,10 @@ import {
   Save,
 } from "lucide-react";
 import { useVendorRegistrationDraftOptional } from "@/pages/modules/vendor-registration/vendor-registration-draft-context";
-import { companyFieldHighlightClass } from "@/pages/modules/vendor-registration/vendor-registration-field-states";
-import { MANDATORY_COMPANY_KEYS } from "@/pages/modules/vendor-registration/registration-mandatory";
 import { isLikelyGlobalPrimaryTaxId } from "@shared/vendor-registration-field-validation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
-import { useLocation, useSearch } from "wouter";
+import { useLocation } from "wouter";
 import { z } from "zod";
 
 const companyDetailsSchema = z.object({
@@ -374,7 +371,6 @@ export default function VendorCompanyDetails() {
   });
 
   const draftCtx = useVendorRegistrationDraftOptional();
-  const urlSearch = useSearch();
 
   const mergedFormValues = useMemo((): CompanyDetailsFormData | undefined => {
     const dco = draftCtx?.draft?.company;
@@ -398,13 +394,6 @@ export default function VendorCompanyDetails() {
     }
     return base;
   }, [profile, draftCtx?.draft?.company]);
-
-  useEffect(() => {
-    const q = new URLSearchParams(urlSearch);
-    if (q.get("source") === "ai-draft") {
-      draftCtx?.setHighlightFromAi(true);
-    }
-  }, [urlSearch, draftCtx]);
 
   const form = useForm<CompanyDetailsFormData>({
     resolver: zodResolver(companyDetailsSchema),
@@ -439,23 +428,6 @@ export default function VendorCompanyDetails() {
   useEffect(() => {
     formHydratedRef.current = false;
   }, [profile?.id]);
-
-  const watched = form.watch();
-  const highlightActive = !!(draftCtx?.highlightFromAi && draftCtx?.draft);
-  const ring = useCallback(
-    (key: keyof CompanyDetailsFormData) =>
-      cn(
-        companyFieldHighlightClass(
-          draftCtx?.draft ?? null,
-          key as string,
-          highlightActive,
-          MANDATORY_COMPANY_KEYS.includes(key as string) &&
-            !String(watched[key] ?? "").trim(),
-          String(watched[key] ?? "").trim() !== "",
-        ),
-      ),
-    [draftCtx?.draft, draftCtx?.highlightFromAi, watched],
-  );
 
   const onFormBlur = useCallback(
     (ev: React.FocusEvent<HTMLFormElement>) => {
@@ -539,8 +511,8 @@ export default function VendorCompanyDetails() {
         queryKey: ["/api/vendor/scope-of-supply"],
       });
       queryClient.invalidateQueries({ queryKey: ["/api/vendor/documents"] });
-      // Keep session AI draft in sync with manual form — do not clear company draft here.
-      // Draft is cleared on successful registration submit or via AI "Start over".
+      // Keep session draft in sync with manual form — do not clear company draft here.
+      // Draft is cleared on successful registration submit.
       const suppId = profile?.id || result.supplierId || parsedAuth?.supplierId;
       if (isEditMode && suppId) {
         queryClient.invalidateQueries({ queryKey: ["/api/dbo/suppliers", suppId] });
@@ -629,14 +601,6 @@ export default function VendorCompanyDetails() {
           onBlur={onFormBlur}
           className="space-y-4"
         >
-          {highlightActive && (
-            <div className="rounded-md border border-amber-500/35 bg-amber-500/[0.06] p-3 text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">Review before submit: </span>
-              <span className="font-semibold text-amber-950/80 dark:text-amber-100/90">Amber</span> highlighted fields
-              contain AI-filled values that require your confirmation.{" "}
-              <span className="font-semibold text-destructive">Red</span> fields are required and still missing.
-            </div>
-          )}
           <CollapsibleSection
             title="Organization Details"
             open={orgOpen}
@@ -652,7 +616,7 @@ export default function VendorCompanyDetails() {
                     <FormLabel>
                       Address Line 1 <span className="text-destructive">*</span>
                     </FormLabel>
-                    <FormControl className={ring(field.name as keyof CompanyDetailsFormData)}>
+                    <FormControl>
                       <Input {...field} data-testid="input-address-1" maxLength={250} />
                     </FormControl>
                     {field.value?.length === 250 && (
@@ -670,7 +634,7 @@ export default function VendorCompanyDetails() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Address Line 2</FormLabel>
-                    <FormControl className={ring(field.name as keyof CompanyDetailsFormData)}>
+                    <FormControl>
                       <Input {...field} data-testid="input-address-2" maxLength={250} />
                     </FormControl>
                     {field.value?.length === 250 && (
@@ -690,7 +654,7 @@ export default function VendorCompanyDetails() {
                     <FormLabel>
                       City <span className="text-destructive">*</span>
                     </FormLabel>
-                    <FormControl className={ring(field.name as keyof CompanyDetailsFormData)}>
+                    <FormControl>
                       <Input {...field} data-testid="input-city" />
                     </FormControl>
                     <FormMessage />
@@ -705,7 +669,7 @@ export default function VendorCompanyDetails() {
                     <FormLabel>
                       State <span className="text-destructive">*</span>
                     </FormLabel>
-                    <FormControl className={ring(field.name as keyof CompanyDetailsFormData)}>
+                    <FormControl>
                       <Input {...field} data-testid="input-state" />
                     </FormControl>
                     <FormMessage />
@@ -724,7 +688,7 @@ export default function VendorCompanyDetails() {
                       onValueChange={onCompanySelectChange("country", field.onChange)}
                       value={field.value}
                     >
-                      <FormControl className={ring(field.name as keyof CompanyDetailsFormData)}>
+                      <FormControl>
                         <SelectTrigger data-testid="select-country">
                           <SelectValue placeholder="Select Country" />
                         </SelectTrigger>
@@ -750,7 +714,7 @@ export default function VendorCompanyDetails() {
                       Zip / Postal Code{" "}
                       <span className="text-destructive">*</span>
                     </FormLabel>
-                    <FormControl className={ring(field.name as keyof CompanyDetailsFormData)}>
+                    <FormControl>
                       <Input {...field} data-testid="input-postalcode" />
                     </FormControl>
                     <FormMessage />
@@ -766,7 +730,7 @@ export default function VendorCompanyDetails() {
                       Company Contact Number{" "}
                       <span className="text-destructive">*</span>
                     </FormLabel>
-                    <FormControl className={ring(field.name as keyof CompanyDetailsFormData)}>
+                    <FormControl>
                       <PhoneInput
                         value={field.value || ""}
                         onChange={field.onChange}
@@ -788,7 +752,7 @@ export default function VendorCompanyDetails() {
                       Company Email ID{" "}
                       <span className="text-destructive">*</span>
                     </FormLabel>
-                    <FormControl className={ring(field.name as keyof CompanyDetailsFormData)}>
+                    <FormControl>
                       <Input
                         type="email"
                         {...field}
@@ -806,7 +770,7 @@ export default function VendorCompanyDetails() {
                 render={({ field }) => (
                   <FormItem className="md:col-span-2">
                     <FormLabel>Website URL</FormLabel>
-                    <FormControl className={ring(field.name as keyof CompanyDetailsFormData)}>
+                    <FormControl>
                       <Input
                         type="url"
                         {...field}
@@ -841,7 +805,7 @@ export default function VendorCompanyDetails() {
                       onValueChange={onCompanySelectChange("legal_entity_type", field.onChange)}
                       value={field.value}
                     >
-                      <FormControl className={ring(field.name as keyof CompanyDetailsFormData)}>
+                      <FormControl>
                         <SelectTrigger data-testid="select-legal-entity">
                           <SelectValue placeholder="Select Legal Entity" />
                         </SelectTrigger>
@@ -867,7 +831,7 @@ export default function VendorCompanyDetails() {
                       PAN No (Company){" "}
                       <span className="text-destructive">*</span>
                     </FormLabel>
-                    <FormControl className={ring(field.name as keyof CompanyDetailsFormData)}>
+                    <FormControl>
                       <Input {...field} data-testid="input-pan" maxLength={10}
                         onChange={(e) => {
                           let value = e.target.value?.toUpperCase();
@@ -888,7 +852,7 @@ export default function VendorCompanyDetails() {
                       Incorporation Date{" "}
                       <span className="text-destructive">*</span>
                     </FormLabel>
-                    <FormControl className={ring(field.name as keyof CompanyDetailsFormData)}>
+                    <FormControl>
                       <Input
                         type="date"
                         {...field}
@@ -908,7 +872,7 @@ export default function VendorCompanyDetails() {
                     <FormLabel>
                       License Number <span className="text-destructive">*</span>
                     </FormLabel>
-                    <FormControl className={ring(field.name as keyof CompanyDetailsFormData)}>
+                    <FormControl>
                       <Input {...field} data-testid="input-license-number"
                         onChange={(e) => {
                           let value = e.target.value?.toUpperCase();
@@ -929,7 +893,7 @@ export default function VendorCompanyDetails() {
                       Licence Expiry Date{" "}
                       <span className="text-destructive">*</span>
                     </FormLabel>
-                    <FormControl className={ring(field.name as keyof CompanyDetailsFormData)}>
+                    <FormControl>
                       <Input
                         type="date"
                         {...field}
@@ -950,7 +914,7 @@ export default function VendorCompanyDetails() {
                       Licence Place of Issue{" "}
                       <span className="text-destructive">*</span>
                     </FormLabel>
-                    <FormControl className={ring(field.name as keyof CompanyDetailsFormData)}>
+                    <FormControl>
                       <Input {...field} data-testid="input-place-of-issue" />
                     </FormControl>
                     <FormMessage />
@@ -969,7 +933,7 @@ export default function VendorCompanyDetails() {
                       onValueChange={onCompanySelectChange("workingday_start", field.onChange)}
                       value={field.value || undefined}
                     >
-                      <FormControl className={ring(field.name as keyof CompanyDetailsFormData)}>
+                      <FormControl>
                         <SelectTrigger data-testid="select-workweek-from">
                           <SelectValue placeholder="Select" />
                         </SelectTrigger>
@@ -998,7 +962,7 @@ export default function VendorCompanyDetails() {
                       onValueChange={onCompanySelectChange("workingday_end", field.onChange)}
                       value={field.value || undefined}
                     >
-                      <FormControl className={ring(field.name as keyof CompanyDetailsFormData)}>
+                      <FormControl>
                         <SelectTrigger data-testid="select-workweek-to">
                           <SelectValue placeholder="Select" />
                         </SelectTrigger>
@@ -1024,7 +988,7 @@ export default function VendorCompanyDetails() {
                       Annual Turn Over{" "}
                       <span className="text-destructive">*</span>
                     </FormLabel>
-                    <FormControl className={ring(field.name as keyof CompanyDetailsFormData)}>
+                    <FormControl>
                       <Input
                         type="number"
                         {...field}
@@ -1047,7 +1011,7 @@ export default function VendorCompanyDetails() {
                       onValueChange={onCompanySelectChange("turn_over_currency", field.onChange)}
                       value={field.value || undefined}
                     >
-                      <FormControl className={ring(field.name as keyof CompanyDetailsFormData)}>
+                      <FormControl>
                         <SelectTrigger data-testid="select-turnover-currency">
                           <SelectValue placeholder="Select..." />
                         </SelectTrigger>
@@ -1079,7 +1043,7 @@ export default function VendorCompanyDetails() {
                       )}
                       value={field.value || undefined}
                     >
-                      <FormControl className={ring(field.name as keyof CompanyDetailsFormData)}>
+                      <FormControl>
                         <SelectTrigger data-testid="select-open-time">
                           <SelectValue placeholder="Select" />
                         </SelectTrigger>
@@ -1111,7 +1075,7 @@ export default function VendorCompanyDetails() {
                       )}
                       value={field.value || undefined}
                     >
-                      <FormControl className={ring(field.name as keyof CompanyDetailsFormData)}>
+                      <FormControl>
                         <SelectTrigger data-testid="select-close-time">
                           <SelectValue placeholder="Select" />
                         </SelectTrigger>
@@ -1146,7 +1110,7 @@ export default function VendorCompanyDetails() {
                       GST/VAT Registration No{" "}
                       <span className="text-destructive">*</span>
                     </FormLabel>
-                    <FormControl className={ring(field.name as keyof CompanyDetailsFormData)}>
+                    <FormControl>
                       <Input {...field} data-testid="input-tax-reg"
                         onChange={(e) => {
                           let value = e.target.value;
@@ -1171,7 +1135,7 @@ export default function VendorCompanyDetails() {
                       onValueChange={onCompanySelectChange("payment_terms", field.onChange)}
                       value={field.value || ""}
                     >
-                      <FormControl className={ring(field.name as keyof CompanyDetailsFormData)}>
+                      <FormControl>
                         <SelectTrigger data-testid="select-payment-terms">
                           <SelectValue placeholder="Select Payment Terms" />
                         </SelectTrigger>
@@ -1197,7 +1161,7 @@ export default function VendorCompanyDetails() {
                       Tax Identification No (TIN){" "}
                       <span className="text-destructive">*</span>
                     </FormLabel>
-                    <FormControl className={ring(field.name as keyof CompanyDetailsFormData)}>
+                    <FormControl>
                       <Input {...field} data-testid="input-tin" maxLength={11}
                         onChange={(e) => {
                           let value = e.target.value?.toUpperCase();
@@ -1217,7 +1181,7 @@ export default function VendorCompanyDetails() {
                     <FormLabel>
                       Effective From <span className="text-destructive">*</span>
                     </FormLabel>
-                    <FormControl className={ring(field.name as keyof CompanyDetailsFormData)}>
+                    <FormControl>
                       <Input
                         type="date"
                         {...field}
@@ -1244,7 +1208,7 @@ export default function VendorCompanyDetails() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Company Name</FormLabel>
-                    <FormControl className={ring(field.name as keyof CompanyDetailsFormData)}>
+                    <FormControl>
                       <Input
                         {...field}
                         data-testid="input-parent-company-name"
@@ -1260,7 +1224,7 @@ export default function VendorCompanyDetails() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Beneficiary Address Line 1</FormLabel>
-                    <FormControl className={ring(field.name as keyof CompanyDetailsFormData)}>
+                    <FormControl>
                       <Input {...field} data-testid="input-parent-address" />
                     </FormControl>
                     <FormMessage />
@@ -1273,7 +1237,7 @@ export default function VendorCompanyDetails() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Phone Number</FormLabel>
-                    <FormControl className={ring(field.name as keyof CompanyDetailsFormData)}>
+                    <FormControl>
                       <PhoneInput
                         value={field.value || ""}
                         onChange={field.onChange}
@@ -1291,7 +1255,7 @@ export default function VendorCompanyDetails() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>URL</FormLabel>
-                    <FormControl className={ring(field.name as keyof CompanyDetailsFormData)}>
+                    <FormControl>
                       <Input
                         type="url"
                         {...field}

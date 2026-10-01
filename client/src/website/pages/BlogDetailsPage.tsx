@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import blogImage95 from "../../assets/images/blog-images/blog95.png";
 import blogImage100 from "../../assets/images/blog-images/blog100.png";
-import blogImage100Chart from "../../assets/images/blog-images/blog100-chart.png";
 
 const blogTabMap = [
     { id: 96, name: "Uncontrolled-Expenses-A-Guide-to-Detecting-Managing-Maverick-Spend" },
@@ -13,10 +12,10 @@ const blogTabMap = [
 ];
 
 const blogBannerMap = [{ id: 96, src: blogImage95, alt: "Managing Maverick Spend" },
-{ id: 97, src: blogImage95, alt: "AI-Driven Efficiency" },
+{ id: 97, src: blogImage95, alt: "Smart Procurement Efficiency" },
 { id: 98, src: blogImage95, alt: "Notes Payable" },
 { id: 99, src: blogImage95, alt: "Intake-to-Procure Management" },
-{ id: 100, src: blogImage100, alt: "Integrating AI into Your Procurement Platform" },]
+{ id: 100, src: blogImage100, alt: "Integrating Decision Intelligence into Your Procurement Platform" },]
 
 export const BlogDetailsPage = () => {
     const [activeTabBlog, setActiveTabBlog] = useState(0);
@@ -61,7 +60,7 @@ export const BlogDetailsPage = () => {
                             {/* Document Header */}
                             <div className="mb-6">
                                 <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3 leading-tight">
-                                    Integrating AI into Your Procurement Platform
+                                    Integrating Decision Intelligence into Your Procurement Platform
                                 </h1>
                                 <h2 className="text-xl font-semibold text-gray-700 mb-2">
                                     What enterprise procurement leaders need to get right
@@ -70,7 +69,7 @@ export const BlogDetailsPage = () => {
                                     A practical guide for CPOs, CFOs, CIOs and procurement transformation leaders
                                 </p>
                                 <p className="text-purple-700 font-bold text-sm uppercase tracking-wide mb-6">
-                                    EMBED AI WHERE DECISIONS HAPPEN
+                                    EMBED INTELLIGENCE WHERE DECISIONS HAPPEN
                                 </p>
                             </div>
 
@@ -80,14 +79,14 @@ export const BlogDetailsPage = () => {
                                 <div className="p-6 flex-1">
                                     <h4 className="font-bold text-gray-900 text-base mb-2">Editorial focus</h4>
                                     <p className="text-gray-700 text-sm leading-relaxed">
-                                        This guide explains how to integrate AI into procurement workflows without turning AI into a disconnected add-on. It focuses on decision quality, governance, workflow design and measurable business outcomes.
+                                        This guide explains how to integrate decision intelligence into procurement workflows without turning it into a disconnected add-on. It focuses on decision quality, governance, workflow design and measurable business outcomes.
                                     </p>
                                 </div>
                             </div>
 
                             {/* Quote */}
                             <div className="my-8 py-4 px-6 font-bold text-gray-900 bg-purple-50/40">
-                                Procurement AI is most useful when it improves the decisions inside the process — not when it simply adds another interface.
+                                Procurement technology is most useful when it improves the decisions inside the process — not when it simply adds another interface.
                             </div>
 
                             {/* Section 1: EXECUTIVE PERSPECTIVE */}
@@ -96,13 +95,13 @@ export const BlogDetailsPage = () => {
                                     EXECUTIVE PERSPECTIVE
                                 </p>
                                 <h3 className="text-2xl sm:text-3xl font-bold text-purple-800 mb-4">
-                                    Procurement does not have an AI shortage. It has an intelligence gap.
+                                    Procurement does not have a technology shortage. It has an intelligence gap.
                                 </h3>
                                 <p className="my-4 text-base text-gray-700">
                                     Most enterprises already have systems for supplier records, sourcing events, contracts, purchase orders, invoices and approvals. Yet procurement teams still spend hours comparing quotations, validating supplier claims, identifying negotiation opportunities and explaining whether reported savings were actually realised.
                                 </p>
                                 <p className="my-4 text-base text-gray-700">
-                                    Adding another chatbot will not solve that problem. The real opportunity is to embed AI directly into the procurement platform - where suppliers are evaluated, bids are compared, negotiations are prepared, approvals are made and value is tracked.
+                                    Adding another standalone tool will not solve that problem. The real opportunity is to embed decision intelligence directly into the procurement platform - where suppliers are evaluated, bids are compared, negotiations are prepared, approvals are made and value is tracked.
                                 </p>
 
                                 {/* The Leadership Question */}
@@ -111,7 +110,7 @@ export const BlogDetailsPage = () => {
                                     <div className="p-6 flex-1">
                                         <h4 className="font-bold text-gray-900 text-base mb-2">The leadership question</h4>
                                         <p className="text-gray-700 text-sm font-medium">
-                                            Will AI become part of the procurement workflow, or remain another disconnected tool?
+                                            Will decision intelligence become part of the procurement workflow, or remain another disconnected tool?
                                         </p>
                                     </div>
                                 </div>
@@ -134,34 +133,11 @@ export const BlogDetailsPage = () => {
                                             <tr className="bg-gray-50/80">
                                                 <td className="py-4 px-4 text-center text-gray-700 border-r border-gray-200">Better sourcing decisions</td>
                                                 <td className="py-4 px-4 text-center text-gray-700 border-r border-gray-200">Measurable cost control</td>
-                                                <td className="py-4 px-4 text-center text-gray-700 border-r border-gray-200">Governed enterprise AI</td>
+                                                <td className="py-4 px-4 text-center text-gray-700 border-r border-gray-200">Governed enterprise technology</td>
                                                 <td className="py-4 px-4 text-center text-gray-700">Less manual analysis</td>
                                             </tr>
                                         </tbody>
                                     </table>
-                                </div>
-
-                                {/* Leaders vs Followers & Chart */}
-                                <h4 className="text-lg font-bold text-gray-900 mt-8 mb-3">
-                                    Maturity, not access, separates leaders from followers
-                                </h4>
-                                <p className="my-4 text-base text-gray-700">
-                                    Deloitte's 2025 Global CPO Survey reported that high-performing procurement organisations achieved an average <strong>3.2x return on GenAI investment</strong>, compared with slightly above <strong>1.5x among followers</strong>. The advantage came from disciplined implementation, digital capability and operating-model maturity — not simply access to AI.
-                                </p>
-
-                                {/* Bar Chart */}
-                                <div className="my-6 p-4 bg-white border border-gray-200 rounded-lg text-center">
-                                    <p className="font-bold text-gray-900 text-sm mb-3">
-                                        Procurement GenAI returns rise with implementation maturity
-                                    </p>
-                                    <img
-                                        src={blogImage100Chart}
-                                        alt="Procurement GenAI returns rise with implementation maturity"
-                                        className="mx-auto max-h-72 rounded object-contain"
-                                    />
-                                    <p className="text-xs text-gray-500 mt-2 text-right">
-                                        Source: Deloitte 2025 Global CPO Survey press release.
-                                    </p>
                                 </div>
                             </div>
 
@@ -171,15 +147,12 @@ export const BlogDetailsPage = () => {
                                     <p className="text-gray-600 font-bold text-xs uppercase tracking-wider">
                                         PLATFORM DESIGN
                                     </p>
-                                    <p className="text-xs text-gray-500">
-                                        Source: Deloitte 2025 Global CPO Survey <a href="https://deloitte.com" target="_blank" rel="noreferrer" className="text-purple-600 hover:underline">press</a> release.
-                                    </p>
                                 </div>
                                 <h3 className="text-2xl sm:text-3xl font-bold text-purple-800 mb-4">
-                                    AI should be embedded in the procurement platform - not added beside it
+                                    Intelligence should be embedded in the procurement platform - not added beside it
                                 </h3>
                                 <p className="my-4 text-base text-gray-700">
-                                    An AI-powered procurement platform should connect procurement execution and intelligence in one environment. Buyers should not have to export data into spreadsheets, upload quotations into separate tools or manually transfer recommendations back into the sourcing workflow.
+                                    A modern procurement platform should connect procurement execution and intelligence in one environment. Buyers should not have to export data into spreadsheets, upload quotations into separate tools or manually transfer recommendations back into the sourcing workflow.
                                 </p>
 
                                 {/* Figure 1: Architecture Diagram (Matching Screenshot 4) */}
@@ -203,7 +176,7 @@ export const BlogDetailsPage = () => {
                                     {/* Layer 2 */}
                                     <div className="bg-purple-50/70 border border-purple-100 rounded-xl p-4 mb-4">
                                         <p className="text-xs font-bold text-purple-800 uppercase tracking-wide mb-2">
-                                            2 AI INTELLIGENCE LAYER
+                                            2 INTELLIGENCE LAYER
                                         </p>
                                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                                             <div className="bg-white rounded-lg p-3 text-center text-xs font-bold text-gray-800 shadow-sm border border-purple-50">Fair-market price comparison</div>
@@ -239,7 +212,7 @@ export const BlogDetailsPage = () => {
                                     </div>
 
                                     <p className="text-xs text-gray-500 mt-3">
-                                        AI participates in the procurement workflow rather than sitting beside it as a disconnected tool.
+                                        Decision support participates in the procurement workflow rather than sitting beside it as a disconnected tool.
                                     </p>
                                 </div>
 
@@ -263,7 +236,7 @@ export const BlogDetailsPage = () => {
                                 </div>
 
                                 <p className="my-4 text-base text-gray-700">
-                                    A mature design connects Source-to-Pay execution with an intelligence layer. The procurement system manages the process; AI interprets procurement and relevant market data to surface price benchmarks, negotiation guidance, risk signals and executive insight.
+                                    A mature design connects Source-to-Pay execution with an intelligence layer. The procurement system manages the process; the intelligence layer interprets procurement and relevant market data to surface price benchmarks, negotiation guidance, risk signals and executive insight.
                                 </p>
 
                                 {/* Design Principle Card */}
@@ -272,7 +245,7 @@ export const BlogDetailsPage = () => {
                                     <div className="p-6 flex-1">
                                         <h4 className="font-bold text-gray-900 text-base mb-2">Design principle</h4>
                                         <p className="text-gray-700 text-sm font-medium">
-                                            The goal is not to place AI next to procurement. The goal is to make the procurement workflow itself more intelligent.
+                                            The goal is not to place another tool next to procurement. The goal is to make the procurement workflow itself more intelligent.
                                         </p>
                                     </div>
                                 </div>
@@ -284,7 +257,7 @@ export const BlogDetailsPage = () => {
                                     COMMERCIAL INTELLIGENCE
                                 </p>
                                 <h3 className="text-2xl sm:text-3xl font-bold text-purple-800 mb-4">
-                                    The three decisions procurement AI must improve
+                                    The three decisions procurement technology must improve
                                 </h3>
 
                                 {/* Figure 2: The Three Decisions (Matching Screenshot 1) */}
@@ -345,7 +318,7 @@ export const BlogDetailsPage = () => {
                                         Validated price sets the target, leverage sets the agenda, realised value closes the loop.
                                     </p>
                                     <p className="text-xs font-bold text-gray-500 text-center uppercase tracking-wider mt-4">
-                                        Figure 2 · The three decisions procurement AI must improve
+                                        Figure 2 · The three decisions procurement technology must improve
                                     </p>
                                 </div>
 
@@ -358,7 +331,7 @@ export const BlogDetailsPage = () => {
                                         A supplier quotation tells procurement what the supplier wants to charge - not whether the price is competitive.
                                     </p>
                                     <p className="my-2 text-base text-gray-700">
-                                        An AI-enabled procurement environment can compare each supplier quotation with fair-market references, historical purchase data, previous quotations and supplier pricing trends. It can also consider order quantity, category, geography, currency, logistics and changing market conditions.
+                                        An intelligent procurement environment can compare each supplier quotation with fair-market references, historical purchase data, previous quotations and supplier pricing trends. It can also consider order quantity, category, geography, currency, logistics and changing market conditions.
                                     </p>
                                     <div className="bg-gray-100 rounded-lg overflow-hidden my-4 flex">
                                         <div className="w-1/2 sm:w-2/4 bg-amber-500 flex-shrink-0"></div>
@@ -377,7 +350,7 @@ export const BlogDetailsPage = () => {
                                         2. Prioritize leverage: Where is the real negotiation opportunity?
                                     </h4>
                                     <p className="my-2 text-base text-gray-700">
-                                        AI should identify the bid lines, suppliers, volume opportunities and commercial trade-offs most likely to create value. This shifts negotiation preparation from spreadsheet analysis and instinct to structured commercial intelligence.
+                                        The platform should identify the bid lines, suppliers, volume opportunities and commercial trade-offs most likely to create value. This shifts negotiation preparation from spreadsheet analysis and instinct to structured commercial intelligence.
                                     </p>
                                 </div>
 
@@ -398,14 +371,14 @@ export const BlogDetailsPage = () => {
                                     WORKFLOW
                                 </p>
                                 <h3 className="text-2xl sm:text-3xl font-bold text-purple-800 mb-4">
-                                    How AI should operate inside a sourcing event
+                                    How decision intelligence should operate inside a sourcing event
                                 </h3>
                                 <p className="my-4 text-base text-gray-700">
                                     The buyer should remain inside the procurement platform. The data, recommendation, approval and final decision should stay connected from RFQ creation through award and value tracking.
                                 </p>
 
                                 <h4 className="text-lg font-bold text-gray-900 mt-6 mb-3">
-                                    How embedded AI changes a sourcing event
+                                    How embedded intelligence changes a sourcing event
                                 </h4>
 
                                 {/* Figure 3: Flowchart (Matching Screenshot 2 & 3) */}
@@ -434,7 +407,7 @@ export const BlogDetailsPage = () => {
                                         </div>
                                         <div className="flex-1 w-full bg-amber-50/70 p-4 rounded-xl border border-amber-100 self-stretch">
                                             <span className="w-7 h-7 bg-amber-500 text-white rounded-full flex items-center justify-center text-xs font-bold mb-2">3</span>
-                                            <h6 className="font-bold text-gray-900 text-sm mb-1">AI compares prices</h6>
+                                            <h6 className="font-bold text-gray-900 text-sm mb-1">Platform compares prices</h6>
                                             <p className="text-xs text-gray-600 leading-relaxed">Quotes are checked against market references, historical data and supplier trends.</p>
                                         </div>
                                     </div>
@@ -483,7 +456,7 @@ export const BlogDetailsPage = () => {
                                     </div>
 
                                     <p className="text-xs font-bold text-gray-500 text-center uppercase tracking-wider mt-2">
-                                        Figure 3 · How embedded AI changes a sourcing event
+                                        Figure 3 · How embedded intelligence changes a sourcing event
                                     </p>
                                 </div>
 
@@ -493,7 +466,7 @@ export const BlogDetailsPage = () => {
                                     <div className="p-6 flex-1">
                                         <h4 className="font-bold text-gray-900 text-base mb-2">Why this matters</h4>
                                         <p className="text-gray-700 text-sm font-medium">
-                                            Connected workflows reduce manual handoffs, improve auditability and ensure that AI recommendations can be traced to the commercial outcome.
+                                            Connected workflows reduce manual handoffs, improve auditability and ensure that system recommendations can be traced to the commercial outcome.
                                         </p>
                                     </div>
                                 </div>
@@ -502,7 +475,7 @@ export const BlogDetailsPage = () => {
                                     Keep human judgment at the decision point
                                 </h4>
                                 <p className="my-3 text-base text-gray-700">
-                                    Embedded AI should reduce repetitive analysis without obscuring accountability. The buyer still needs to see the evidence, understand the recommendation and own the final commercial decision - especially where supplier risk, contractual terms or material spend are involved.
+                                    Embedded intelligence should reduce repetitive analysis without obscuring accountability. The buyer still needs to see the evidence, understand the recommendation and own the final commercial decision - especially where supplier risk, contractual terms or material spend are involved.
                                 </p>
                             </div>
 
@@ -512,14 +485,14 @@ export const BlogDetailsPage = () => {
                                     IMPLEMENTATION PRINCIPLES
                                 </p>
                                 <h3 className="text-2xl sm:text-3xl font-bold text-purple-800 mb-4">
-                                    Five rules for integrating AI correctly
+                                    Five rules for integrating decision intelligence correctly
                                 </h3>
 
                                 <div className="space-y-4 my-6">
                                     <div>
                                         <h4 className="text-base font-bold text-purple-800 mb-1">1. Start with a decision, not a feature</h4>
                                         <p className="text-sm text-gray-700 leading-relaxed">
-                                            Define the decision AI must improve: fair-price validation, negotiation priority, supplier review, spend leakage or realised value. A specific decision creates a clear data requirement, workflow and success metric.
+                                            Define the decision the platform must improve: fair-price validation, negotiation priority, supplier review, spend leakage or realised value. A specific decision creates a clear data requirement, workflow and success metric.
                                         </p>
                                     </div>
                                     <div>
@@ -548,10 +521,10 @@ export const BlogDetailsPage = () => {
                                     </div>
                                 </div>
 
-                                {/* Figure 4: Match AI autonomy to procurement risk (Matching Screenshot) */}
+                                {/* Figure 4: Match automation to procurement risk (Matching Screenshot) */}
                                 <div className="my-8 p-4 sm:p-6 bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
                                     <h4 className="text-lg sm:text-xl font-bold text-gray-900 text-center mb-6 sm:mb-8">
-                                        Match AI autonomy to procurement risk
+                                        Match automation to procurement risk
                                     </h4>
 
                                     {/* Responsive horizontal scroll wrapper for 5-step staircase */}
@@ -610,12 +583,9 @@ export const BlogDetailsPage = () => {
                                     </p>
 
                                     <p className="text-xs font-bold text-gray-500 text-center uppercase tracking-wider mt-4">
-                                        Figure 4 · Matching AI autonomy to procurement risk
+                                        Figure 4 · Matching automation to procurement risk
                                     </p>
                                 </div>
-                                <p className="my-4 text-base text-gray-700">
-                                    NIST's AI Risk Management Framework groups responsible AI practices around four functions: govern, map, measure and manage. The practical implication for procurement is continuous risk management, not a one-time compliance review.
-                                </p>
                             </div>
 
                             {/* Section 6: VALUE AND GOVERNANCE */}
@@ -624,10 +594,10 @@ export const BlogDetailsPage = () => {
                                     VALUE AND GOVERNANCE
                                 </p>
                                 <h3 className="text-2xl sm:text-3xl font-bold text-purple-800 mb-4">
-                                    Measure business impact, not AI activity
+                                    Measure business impact, not system activity
                                 </h3>
                                 <p className="my-4 text-base text-gray-700">
-                                    Usage metrics describe activity. They do not prove value. Leadership should measure whether AI improves commercial outcomes, operating efficiency, decision quality and governance.
+                                    Usage metrics describe activity. They do not prove value. Leadership should measure whether the platform improves commercial outcomes, operating efficiency, decision quality and governance.
                                 </p>
 
                                 {/* 3 Metrics Columns Table (Matching Screenshot) */}
@@ -677,7 +647,7 @@ export const BlogDetailsPage = () => {
                                     Five failure patterns to avoid
                                 </h4>
                                 <ul className="list-disc pl-6 space-y-2 text-base text-gray-700 my-4">
-                                    <li><strong>Disconnected AI:</strong> Recommendations sit in a separate tool and must be copied into the procurement process.</li>
+                                    <li><strong>Disconnected tools:</strong> Recommendations sit in a separate tool and must be copied into the procurement process.</li>
                                     <li><strong>Poor data discipline:</strong> Duplicate suppliers, inconsistent categories and incomplete bid histories weaken recommendations.</li>
                                     <li><strong>Black-box decisions:</strong> Buyers receive a number without evidence, context or confidence.</li>
                                     <li><strong>Technology-first implementation:</strong> The organisation buys capabilities before defining the decision and outcome that matter.</li>
@@ -690,7 +660,7 @@ export const BlogDetailsPage = () => {
                                     <div className="p-6 flex-1">
                                         <h4 className="font-bold text-gray-900 text-base mb-2">Bottom line</h4>
                                         <p className="text-gray-700 text-sm sm:text-base leading-relaxed font-medium">
-                                            AI succeeds when it changes commercial outcomes - not when it produces more dashboards.
+                                            Procurement technology succeeds when it changes commercial outcomes - not when it produces more dashboards.
                                         </p>
                                     </div>
                                 </div>
@@ -711,7 +681,7 @@ export const BlogDetailsPage = () => {
                                     The next generation of procurement systems must improve the commercial decisions inside that process: What should we pay? Where should we negotiate? Which supplier creates the best total value? Where is spend leaking? What value did procurement actually deliver?
                                 </p>
                                 <p className="my-4 text-base text-gray-700">
-                                    The shift from automation to intelligence requires execution, data and decision support to stay connected. That means embedding AI where procurement work happens, preserving evidence and human accountability, integrating the surrounding enterprise environment and measuring realised outcomes rather than AI activity.
+                                    The shift from automation to intelligence requires execution, data and decision support to stay connected. That means embedding intelligence where procurement work happens, preserving evidence and human accountability, integrating the surrounding enterprise environment and measuring realised outcomes rather than system activity.
                                 </p>
 
                                 <div className="">
@@ -720,24 +690,6 @@ export const BlogDetailsPage = () => {
                                         <li>Is the supplier price fair?</li>
                                         <li>Where is the real negotiation leverage?</li>
                                         <li>Was negotiated value actually realised?</li>
-                                    </ul>
-                                </div>
-
-                                <div className="mt-8 pt-4 border-t border-gray-200">
-                                    <h5 className="font-bold text-gray-900 text-sm mb-2">References</h5>
-                                    <ul className="space-y-1.5 text-xs text-gray-600">
-                                        <li>
-                                            • Deloitte, 2025 Global Chief Procurement Officer Survey press release —{" "}
-                                            <a href="https://deloitte.com" target="_blank" rel="noreferrer" className="text-purple-600 hover:underline">
-                                                deloitte.com (2025 CPO Survey)
-                                            </a>
-                                        </li>
-                                        <li>
-                                            • NIST, AI Risk Management Framework —{" "}
-                                            <a href="https://nist.gov" target="_blank" rel="noreferrer" className="text-purple-600 hover:underline">
-                                                nist.gov (AI Risk Management Framework)
-                                            </a>
-                                        </li>
                                     </ul>
                                 </div>
                             </div>
@@ -760,8 +712,7 @@ export const BlogDetailsPage = () => {
                                 management and supplier relationships.
                             </p>
                             <p className="my-[16px]">
-                                With advancements in artificial intelligence (AI), machine
-                                learning (ML), and cloud-based technology, modern invoice
+                                With advancements in automation, analytics, and cloud-based technology, modern invoice
                                 automation solutions are more efficient and accessible than
                                 ever. This guide will help you understand the key factors to
                                 consider when selecting the right{" "}
@@ -783,7 +734,7 @@ export const BlogDetailsPage = () => {
                                 processing and Excel tracking.
                             </p>
                             <p className="my-[16px]">
-                                Today, modern invoice automation software leverages AI, OCR
+                                Today, modern invoice automation software leverages automation, OCR
                                 (Optical Character Recognition), and cloud technology to
                                 streamline invoice receipt, validation, approval, and payment.
                                 This evolution has drastically improved efficiency,
@@ -798,7 +749,7 @@ export const BlogDetailsPage = () => {
                             </p>
                             <ul>
                                 <li className="my-[16px]">
-                                    <strong>AI-Powered Data Extraction:</strong> Automatically
+                                    <strong>Automated Data Extraction:</strong> Automatically
                                     captures invoice details, reducing manual entry errors.
                                 </li>
                                 <li className="my-[16px]">
@@ -827,16 +778,16 @@ export const BlogDetailsPage = () => {
                                     and collaboration.
                                 </li>
                             </ul>
-                            <h3 className="text-1xl font-bold text-gray-900 my-[16px]">How AI and Machine Learning Enhance Invoice Processing</h3>
+                            <h3 className="text-1xl font-bold text-gray-900 my-[16px]">How Automation and Analytics Enhance Invoice Processing</h3>
                             <p className="my-[16px]">
-                                AI and machine learning have revolutionized invoice automation
+                                Automation and analytics have revolutionized invoice processing
                                 by introducing predictive analytics, intelligent approvals,
-                                and real-time fraud detection. Here's how AI enhances invoice
+                                and real-time fraud detection. Here's how automation enhances invoice
                                 processing:
                             </p>
                             <ul>
                                 <li className="my-[16px]">
-                                    <strong>Automated Data Matching:</strong> AI matches
+                                    <strong>Automated Data Matching:</strong> The system matches
                                     invoices with purchase orders (PO) and delivery receipts,
                                     reducing discrepancies.
                                 </li>
@@ -854,7 +805,7 @@ export const BlogDetailsPage = () => {
                                 </li>
                             </ul>
                             <p className="my-[16px]">
-                                With AI-driven automation, businesses can significantly reduce
+                                With intelligent automation, businesses can significantly reduce
                                 manual workload, improve accuracy, and optimize financial
                                 decision-making.
                             </p>
@@ -913,8 +864,7 @@ export const BlogDetailsPage = () => {
                                     route invoices to approvers instantly.
                                 </li>
                                 <li className="my-[16px]">
-                                    <strong>Fraudulent Activities:</strong> AI-driven fraud
-                                    detection flags suspicious invoices.
+                                    <strong>Fraudulent Activities:</strong> Automated fraud detection flags suspicious invoices.
                                 </li>
                                 <li className="my-[16px]">
                                     <strong>Lack of Visibility:</strong> Real-time dashboards
@@ -1078,7 +1028,7 @@ export const BlogDetailsPage = () => {
                             <p className="my-[16px]">
                                 As we move into 2025, invoice automation is no longer a luxury
                                 but a necessity for businesses aiming to streamline accounts
-                                payable processes. With AI-driven automation, real-time
+                                payable processes. With intelligent automation, real-time
                                 insights, and seamless integration, organizations can
                                 significantly enhance efficiency, reduce costs, and maintain
                                 compliance.
@@ -1307,8 +1257,7 @@ export const BlogDetailsPage = () => {
                                     anomalies that indicate maverick spend.
                                 </li>
                                 <li className="my-[16px]">
-                                    <strong>AI-Powered Solutions:</strong> Artificial
-                                    intelligence can be used to detect fraudulent transactions
+                                    <strong>Fraud Detection Tools:</strong> Automated tools can be used to detect fraudulent transactions
                                     and predict potential areas of uncontrolled spending.
                                 </li>
                                 <li className="my-[16px]">
@@ -1385,10 +1334,10 @@ export const BlogDetailsPage = () => {
                                 </li>
                             </ul>
                             <h3 className="text-1xl font-bold text-gray-900 my-[16px]">
-                                Leveraging Data Analytics and AI to Minimize Maverick Spend
+                                Leveraging Data Analytics and Automation to Minimize Maverick Spend
                             </h3>
                             <p className="my-[16px]">
-                                Data analytics and AI can provide valuable insights into
+                                Data analytics and automation can provide valuable insights into
                                 spending patterns.
                             </p>
                             <ul>
@@ -1398,7 +1347,7 @@ export const BlogDetailsPage = () => {
                                     spend.
                                 </li>
                                 <li className="my-[16px]">
-                                    <strong>Predict Potential Areas of Risk:</strong> Use AI to
+                                    <strong>Predict Potential Areas of Risk:</strong> Use predictive analytics to
                                     predict potential areas of uncontrolled spending.
                                 </li>
                                 <li className="my-[16px]">
@@ -1449,48 +1398,45 @@ export const BlogDetailsPage = () => {
                     {activeTabBlog === 97 && (
                         <div className="col-span-9">
                             <h1 className="text-3xl font-bold text-gray-900 my-[16px]">
-                                AI in Procurement 2025: Driving Efficiency with Smart Metrics
+                                Procurement in 2025: Driving Efficiency with Smart Metrics
                             </h1>
                             <p className="my-[16px]">
                                 The procurement landscape is undergoing a profound
-                                transformation, driven by the rapid advancement of artificial
-                                intelligence (AI). As we approach 2025, AI is no longer a
+                                transformation, driven by the rapid advancement of automation and analytics. As we approach 2025, intelligent automation is no longer a
                                 futuristic concept but a vital tool for achieving
                                 unprecedented efficiency and strategic advantage in
-                                procurement. This article explores how AI is reshaping
+                                procurement. This article explores how automation is reshaping
                                 procurement, the key efficiency metrics to track, and the
-                                practical applications of AI in streamlining processes,
+                                practical applications of automation in streamlining processes,
                                 managing suppliers, and mitigating risks.
                             </p>
                             <h3 className="text-1xl font-bold text-gray-900 my-[16px]">
-                                Introduction: How AI is Transforming Procurement in 2025
+                                Introduction: How Automation is Transforming Procurement in 2025
                             </h3>
                             <p className="my-[16px]">
-                                In 2025, AI has seamlessly integrated into procurement
+                                In 2025, intelligent automation has seamlessly integrated into procurement
                                 operations, moving beyond simple automation to become a
                                 strategic partner. Traditional, manual processes are yielding
                                 to intelligent systems that can analyze vast datasets, predict
-                                trends, and optimize decisions in real-time. AI is empowering
-                                procurement professionals to focus on strategic initiatives,
+                                trends, and optimize decisions in real-time. Automation is empowering procurement professionals to focus on strategic initiatives,
                                 such as supplier innovation and value creation, rather than
                                 mundane tasks. The era of reactive procurement is fading,
-                                replaced by a proactive, data-driven approach. AI's ability to
-                                learn and adapt ensures that procurement strategies remain
+                                replaced by a proactive, data-driven approach. Modern platforms' ability to learn and adapt ensures that procurement strategies remain
                                 agile and responsive to evolving market conditions.
                             </p>
                             <h3 className="text-1xl font-bold text-gray-900 my-[16px]">
                                 Key Procurement Efficiency Metrics: What to Track and Why
                             </h3>
                             <p className="my-[16px]">
-                                To gauge the effectiveness of AI-driven procurement,
+                                To gauge the effectiveness of automated procurement,
                                 organizations must track relevant efficiency metrics. These
                                 metrics provide insights into performance, identify areas for
-                                improvement, and demonstrate the value of AI investments.
+                                improvement, and demonstrate the value of technology investments.
                             </p>
                             <ul>
                                 <li className="my-[16px]">
                                     <strong>Cost Savings:</strong> Measures the reduction in
-                                    procurement costs achieved through AI-powered negotiations,
+                                    procurement costs achieved through data-driven negotiations,
                                     demand forecasting, and spend optimization.
                                 </li>
                                 <li className="my-[16px]">
@@ -1500,8 +1446,7 @@ export const BlogDetailsPage = () => {
                                 </li>
                                 <li className="my-[16px]">
                                     <strong>Supplier Performance:</strong> Evaluates vendor
-                                    reliability, quality, and delivery performance, leveraging
-                                    AI to analyze vast amounts of data.
+                                    reliability, quality, and delivery performance, leveraging automation to analyze vast amounts of data.
                                 </li>
                                 <li className="my-[16px]">
                                     <strong>Contract Compliance:</strong> Monitors adherence to
@@ -1524,36 +1469,29 @@ export const BlogDetailsPage = () => {
                                 performance, allowing organizations to make informed decisions
                                 and drive continuous improvement.
                             </p>
-                            <h3 className="text-1xl font-bold text-gray-900 my-[16px]">The Role of AI in Streamlining Procurement Processes</h3>
+                            <h3 className="text-1xl font-bold text-gray-900 my-[16px]">The Role of Automation in Streamlining Procurement Processes</h3>
                             <p className="my-[16px]">
-                                AI is revolutionizing procurement processes by automating
+                                Automation is revolutionizing procurement processes by handling
                                 repetitive tasks, improving accuracy, and accelerating
                                 decision-making.
                             </p>
                             <ul>
                                 <li className="my-[16px]">
-                                    <strong>Automated Requisitioning:</strong> AI-powered
-                                    systems can automatically generate purchase requisitions
+                                    <strong>Automated Requisitioning:</strong> Automated systems can automatically generate purchase requisitions
                                     based on historical data and demand forecasts.
                                 </li>
                                 <li className="my-[16px]">
-                                    <strong>Intelligent Sourcing:</strong> AI algorithms can
+                                    <strong>Intelligent Sourcing:</strong> Analytics tools can
                                     analyze supplier data, market trends, and pricing
                                     information to identify the best sourcing options.
                                 </li>
                                 <li className="my-[16px]">
-                                    <strong>Automated Invoice Processing:</strong> AI-driven
-                                    invoice processing eliminates manual data entry, reduces
+                                    <strong>Automated Invoice Processing:</strong> Automated invoice processing eliminates manual data entry, reduces
                                     errors, and speeds up payment cycles.
-                                </li>
-                                <li className="my-[16px]">
-                                    <strong>Chatbots and Virtual Assistants:</strong> AI-powered
-                                    chatbots can assist employees with procurement-related
-                                    queries, providing instant support and guidance.
                                 </li>
                             </ul>
                             <p className="my-[16px]">
-                                By automating these processes, AI frees up procurement
+                                By automating these processes, organizations free up procurement
                                 professionals to focus on strategic initiatives and
                                 value-added activities.
                             </p>
@@ -1561,29 +1499,29 @@ export const BlogDetailsPage = () => {
                                 Predictive Analytics: Enhancing Procurement Decision-Making
                             </h3>
                             <p className="my-[16px]">
-                                Predictive analytics, powered by AI, enables procurement teams
+                                Predictive analytics enables procurement teams
                                 to anticipate future trends and make proactive decisions.
                             </p>
                             <ul>
                                 <li className="my-[16px]">
-                                    <strong>Demand Forecasting:</strong> AI algorithms can
+                                    <strong>Demand Forecasting:</strong> Forecasting models can
                                     analyze historical data, market trends, and external factors
                                     to predict future demand, enabling accurate inventory
                                     planning.
                                 </li>
                                 <li className="my-[16px]">
-                                    <strong>Price Forecasting:</strong> AI can forecast
+                                    <strong>Price Forecasting:</strong> The platform can forecast
                                     commodity prices and market fluctuations, allowing
                                     organizations to optimize purchasing strategies and minimize
                                     costs.
                                 </li>
                                 <li className="my-[16px]">
-                                    <strong>Risk Prediction:</strong> AI can identify potential
+                                    <strong>Risk Prediction:</strong> The platform can identify potential
                                     risks, such as supplier disruptions and market volatility,
                                     enabling proactive risk mitigation.
                                 </li>
                                 <li className="my-[16px]">
-                                    <strong>Supplier Risk Assessment:</strong> AI can assess
+                                    <strong>Supplier Risk Assessment:</strong> The platform can assess
                                     supplier financial stability, compliance records, and
                                     performance data to predict potential issues.
                                 </li>
@@ -1593,38 +1531,37 @@ export const BlogDetailsPage = () => {
                                 informed decisions and stay ahead of the curve.
                             </p>
                             <h3 className="text-1xl font-bold text-gray-900 my-[16px]">
-                                AI-Powered Supplier Management: Improving Vendor Relationships
+                                Smarter Supplier Management: Improving Vendor Relationships
                             </h3>
                             <p className="my-[16px]">
-                                AI is transforming supplier management by providing deeper
+                                Automation is transforming supplier management by providing deeper
                                 insights into vendor performance and facilitating
                                 collaborative relationships.
                             </p>
                             <ul>
                                 <li className="my-[16px]">
-                                    <strong>Supplier Performance Monitoring:</strong> AI can
+                                    <strong>Supplier Performance Monitoring:</strong> The platform can
                                     analyze vast amounts of data to monitor supplier performance
                                     in real-time, identifying areas for improvement.
                                 </li>
                                 <li className="my-[16px]">
-                                    <strong>Automated Supplier Onboarding:</strong> AI-powered
-                                    systems can automate the supplier onboarding process,
+                                    <strong>Automated Supplier Onboarding:</strong> Modern systems can automate the supplier onboarding process,
                                     reducing paperwork and accelerating time-to-value.
                                 </li>
                                 <li className="my-[16px]">
                                     <strong>Supplier Collaboration Platforms:</strong>{" "}
-                                    AI-powered platforms can facilitate communication and
+                                    Digital platforms can facilitate communication and
                                     collaboration between buyers and suppliers, fostering
                                     stronger relationships.
                                 </li>
                                 <li className="my-[16px]">
-                                    <strong>Automated Supplier Risk Scoring:</strong> AI can
+                                    <strong>Automated Supplier Risk Scoring:</strong> The platform can
                                     provide risk scores to suppliers, and help track and
                                     mitigate potential risks.
                                 </li>
                             </ul>
                             <p className="my-[16px]">
-                                By leveraging AI, organizations can build stronger, more
+                                By leveraging automation and analytics, organizations can build stronger, more
                                 resilient supplier relationships.
                             </p>
                             <h3 className="text-1xl font-bold text-gray-900 my-[16px]">
@@ -1670,27 +1607,27 @@ export const BlogDetailsPage = () => {
                                 Delays
                             </h3>
                             <p className="my-[16px]">
-                                AI-powered workflow automation can significantly reduce costs
+                                Workflow automation can significantly reduce costs
                                 and time delays in procurement.
                             </p>
                             <ul>
                                 <li className="my-[16px]">
-                                    <strong>Automated Approval Workflows:</strong> AI can
+                                    <strong>Automated Approval Workflows:</strong> The platform can
                                     automate the approval process for purchase orders and
                                     invoices, reducing bottlenecks and delays.
                                 </li>
                                 <li className="my-[16px]">
-                                    <strong>Automated Contract Management:</strong> AI can
+                                    <strong>Automated Contract Management:</strong> The platform can
                                     automate the process of creating, reviewing, and managing
                                     contracts, ensuring compliance and minimizing risks.
                                 </li>
                                 <li className="my-[16px]">
-                                    <strong>Automated Purchase Order Processing:</strong> AI can
+                                    <strong>Automated Purchase Order Processing:</strong> The platform can
                                     automate the process of generating and processing purchase
                                     orders, reducing errors and delays.
                                 </li>
                                 <li className="my-[16px]">
-                                    <strong>Automated Reporting:</strong> AI can automatically
+                                    <strong>Automated Reporting:</strong> The platform can automatically
                                     generate reports on key procurement metrics, providing
                                     real-time insights into performance.
                                 </li>
@@ -1699,79 +1636,79 @@ export const BlogDetailsPage = () => {
                                 By automating workflows, organizations can improve efficiency
                                 and reduce costs.
                             </p>
-                            <h3 className="text-1xl font-bold text-gray-900 my-[16px]">Enhancing Spend Visibility with AI-Driven Insights</h3>
+                            <h3 className="text-1xl font-bold text-gray-900 my-[16px]">Enhancing Spend Visibility with Data-Driven Insights</h3>
                             <p className="my-[16px]">
-                                AI provides unparalleled spend visibility, enabling
+                                Spend analytics provides unparalleled spend visibility, enabling
                                 organizations to identify cost-saving opportunities and
                                 improve compliance.
                             </p>
                             <ul>
                                 <li className="my-[16px]">
-                                    <strong>Real-Time Spend Analytics:</strong> AI can analyze
+                                    <strong>Real-Time Spend Analytics:</strong> The platform can analyze
                                     spending data in real-time, providing insights into spending
                                     patterns and trends.
                                 </li>
                                 <li className="my-[16px]">
-                                    <strong>Anomaly Detection:</strong> AI can identify
+                                    <strong>Anomaly Detection:</strong> The platform can identify
                                     anomalies in spending data, such as unauthorized purchases
                                     and fraudulent transactions.
                                 </li>
                                 <li className="my-[16px]">
-                                    <strong>Spend Categorization:</strong> AI can automatically
+                                    <strong>Spend Categorization:</strong> The platform can automatically
                                     categorize spending data, providing a clear view of spending
                                     across different categories.
                                 </li>
                                 <li className="my-[16px]">
-                                    <strong>Spend Forecasting:</strong> AI can forecast future
+                                    <strong>Spend Forecasting:</strong> The platform can forecast future
                                     spending based on historical data and trends.
                                 </li>
                             </ul>
                             <p className="my-[16px]">
-                                By leveraging AI, organizations can gain a comprehensive
+                                By leveraging automation and analytics, organizations can gain a comprehensive
                                 understanding of their spending and make informed decisions.
                             </p>
                             <h3 className="text-1xl font-bold text-gray-900 my-[16px]">
-                                Risk Management in Procurement: How AI Identifies and
+                                Risk Management in Procurement: How Analytics Identifies and
                                 Mitigates Risks
                             </h3>
                             <p className="my-[16px]">
-                                AI plays a crucial role in identifying and mitigating risks in
+                                Automation plays a crucial role in identifying and mitigating risks in
                                 procurement.
                             </p>
                             <ul>
                                 <li className="my-[16px]">
-                                    <strong>Supplier Risk Assessment:</strong> AI can assess
+                                    <strong>Supplier Risk Assessment:</strong> The platform can assess
                                     supplier financial stability, compliance records, and
                                     performance data to identify potential risks.
                                 </li>
                                 <li className="my-[16px]">
-                                    <strong>Market Risk Analysis:</strong> AI can analyze market
+                                    <strong>Market Risk Analysis:</strong> The platform can analyze market
                                     data to identify potential risks, such as commodity price
                                     fluctuations and supply chain disruptions.
                                 </li>
                                 <li className="my-[16px]">
-                                    <strong>Contract Risk Analysis:</strong> AI can analyze
+                                    <strong>Contract Risk Analysis:</strong> The platform can analyze
                                     contract terms to identify potential risks, such as legal
                                     and financial risks.
                                 </li>
                                 <li className="my-[16px]">
-                                    <strong>Fraud Detection:</strong> AI can identify fraudulent
+                                    <strong>Fraud Detection:</strong> The platform can identify fraudulent
                                     transactions and activities, minimizing financial losses.
                                 </li>
                             </ul>
                             <p className="my-[16px]">
-                                By leveraging AI, organizations can proactively manage risks
+                                By leveraging automation and analytics, organizations can proactively manage risks
                                 and ensure business continuity.
                             </p>
-                            <h3 className="text-1xl font-bold text-gray-900 my-[16px]">Measuring the ROI of AI in Procurement Operations</h3>
+                            <h3 className="text-1xl font-bold text-gray-900 my-[16px]">Measuring the ROI of Technology in Procurement Operations</h3>
                             <p className="my-[16px]">
-                                Measuring the ROI of AI investments is essential for
+                                Measuring the ROI of technology investments is essential for
                                 demonstrating value and securing continued support.
                             </p>
                             <ul>
                                 <li className="my-[16px]">
                                     <strong>Cost Savings Analysis:</strong> Quantify the cost
-                                    savings achieved through AI-powered procurement processes.
+                                    savings achieved through automated procurement processes.
                                 </li>
                                 <li className="my-[16px]">
                                     <strong>Efficiency Gains:</strong> Measure the improvements
@@ -1789,8 +1726,7 @@ export const BlogDetailsPage = () => {
                                 </li>
                             </ul>
                             <p className="my-[16px]">
-                                By demonstrating a clear ROI, organizations can justify their
-                                AI investments and drive further innovation in procurement.
+                                By demonstrating a clear ROI, organizations can justify their technology investments and drive further innovation in procurement.
                             </p>
                         </div>
                     )}
@@ -2229,36 +2165,31 @@ export const BlogDetailsPage = () => {
                                 </li>
                             </ul>
                             <h3 className="text-1xl font-bold text-gray-900 my-[16px]">
-                                The Impact of Automation and AI on Intake-to-Procure
+                                The Impact of Automation on Intake-to-Procure
                                 Management
                             </h3>
                             <p className="my-[16px]">
                                 Automation and{" "}
                                 <a href="/blog-details/The-Future-of-Procurement-AI-Driven-Efficiency-Metrics-for-2025">
-                                    AI-driven procurement
+                                    data-driven procurement
                                 </a>{" "}
                                 are playing a transformative role in intake-to-procure
                                 management
                             </p>
                             <ul>
                                 <li className="my-[16px]">
-                                    <strong>Automated Data Entry:</strong> AI-powered tools can
+                                    <strong>Automated Data Entry:</strong> Automated tools can
                                     automatically extract and validate data from intake forms.
                                 </li>
                                 <li className="my-[16px]">
-                                    <strong>Intelligent Routing:</strong> AI algorithms can
+                                    <strong>Intelligent Routing:</strong> Rules engines can
                                     route requests to the appropriate approvers based on
                                     predefined rules.
                                 </li>
                                 <li className="my-[16px]">
-                                    <strong>Predictive Analytics:</strong> AI can analyze
+                                    <strong>Predictive Analytics:</strong> The platform can analyze
                                     historical data to forecast demand and identify potential
                                     risks.
-                                </li>
-                                <li className="my-[16px]">
-                                    <strong>Chatbots and Virtual Assistants:</strong> AI-powered
-                                    chatbots can provide instant support and guidance to
-                                    requestors.
                                 </li>
                             </ul>
                             <p className="my-[16px]">

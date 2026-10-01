@@ -2,14 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { FormSheet } from "@/components/form-sheet";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,14 +22,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -47,7 +32,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { useAISettings } from "@/hooks/use-ai-settings";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency, formatDate } from "@/lib/common-functions";
 import { generateTablePdf } from "@/lib/generate-table-pdf";
@@ -56,7 +40,6 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   AlertTriangle,
   Ban,
-  Brain,
   Building2,
   Calendar,
   CheckCircle2,
@@ -72,11 +55,10 @@ import {
   Plus,
   Search,
   ShoppingCart,
-  Sparkles,
   Truck,
   Upload,
   User,
-  XCircle
+  XCircle,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "wouter";
@@ -231,7 +213,6 @@ function StatusBadge({ status }: { status: string | null }) {
 export default function PurchaseRequests() {
   const [location, setLocation] = useLocation();
   const { toast } = useToast();
-  const { isAIEnabled } = useAISettings();
 
   // Determine the logged-in user for buyer-only actions
   const parsedAuth = useMemo(() => {
@@ -476,20 +457,6 @@ export default function PurchaseRequests() {
   const [createPODialogOpen, setCreatePODialogOpen] = useState(false);
   const [selectedPRForPO, setSelectedPRForPO] = useState<string | null>(null);
   const [prDetailsForPO, setPrDetailsForPO] = useState<any>(null);
-  const [suggestedVendors, setSuggestedVendors] = useState<any[]>([]);
-  const [aiRecommendMeta, setAiRecommendMeta] = useState<{
-    recommendationLevel: "full_pr" | "line" | "none" | null;
-    noRecommendationReason?: string;
-    missingDatapoints?: string[];
-    lineRecommendations?: Array<{
-      lineNum: number;
-      description: string;
-      vendorId: string;
-      vendorName: string;
-      matchScore: number;
-      reason: string;
-    }>;
-  }>({ recommendationLevel: null });
   const [selectedVendorId, setSelectedVendorId] = useState<string>("");
   const [selectedVendorName, setSelectedVendorName] = useState<string>("");
   const [vendorSearchPO, setVendorSearchPO] = useState("");
@@ -498,8 +465,6 @@ export default function PurchaseRequests() {
   const [poPaymentTermsName, setPoPaymentTermsName] = useState("");
   const [poAdvanceFlag, setPoAdvanceFlag] = useState(false);
   const [poAdvancePercentage, setPoAdvancePercentage] = useState("");
-  const [aiLoading, setAiLoading] = useState(false);
-  const [expandedPoEvidence, setExpandedPoEvidence] = useState(false);
 
   const [createContractDialogOpen, setCreateContractDialogOpen] = useState(false);
   const [selectedPRForContract, setSelectedPRForContract] = useState<string | null>(null);
@@ -559,75 +524,10 @@ export default function PurchaseRequests() {
     (pt) => pt.status === "Y",
   );
 
-  const handleAIRecommendSupplier = async (
-    lines?: any[],
-    opts?: { prNumber?: string; deliveryLocation?: string | null },
-  ) => {
-    const lineItems = lines ?? prDetailsForPO?.lines;
-    if (!lineItems || lineItems.length === 0) {
-      toast({
-        title: "No line items",
-        description: "PR line items are required for AI supplier recommendation.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const prNumber = opts?.prNumber ?? selectedPRForPO ?? undefined;
-    const deliveryLocation =
-      opts?.deliveryLocation ??
-      prDetailsForPO?.header?.delivertto_location_name ??
-      null;
-
-    setAiLoading(true);
-    setSuggestedVendors([]);
-    setAiRecommendMeta({ recommendationLevel: null });
-    setExpandedPoEvidence(false);
-    try {
-      const vendorRes = await apiRequest(
-        "POST",
-        "/api/purchase-orders/ai-suggest-vendor",
-        { lineItems, prNumber, deliveryLocation },
-      );
-      const vendorData = await vendorRes.json();
-      const vendors = vendorData.vendors || [];
-      setSuggestedVendors(vendors);
-      setAiRecommendMeta({
-        recommendationLevel: vendorData.recommendationLevel || (vendors.length ? "full_pr" : "none"),
-        noRecommendationReason: vendorData.noRecommendationReason,
-        missingDatapoints: vendorData.missingDatapoints,
-        lineRecommendations: vendorData.lineRecommendations,
-      });
-      if (vendors.length > 0) {
-        const top = vendors[0];
-        setSelectedVendorId(String(top.vendorId));
-        setSelectedVendorName(String(top.vendorName));
-        setVendorSearchPO("");
-      }
-    } catch (e) {
-      console.error("Error getting vendor suggestions:", e);
-      setAiRecommendMeta({
-        recommendationLevel: "none",
-        noRecommendationReason:
-          "No recommendation available: could not fetch supplier recommendations.",
-      });
-      toast({
-        title: "AI recommendation failed",
-        description: "Could not fetch supplier recommendations. Please try again or select a supplier manually.",
-        variant: "destructive",
-      });
-    } finally {
-      setAiLoading(false);
-    }
-  };
-
   const handleOpenCreatePODialog = async (prNumber: string) => {
     setSelectedPRForPO(prNumber);
     setCreatePODialogOpen(true);
     setPrDetailsForPO(null);
-    setSuggestedVendors([]);
-    setAiRecommendMeta({ recommendationLevel: null });
-    setExpandedPoEvidence(false);
     setSelectedVendorId("");
     setSelectedVendorName("");
     setVendorSearchPO("");
@@ -1323,28 +1223,38 @@ export default function PurchaseRequests() {
     <div className="p-4 space-y-3">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold" data-testid="text-page-title">
+          <h1 className="text-xl font-bold text-primary" data-testid="text-page-title">
             Purchase Requisitions
           </h1>
           <p className="text-sm text-muted-foreground">
             View and manage procurement requests from the ERP system
           </p>
         </div>
-        <Sheet open={createDialogOpen} onOpenChange={handleOpenCreateDialog}>
-          <SheetTrigger asChild>
-            <Button size="sm" data-testid="button-create-pr">
-              <Plus className="h-4 w-4 mr-2" />
-              Create PR
-            </Button>
-          </SheetTrigger>
-          <SheetContent className="w-[50vw] sm:max-w-[50vw] overflow-y-auto">
-            <SheetHeader>
-              <SheetTitle>Create Purchase Requisition</SheetTitle>
-              <SheetDescription>
-                <span className="text-destructive">*</span> Indicates mandatory
-                fields
-              </SheetDescription>
-            </SheetHeader>
+        <Button size="sm" onClick={() => handleOpenCreateDialog(true)} data-testid="button-create-pr">
+          <Plus className="h-4 w-4 mr-2" />
+          Create PR
+        </Button>
+        <FormSheet
+          open={createDialogOpen}
+          onOpenChange={handleOpenCreateDialog}
+          title="Create Purchase Requisition"
+          onSubmit={handleCreatePR}
+          submitLabel={createPRMutation.isPending ? "Creating..." : "Create"}
+          isSubmitting={createPRMutation.isPending}
+          submitDisabled={
+            !newPR.description ||
+            !newPR.deliveryLocation ||
+            !newPR.needByDate ||
+            !newPR.requestorId ||
+            !newPR.requestorDepartment ||
+            !newPR.buyerId ||
+            !newPR.orgId ||
+            (newPR.isBudgeted === "yes" && !newPR.budgetId)
+          }
+        >
+            <p className="text-xs text-muted-foreground mb-4">
+              <span className="text-destructive">*</span> Indicates mandatory fields
+            </p>
             <div className="mt-2">
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2 space-y-2">
@@ -1680,38 +1590,7 @@ export default function PurchaseRequests() {
                 )}
               </div>
             </div>
-
-            <div className="flex justify-end gap-2 mt-6 pt-4">
-              <Button
-                variant="outline"
-                onClick={() => setCreateDialogOpen(false)}
-                data-testid="button-cancel-pr"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleCreatePR}
-                disabled={
-                  createPRMutation.isPending ||
-                  !newPR.description ||
-                  !newPR.deliveryLocation ||
-                  !newPR.needByDate ||
-                  !newPR.requestorId ||
-                  !newPR.requestorDepartment ||
-                  !newPR.buyerId ||
-                  !newPR.orgId ||
-                  (newPR.isBudgeted === "yes" && !newPR.budgetId)
-                }
-                data-testid="button-save-pr"
-              >
-                {createPRMutation.isPending && (
-                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                )}
-                Create
-              </Button>
-            </div>
-          </SheetContent>
-        </Sheet>
+        </FormSheet>
       </div>
 
       <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4">
@@ -2233,19 +2112,20 @@ export default function PurchaseRequests() {
         </CardContent>
       </Card>
       
-      <Sheet
+      <FormSheet
         open={createPODialogOpen}
         onOpenChange={setCreatePODialogOpen}
+        title={`Create PO from PR ${selectedPRForPO}`}
+        description="Auto-filled from Purchase Request. Select a supplier and review details."
+        onSubmit={handleCreatePOFromPR}
+        submitLabel={createPOFromPRMutation.isPending ? "Creating..." : "Create PO"}
+        isSubmitting={createPOFromPRMutation.isPending}
+        submitDisabled={
+          !prDetailsForPO ||
+          createPOFromPRMutation.isPending || !selectedVendorId || (prDetailsForPO.header?.budgeted === false && !newPR.budgetId)
+        }
+        widthClassName="w-full sm:max-w-[55vw]"
       >
-        <SheetContent className="w-[55vw] sm:max-w-[55vw] overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle>Create PO from PR {selectedPRForPO}</SheetTitle>
-            <SheetDescription>
-              Auto-filled from Purchase Request. Select a supplier and review
-              details.
-            </SheetDescription>
-          </SheetHeader>
-
           {!prDetailsForPO ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -2444,279 +2324,10 @@ export default function PurchaseRequests() {
               <div className="border-t pt-4 space-y-4">
                 <div className="flex items-center justify-between gap-3">
                   <h4 className="text-sm font-semibold flex items-center gap-2">
-                    <Brain className="h-4 w-4 text-primary" />
+                    <Building2 className="h-4 w-4 text-primary" />
                     Supplier Selection
                   </h4>
-                  {isAIEnabled("AI_VENDOR_RECOMMENDATIONS") && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleAIRecommendSupplier()}
-                      disabled={aiLoading || !prDetailsForPO?.lines?.length}
-                      data-testid="button-ai-recommend-supplier"
-                    >
-                      {aiLoading ? (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      ) : (
-                        <Sparkles className="h-4 w-4 mr-2" />
-                      )}
-                      AI Recommend Supplier
-                    </Button>
-                  )}
                 </div>
-
-                {isAIEnabled("AI_VENDOR_RECOMMENDATIONS") && aiLoading && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 p-3 rounded-md">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    AI is analyzing scope of supply and previous POs to recommend the best supplier...
-                  </div>
-                )}
-
-                {isAIEnabled("AI_VENDOR_RECOMMENDATIONS") &&
-                  !aiLoading &&
-                  aiRecommendMeta.recommendationLevel === "none" &&
-                  prDetailsForPO && (
-                    <div
-                      className="flex items-start gap-2 text-sm text-muted-foreground bg-muted/50 p-3 rounded-md"
-                      data-testid="text-no-vendor-suggestion"
-                    >
-                      <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
-                      <div className="space-y-1">
-                        <p className="font-medium text-foreground">
-                          No recommendation available
-                        </p>
-                        <p>
-                          {aiRecommendMeta.noRecommendationReason ||
-                            "No eligible suppliers were found for this PR. Please search and select a supplier manually below."}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                {isAIEnabled("AI_VENDOR_RECOMMENDATIONS") &&
-                  !aiLoading &&
-                  suggestedVendors.length > 0 && (
-                    <div className="space-y-3">
-                      {aiRecommendMeta.missingDatapoints?.includes(
-                        "previous_po_history",
-                      ) && (
-                        <p
-                          className="text-xs text-muted-foreground bg-amber-50 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-800/40 rounded-md px-3 py-2"
-                          data-testid="text-missing-po-history"
-                        >
-                          No previous PO evidence was found for these PR items —
-                          confidence is based on scope of supply match only.
-                        </p>
-                      )}
-
-                      {aiRecommendMeta.recommendationLevel === "line" &&
-                        (aiRecommendMeta.lineRecommendations?.length ?? 0) >
-                          0 && (
-                          <div
-                            className="space-y-1.5 rounded-md border p-3 bg-muted/30"
-                            data-testid="line-level-recommendations"
-                          >
-                            <p className="text-xs font-medium">
-                              Line-level recommendations
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              No single supplier covers the full PR. Suggestions
-                              below are advisory — select one supplier for this
-                              PO.
-                            </p>
-                            <div className="space-y-1 mt-1">
-                              {aiRecommendMeta.lineRecommendations!.map(
-                                (lr) => (
-                                  <div
-                                    key={lr.lineNum}
-                                    className="flex items-center justify-between gap-2 text-xs"
-                                  >
-                                    <span className="truncate text-muted-foreground">
-                                      Line {lr.lineNum}:{" "}
-                                      {lr.description || "—"}
-                                    </span>
-                                    <button
-                                      type="button"
-                                      className="shrink-0 font-medium text-primary hover:underline disabled:opacity-50"
-                                      disabled={!lr.vendorId}
-                                      onClick={() => {
-                                        if (!lr.vendorId) return;
-                                        setSelectedVendorId(String(lr.vendorId));
-                                        setSelectedVendorName(
-                                          String(lr.vendorName),
-                                        );
-                                        setVendorSearchPO("");
-                                      }}
-                                    >
-                                      {lr.vendorName || "None"} (
-                                      {lr.matchScore}%)
-                                    </button>
-                                  </div>
-                                ),
-                              )}
-                            </div>
-                          </div>
-                        )}
-
-                      {(() => {
-                        const top = suggestedVendors[0];
-                        const alternates = suggestedVendors.slice(1);
-                        return (
-                          <>
-                            <div
-                              className={`rounded-md border p-3 space-y-2 cursor-pointer transition-colors ${
-                                selectedVendorId === String(top.vendorId)
-                                  ? "border-primary bg-primary/5"
-                                  : "hover-elevate"
-                              }`}
-                              onClick={() => {
-                                setSelectedVendorId(String(top.vendorId));
-                                setSelectedVendorName(String(top.vendorName));
-                                setVendorSearchPO("");
-                              }}
-                              data-testid="vendor-suggestion-0"
-                            >
-                              <div className="flex items-start justify-between gap-2">
-                                <div className="min-w-0">
-                                  <p className="text-xs text-muted-foreground">
-                                    Recommended supplier
-                                    {aiRecommendMeta.recommendationLevel ===
-                                    "full_pr"
-                                      ? " (full PR)"
-                                      : ""}
-                                  </p>
-                                  <p className="text-sm font-semibold">
-                                    {top.vendorName}
-                                  </p>
-                                </div>
-                                <Badge
-                                  variant="secondary"
-                                  className="shrink-0"
-                                >
-                                  {top.matchScore}% confidence
-                                </Badge>
-                              </div>
-                              <p className="text-xs text-muted-foreground leading-relaxed">
-                                {top.reasoningSummary || top.reason}
-                              </p>
-                              {top.matchedPrItems?.length > 0 && (
-                                <div className="flex flex-wrap gap-1">
-                                  {top.matchedPrItems.map(
-                                    (item: any, i: number) => (
-                                      <Badge
-                                        key={`${item.lineNum}-${i}`}
-                                        variant="outline"
-                                        className="text-[10px] font-normal"
-                                      >
-                                        L{item.lineNum}:{" "}
-                                        {item.matchType?.replace("_", " ")}
-                                      </Badge>
-                                    ),
-                                  )}
-                                </div>
-                              )}
-                              {top.previousPoEvidence?.length > 0 && (
-                                <div className="pt-1">
-                                  <button
-                                    type="button"
-                                    className="text-xs text-primary hover:underline"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setExpandedPoEvidence((v) => !v);
-                                    }}
-                                    data-testid="toggle-po-evidence"
-                                  >
-                                    {expandedPoEvidence ? "Hide" : "Show"}{" "}
-                                    previous PO evidence (
-                                    {top.previousPoEvidence.length})
-                                  </button>
-                                  {expandedPoEvidence && (
-                                    <ul className="mt-1.5 space-y-1 text-xs text-muted-foreground">
-                                      {top.previousPoEvidence.map(
-                                        (ev: any, i: number) => (
-                                          <li
-                                            key={`${ev.poNumber}-${i}`}
-                                            className="border-l-2 border-muted pl-2"
-                                          >
-                                            <span className="font-medium text-foreground">
-                                              {ev.poNumber}
-                                            </span>
-                                            {ev.poDate ? ` · ${ev.poDate}` : ""}
-                                            {ev.qty != null
-                                              ? ` · qty ${ev.qty}`
-                                              : ""}
-                                            {ev.unitPrice != null
-                                              ? ` · ${ev.currency || ""} ${ev.unitPrice}`
-                                              : ""}
-                                            {ev.itemRef
-                                              ? ` · ${ev.itemRef}`
-                                              : ""}
-                                          </li>
-                                        ),
-                                      )}
-                                    </ul>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-
-                            {alternates.length > 0 && (
-                              <div className="space-y-1.5">
-                                <Label className="text-xs text-muted-foreground">
-                                  Alternate suppliers
-                                </Label>
-                                {alternates.map((sv: any, idx: number) => (
-                                  <div
-                                    key={sv.vendorId || idx}
-                                    className={`flex items-center justify-between p-2 rounded-md border cursor-pointer transition-colors ${
-                                      selectedVendorId === String(sv.vendorId)
-                                        ? "border-primary bg-primary/5"
-                                        : "hover-elevate"
-                                    }`}
-                                    onClick={() => {
-                                      setSelectedVendorId(String(sv.vendorId));
-                                      setSelectedVendorName(
-                                        String(sv.vendorName),
-                                      );
-                                      setVendorSearchPO("");
-                                    }}
-                                    data-testid={`vendor-suggestion-${idx + 1}`}
-                                  >
-                                    <div className="flex-1 min-w-0">
-                                      <p className="text-sm font-medium">
-                                        {sv.vendorName}
-                                      </p>
-                                      <p className="text-xs text-muted-foreground truncate">
-                                        {sv.alternateReason || sv.reason}
-                                      </p>
-                                    </div>
-                                    <Badge
-                                      variant="secondary"
-                                      className="ml-2 shrink-0"
-                                    >
-                                      {sv.matchScore}%
-                                    </Badge>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </>
-                        );
-                      })()}
-                    </div>
-                  )}
-
-                {isAIEnabled("AI_VENDOR_RECOMMENDATIONS") &&
-                  !aiLoading &&
-                  aiRecommendMeta.recommendationLevel === null &&
-                  suggestedVendors.length === 0 &&
-                  prDetailsForPO && (
-                    <div className="text-xs text-muted-foreground">
-                      Click <span className="font-medium">AI Recommend Supplier</span>{" "}
-                      to evaluate suppliers by scope of supply and previous POs.
-                    </div>
-                  )}
 
                 <div className="space-y-1.5 relative">
                   <Label>
@@ -2742,7 +2353,7 @@ export default function PurchaseRequests() {
                       onBlur={() =>
                         setTimeout(() => setVendorDropdownOpenPO(false), 200)
                       }
-                      placeholder="Search suppliers or use AI Recommend Supplier..."
+                      placeholder="Search suppliers..."
                       className="pl-8"
                       data-testid="input-vendor-search-po"
                     />
@@ -2933,45 +2544,28 @@ export default function PurchaseRequests() {
                   </div>
                 </div>
               </div>
-
-              <div className="flex justify-end gap-2 pt-4 border-t">
-                <Button
-                  variant="outline"
-                  onClick={() => setCreatePODialogOpen(false)}
-                  data-testid="button-cancel-po-from-pr"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleCreatePOFromPR}
-                  disabled={
-                    createPOFromPRMutation.isPending || !selectedVendorId || (prDetailsForPO.header?.budgeted === false && !newPR.budgetId)
-                  }
-                  data-testid="button-create-po-from-pr"
-                >
-                  {createPOFromPRMutation.isPending && (
-                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                  )}
-                  Create PO
-                </Button>
-              </div>
             </div>
           )}
-        </SheetContent>
-      </Sheet>
+      </FormSheet>
 
-      <Sheet
+      <FormSheet
         open={createContractDialogOpen}
         onOpenChange={setCreateContractDialogOpen}
+        title={`Create Contract from PR ${selectedPRForContract}`}
+        description="Auto-filled from Purchase Request. Select the lines to include, a supplier, and the contract dates."
+        onSubmit={handleCreateContractFromPR}
+        submitLabel={createContractFromPRMutation.isPending ? "Creating..." : "Create Contract"}
+        isSubmitting={createContractFromPRMutation.isPending}
+        submitDisabled={
+          !prDetailsForContract ||
+          createContractFromPRMutation.isPending ||
+          !selectedContractVendorId ||
+          !contractStartDate ||
+          !contractEndDate ||
+          !prDetailsForContract?.selectedLines
+        }
+        widthClassName="w-full sm:max-w-[55vw]"
       >
-        <SheetContent className="w-[55vw] sm:max-w-[55vw] overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle>Create Contract from PR {selectedPRForContract}</SheetTitle>
-            <SheetDescription>
-              Auto-filled from Purchase Request. Select the lines to include, a supplier, and the contract dates.
-            </SheetDescription>
-          </SheetHeader>
-
           {!prDetailsForContract ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -3265,58 +2859,32 @@ export default function PurchaseRequests() {
                   </div>
                 </div>
               </div>
-
-              <div className="flex justify-end gap-2 pt-4 border-t">
-                <Button
-                  variant="outline"
-                  onClick={() => setCreateContractDialogOpen(false)}
-                  data-testid="button-cancel-contract-from-pr"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleCreateContractFromPR}
-                  disabled={
-                    createContractFromPRMutation.isPending ||
-                    !selectedContractVendorId ||
-                    !contractStartDate ||
-                    !contractEndDate ||
-                    !prDetailsForContract?.selectedLines
-                  }
-                  data-testid="button-create-contract-from-pr"
-                >
-                  {createContractFromPRMutation.isPending && (
-                    <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                  )}
-                  Create Contract
-                </Button>
-              </div>
             </div>
           )}
-        </SheetContent>
-      </Sheet>
+      </FormSheet>
 
-      <Dialog
+      <FormSheet
         open={createBidDialogOpen}
         onOpenChange={(open) => {
           if (!createBidFromPRMutation.isPending) setCreateBidDialogOpen(open);
         }}
+        title="Create Bid from PR"
+        description="Select bid type, dates and optionally a template"
+        onSubmit={handleCreateBidFromPR}
+        submitLabel={createBidFromPRMutation.isPending ? "Creating..." : "Submit"}
+        isSubmitting={createBidFromPRMutation.isPending}
+        submitDisabled={
+          createBidFromPRMutation.isPending ||
+          !bidType ||
+          !bidOpenDate ||
+          !bidCloseDate
+        }
+        widthClassName="sm:max-w-[480px]"
       >
-        <DialogContent className="sm:max-w-[480px]">
-          <DialogHeader>
-            <div className="flex items-center justify-between">
-              <DialogTitle className="text-base font-semibold">
-                Create Bid from PR
-              </DialogTitle>
-              <span className="text-xs text-red-500">
-                *Indicates mandatory fields.
-              </span>
-            </div>
-            <DialogDescription className="sr-only">
-              Select bid type, dates and optionally a template
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
+          <p className="text-xs text-muted-foreground mb-4">
+            <span className="text-destructive">*</span> Indicates mandatory fields
+          </p>
+          <div className="space-y-4">
             <div className="space-y-1.5">
               <Label className="text-sm">
                 Bid Type <span className="text-red-500">*</span>
@@ -3385,32 +2953,7 @@ export default function PurchaseRequests() {
               </Select>
             </div>
           </div>
-          <DialogFooter className="gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setCreateBidDialogOpen(false)}
-              disabled={createBidFromPRMutation.isPending}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleCreateBidFromPR}
-              disabled={
-                createBidFromPRMutation.isPending ||
-                !bidType ||
-                !bidOpenDate ||
-                !bidCloseDate
-              }
-              data-testid="button-confirm-create-bid"
-            >
-              {createBidFromPRMutation.isPending && (
-                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-              )}
-              Submit
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      </FormSheet>
     </div>
   );
 }

@@ -1,5 +1,3 @@
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -11,6 +9,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   Activity,
   ArrowUpRight,
+  BarChart3,
   Building2,
   ClipboardList,
   Clock,
@@ -19,7 +18,6 @@ import {
   FileText,
   Gavel,
   Handshake,
-  MessageSquare,
   Package,
   Receipt,
   ShoppingCart,
@@ -29,12 +27,40 @@ import {
   Wallet
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
+import {
+  Bar,
+  BarChart,
+  Cell,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+import { cn } from "@/lib/utils";
 
 interface UserCounts {
   totalUsers: number;
+  totalUsersNew: number;
   organizationUsers: number;
+  organizationUsersNew: number;
   supplierUsers: number;
+  supplierUsersNew: number;
 }
+
+interface SupplierSpendRow {
+  name: string;
+  amount: number;
+}
+
+const DONUT_COLORS = [
+  "var(--swatch-1)",
+  "var(--swatch-2)",
+  "var(--swatch-3)",
+  "var(--swatch-4)",
+  "var(--swatch-5)",
+];
 
 interface SupplierStats {
   activePOs: number;
@@ -77,16 +103,23 @@ interface PendingApprovalCounts {
 function StatCard({
   title,
   value,
+  newValue,
   icon: Icon,
   bgColor,
   textColor,
+  swatchVar,
   onClick,
 }: {
   title: string;
   value: number;
+  newValue?: number;
   icon: typeof Users;
   bgColor: string;
   textColor: string;
+  /** CSS custom property name (e.g. "--swatch-1") to color this card's icon from —
+   *  lets a set of cards cycle through the selected accent's swatches instead of
+   *  all sharing one flat color. Falls back to bgColor/textColor when omitted. */
+  swatchVar?: string;
   onClick?: () => void;
 }) {
   return (
@@ -95,99 +128,79 @@ function StatCard({
       onClick={onClick}
       data-testid={`stat-card-${title.toLowerCase().replace(/\s+/g, "-")}`}
     >
-      <CardContent className="flex items-center gap-3 p-3">
-        <div
-          className={`flex h-10 w-10 items-center justify-center rounded-lg ${bgColor} ${textColor}`}
-        >
-          <Icon className="h-5 w-5" />
-        </div>
-        <div>
-          <p className="text-xs font-medium text-muted-foreground">{title}</p>
-          <p
-            className="text-xl font-bold"
-            data-testid={`stat-value-${title.toLowerCase().replace(/\s+/g, "-")}`}
-          >
-            {value}
+      <CardContent className="flex items-start gap-3 p-3">
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-bold uppercase tracking-wide text-primary flex items-center gap-1.5">
+            <span className="truncate">{title}</span>
+            {newValue !== undefined && (
+              <span className="text-sm normal-case shrink-0">· {value + newValue}</span>
+            )}
           </p>
+          {newValue === undefined ? (
+            <p
+              className="text-xl font-bold text-primary"
+              data-testid={`stat-value-${title.toLowerCase().replace(/\s+/g, "-")}`}
+            >
+              {value}
+            </p>
+          ) : (
+            <div className="flex items-center gap-6 mt-1">
+              <div>
+                <p className="text-lg font-bold text-primary" data-testid={`stat-value-${title.toLowerCase().replace(/\s+/g, "-")}`}>
+                  {value}
+                </p>
+                <p className="text-[10px] uppercase text-muted-foreground">Active</p>
+              </div>
+              <div>
+                <p className="text-lg font-bold text-primary">{newValue}</p>
+                <p className="text-[10px] uppercase text-muted-foreground">New</p>
+              </div>
+            </div>
+          )}
+        </div>
+        <div
+          className={cn(
+            "flex h-10 w-10 items-center justify-center rounded-lg",
+            !swatchVar && bgColor,
+            !swatchVar && textColor
+          )}
+          style={
+            swatchVar
+              ? {
+                  backgroundColor: `color-mix(in srgb, var(${swatchVar}) 15%, transparent)`,
+                  color: `var(${swatchVar})`,
+                }
+              : undefined
+          }
+        >
+          <Icon className="h-5 w-5" />
         </div>
       </CardContent>
     </Card>
   );
 }
 
-function ApprovalCard({
-  title,
+function ListRow({
+  label,
   count,
-  icon: Icon,
-  bgColor,
-  textColor,
   onClick,
 }: {
-  title: string;
+  label: string;
   count: number;
-  icon: typeof FileText;
-  bgColor: string;
-  textColor: string;
   onClick?: () => void;
 }) {
   return (
-    <Card
-      className={`hover-elevate ${onClick ? "cursor-pointer" : ""}`}
+    <div
+      className={cn(
+        "flex items-center justify-between py-2.5 border-b last:border-0",
+        onClick && "cursor-pointer hover-elevate rounded-sm px-2 -mx-2"
+      )}
       onClick={onClick}
-      data-testid={`pending-card-${title.toLowerCase().replace(/\s+/g, "-")}`}
+      data-testid={`list-row-${label.toLowerCase().replace(/\s+/g, "-")}`}
     >
-      <CardContent className="flex items-center gap-3 p-3">
-        <div
-          className={`flex h-10 w-10 items-center justify-center rounded-lg ${bgColor} ${textColor}`}
-        >
-          <Icon className="h-5 w-5" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium truncate" title={title}>{title}</p>
-        </div>
-        <Badge variant="secondary" className="font-medium">
-          {count}
-        </Badge>
-      </CardContent>
-    </Card>
-  );
-}
-
-function RequestStatCard({
-  title,
-  count,
-  icon: Icon,
-  bgColor,
-  textColor,
-  onClick,
-}: {
-  title: string;
-  count: number;
-  icon: typeof FileText;
-  bgColor: string;
-  textColor: string;
-  onClick?: () => void;
-}) {
-  return (
-    <Card
-      className={`hover-elevate ${onClick ? "cursor-pointer" : ""}`}
-      onClick={onClick}
-      data-testid={`request-card-${title.toLowerCase().replace(/\s+/g, "-")}`}
-    >
-      <CardContent className="flex items-center gap-3 p-3">
-        <div
-          className={`flex h-10 w-10 items-center justify-center rounded-lg ${bgColor} ${textColor}`}
-        >
-          <Icon className="h-5 w-5" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium truncate" title={title}>{title}</p>
-        </div>
-        <Badge variant="secondary" className="font-medium">
-          {count}
-        </Badge>
-      </CardContent>
-    </Card>
+      <span className="text-sm truncate">{label}</span>
+      <span className="text-sm font-semibold text-primary shrink-0 ml-3">{count}</span>
+    </div>
   );
 }
 
@@ -266,27 +279,45 @@ function TaskItemComponent({ task, index }: { task: TaskItem; index: number }) {
 
   return (
     <div
-      className="flex items-center gap-3 py-3 border-b last:border-0 cursor-pointer hover-elevate rounded-sm px-2 -mx-2"
+      className={cn(
+        "flex items-center gap-4 py-6 px-4 -mx-3 border-b last:border-0 cursor-pointer hover-elevate",
+        index % 2 === 0 && "bg-primary/5"
+      )}
       onClick={viewDetails}
       data-testid={`task-item-${index}`}
     >
       <div className="flex-1 min-w-0">
-        <p className="text-sm truncate" title={task.subject || task.taskName || "Approval Request"} data-testid={`task-subject-${index}`}>
+        <p
+          className="text-sm font-medium truncate"
+          title={task.subject || task.taskName || "Approval Request"}
+          data-testid={`task-subject-${index}`}
+        >
           {task.subject || task.taskName || "Approval Request"}
         </p>
         <p
-          className="text-xs text-muted-foreground mt-0.5"
+          className="text-xs text-muted-foreground mt-1.5"
           data-testid={`task-requester-${index}`}
         >
           {currentOwner}
         </p>
+        <p
+          className="text-xs text-muted-foreground mt-2"
+          data-testid={`task-date-${index}`}
+        >
+          {formatDate(task.inboxDate)}
+        </p>
       </div>
-      <p
-        className="text-xs text-muted-foreground whitespace-nowrap"
-        data-testid={`task-date-${index}`}
+      <Button
+        size="sm"
+        className="shrink-0"
+        onClick={(e) => {
+          e.stopPropagation();
+          viewDetails();
+        }}
+        data-testid={`button-view-task-${index}`}
       >
-        {formatDate(task.inboxDate)}
-      </p>
+        View
+      </Button>
     </div>
   );
 }
@@ -355,55 +386,6 @@ function BudgetItem({
         </div>
       </div>
       <Progress value={usedPercent} className="h-1.5 mt-2" />
-    </div>
-  );
-}
-
-function CommentItem({
-  comment,
-  index,
-}: {
-  comment: {
-    user: string;
-    date: string;
-    text: string;
-    section?: string;
-    entityId?: string;
-  };
-  index: number;
-}) {
-  const initials = comment.user
-    ? comment.user
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .slice(0, 2)
-      .toUpperCase()
-    : "?";
-
-  return (
-    <div
-      className="flex gap-3 py-3 border-b last:border-0"
-      data-testid={`comment-item-${index}`}
-    >
-      <Avatar className="h-8 w-8 shrink-0">
-        <AvatarFallback className="text-xs">{initials}</AvatarFallback>
-      </Avatar>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 flex-wrap">
-          <p className="text-sm font-medium">{comment.user || "Unknown"}</p>
-          {comment.section && (
-            <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-              {comment.section}
-              {comment.entityId ? ` - ${comment.entityId}` : ""}
-            </Badge>
-          )}
-          <p className="text-xs text-muted-foreground">{comment.date}</p>
-        </div>
-        <p className="mt-1.5 text-xs text-muted-foreground break-words">
-          {comment.text}
-        </p>
-      </div>
     </div>
   );
 }
@@ -509,7 +491,7 @@ function SupplierDashboard() {
   return (
     <div className="p-4 space-y-4">
       <div>
-        <h1 className="text-xl font-bold" data-testid="text-page-title">
+        <h1 className="text-xl font-bold text-primary" data-testid="text-page-title">
           Dashboard
         </h1>
         <p className="text-sm text-muted-foreground">
@@ -658,15 +640,6 @@ interface BudgetRow {
   status: string;
 }
 
-interface CommentRow {
-  user_id_: string;
-  message_: string;
-  time_: string;
-  task_id_: string;
-  subject: string;
-  process_name: string;
-}
-
 function AppDashboardContent() {
   const [, navigate] = useLocation();
   const authData = localStorage.getItem("prokraya-auth");
@@ -734,12 +707,13 @@ function AppDashboardContent() {
     enabled: ["ROLE_SUPERADMIN", "ROLE_SYSADMIN", "ROLE_FINANCE_OFFICER", "ROLE_FINANCE_MANAGER"].includes(userRole),
   });
 
-  const { data: commentsData = [], isLoading: commentsLoading } = useQuery<
-    CommentRow[]
+  const { data: suppliersSpend = [], isLoading: suppliersSpendLoading } = useQuery<
+    SupplierSpendRow[]
   >({
-    queryKey: ["/api/dashboard/recent-comments"],
+    queryKey: ["/api/dashboard/suppliers-spend-chart"],
     staleTime: 30000,
     retry: 1,
+    enabled: ["ROLE_SUPERADMIN", "ROLE_SYSADMIN", "ROLE_FINANCE_OFFICER", "ROLE_FINANCE_MANAGER"].includes(userRole),
   });
 
   const allApprovalCategories = [
@@ -877,18 +851,13 @@ function AppDashboardContent() {
     currency: b.budget_curr || "USD",
   }));
 
-  const recentComments = commentsData.slice(0, 5).map((c: any) => ({
-    user: c.created_by_name || c.created_by || "",
-    date: c.creation_date ? formatDate(c.creation_date, true) : "",
-    text: c.comments || "",
-    section: c.section || "",
-    entityId: c.entity_id || "",
-  }));
+  const isFinanceRole = ["ROLE_SUPERADMIN", "ROLE_SYSADMIN", "ROLE_FINANCE_OFFICER", "ROLE_FINANCE_MANAGER"].includes(userRole);
+  const budgetDonutData = availableBudgets.map((b) => ({ name: b.name, value: b.available + b.used }));
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="p-4 space-y-4 max-w-[1440px] mx-auto">
       <div>
-        <h1 className="text-xl font-bold" data-testid="text-page-title">
+        <h1 className="text-xl font-bold text-primary" data-testid="text-page-title">
           My Dashboard
         </h1>
         <p className="text-sm text-muted-foreground">
@@ -896,174 +865,275 @@ function AppDashboardContent() {
         </p>
       </div>
 
-      {isAdminUser && (
-        <div className="grid gap-4 md:grid-cols-3">
-          {userCountsLoading ? (
-            <>
-              <Skeleton className="h-20" />
-              <Skeleton className="h-20" />
-              <Skeleton className="h-20" />
-            </>
-          ) : (
-            <>
-              <StatCard
-                title="Total Users"
-                value={userCounts?.totalUsers || 0}
-                icon={Users}
-                bgColor="bg-blue-100 dark:bg-blue-900/30"
-                textColor="text-blue-500"
-                onClick={() => navigate("/app/users")}
-              />
-              <StatCard
-                title="Active Organization Users"
-                value={userCounts?.organizationUsers || 0}
-                icon={Building2}
-                bgColor="bg-amber-100 dark:bg-amber-900/30"
-                textColor="text-amber-500"
-                onClick={() =>
-                  navigate("/app/users?type=organization&status=active")
-                }
-              />
-              <StatCard
-                title="Supplier Users"
-                value={userCounts?.supplierUsers || 0}
-                icon={Users}
-                bgColor="bg-emerald-100 dark:bg-emerald-900/30"
-                textColor="text-emerald-500"
-                onClick={() => navigate("/app/users?type=supplier")}
-              />
-            </>
-          )}
-        </div>
-      )}
-
-      <div className="grid gap-4 lg:grid-cols-2 items-start">
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <FileCheck className="h-5 w-5 text-muted-foreground" />
-            <div>
-              <h2 className="text-sm font-semibold">
-                Pending Approval Requests
-              </h2>
-              <p className="text-xs text-muted-foreground">
-                Tasks where action is required from me.
-              </p>
-            </div>
-          </div>
-
-          {pendingLoading ? (
-            <div className="grid grid-cols-2 gap-2">
-              {[...Array(8)].map((_, i) => (
-                <Skeleton key={i} className="h-12" />
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-2">
-              {approvalCategories.map((category) => {
-                const getNavigation = () =>
-                  dashboardPendingApprovalListUrl(category.key);
-
-                return (
-                  <ApprovalCard
-                    key={category.key}
-                    title={category.title}
-                    count={mergedCounts[category.key] || 0}
-                    icon={category.icon}
-                    bgColor={category.bgColor}
-                    textColor={category.textColor}
-                    onClick={() => {
-                      const nav = getNavigation();
-                      if (nav) navigate(nav);
-                    }}
+      <div className="grid gap-4 lg:grid-cols-3">
+        <div className="lg:col-span-2 space-y-4">
+          {isAdminUser && (
+            <div className="grid gap-4 md:grid-cols-3">
+              {userCountsLoading ? (
+                <>
+                  <Skeleton className="h-20" />
+                  <Skeleton className="h-20" />
+                  <Skeleton className="h-20" />
+                </>
+              ) : (
+                <>
+                  <StatCard
+                    title="Total Users"
+                    value={userCounts?.totalUsers || 0}
+                    newValue={userCounts?.totalUsersNew || 0}
+                    icon={Users}
+                    bgColor="bg-primary/10"
+                    textColor="text-primary"
+                    swatchVar="--swatch-1"
+                    onClick={() => navigate("/app/users")}
                   />
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <FileText className="h-5 w-5 text-muted-foreground" />
-            <div>
-              <h2 className="text-sm font-semibold">My Requests</h2>
-              <p className="text-xs text-muted-foreground">
-                Work in progress activities.
-              </p>
-            </div>
-          </div>
-          {requestStatsLoading ? (
-            <div className="grid grid-cols-2 gap-2">
-              {[...Array(5)].map((_, i) => (
-                <Skeleton key={i} className="h-12" />
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-2">
-              {myRequestStats.map((stat, index) => {
-                const getNavigation = () => {
-                  switch (stat.title) {
-                    case "Draft Requisitions":
-                      return "/app/purchase-requests?status=Draft&page=1&limit=10";
-                    case "Pending Requisitions":
-                      return "/app/purchase-requests?status=Pending%20Approval,More%20Info%20Required&page=1&limit=10";
-                    case "Draft Orders":
-                      return "/app/purchase-orders?status=Draft&page=1&limit=10";
-                    case "Approved Orders":
-                      return "/app/purchase-orders?status=Approved&page=1&limit=10";
-                    case "Pending Invoices":
-                      return "/app/invoices?status=Pending%20Approval,More%20Info%20Required&page=1&limit=10";
-                    default:
-                      return "";
-                  }
-                };
-                return (
-                  <RequestStatCard
-                    key={index}
-                    title={stat.title}
-                    count={stat.count}
-                    icon={stat.icon}
-                    bgColor={stat.bgColor}
-                    textColor={stat.textColor}
-                    onClick={() => {
-                      const nav = getNavigation();
-                      if (nav) navigate(nav);
-                    }}
+                  <StatCard
+                    title="Organization Users"
+                    value={userCounts?.organizationUsers || 0}
+                    newValue={userCounts?.organizationUsersNew || 0}
+                    icon={Building2}
+                    bgColor="bg-primary/10"
+                    textColor="text-primary"
+                    swatchVar="--swatch-2"
+                    onClick={() =>
+                      navigate("/app/users?type=organization&status=active")
+                    }
                   />
-                )
-              }
+                  <StatCard
+                    title="Supplier Users"
+                    value={userCounts?.supplierUsers || 0}
+                    newValue={userCounts?.supplierUsersNew || 0}
+                    icon={Users}
+                    bgColor="bg-primary/10"
+                    textColor="text-primary"
+                    swatchVar="--swatch-3"
+                    onClick={() => navigate("/app/users?type=supplier")}
+                  />
+                </>
               )}
             </div>
           )}
-        </div>
-      </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Clock className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <h2 className="text-sm font-semibold">Tasks To Do</h2>
-                <p className="text-xs text-muted-foreground">
-                  List of tasks to be completed on priority.
-                </p>
+          <div className="grid gap-4 md:grid-cols-3">
+            {isFinanceRole && (
+              <Card className="h-full flex flex-col">
+                <div className="flex items-center gap-2 px-3 pt-3 pb-2 border-b">
+                  <Wallet className="h-5 w-5 text-muted-foreground" />
+                  <h2 className="text-sm font-semibold uppercase text-primary">Available Budgets</h2>
+                </div>
+                <CardContent className="p-3 flex-1 flex flex-col justify-center">
+                  {budgetsLoading ? (
+                    <Skeleton className="h-[220px]" />
+                  ) : budgetDonutData.length === 0 ? (
+                    <div className="h-[220px] flex items-center justify-center text-sm text-muted-foreground">
+                      No budgets available
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-3">
+                      <div className="h-[140px] w-[140px] shrink-0">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={budgetDonutData}
+                              dataKey="value"
+                              nameKey="name"
+                              innerRadius={40}
+                              outerRadius={62}
+                              paddingAngle={2}
+                            >
+                              {budgetDonutData.map((_, i) => (
+                                <Cell key={i} fill={DONUT_COLORS[i % DONUT_COLORS.length]} />
+                              ))}
+                            </Pie>
+                            <Tooltip />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
+                      <div className="space-y-1.5 min-w-0 flex-1">
+                        {budgetDonutData.map((b, i) => (
+                          <div key={i} className="flex items-center gap-1.5 text-xs">
+                            <span
+                              className="h-2.5 w-2.5 rounded-sm shrink-0"
+                              style={{ backgroundColor: DONUT_COLORS[i % DONUT_COLORS.length] }}
+                            />
+                            <span className="truncate text-muted-foreground">{b.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            <Card className="h-full flex flex-col">
+              <div className="flex items-center gap-2 px-3 pt-3 pb-2 border-b">
+                <FileCheck className="h-5 w-5 text-muted-foreground" />
+                <h2 className="text-sm font-semibold uppercase text-primary whitespace-nowrap">Pending Approval Requests</h2>
               </div>
-            </div>
-            <Link href="/app/my-tasks">
-              <Button
-                variant="ghost"
-                size="sm"
-                data-testid="link-view-all-tasks"
-              >
-                View All
-                <ArrowUpRight className="h-4 w-4 ml-1" />
-              </Button>
-            </Link>
+              <CardContent className="p-3 flex-1 flex flex-col">
+                {pendingLoading ? (
+                  <div className="space-y-3">
+                    {[...Array(5)].map((_, i) => (
+                      <Skeleton key={i} className="h-6" />
+                    ))}
+                  </div>
+                ) : (
+                  <div>
+                    {approvalCategories.map((category) => (
+                      <ListRow
+                        key={category.key}
+                        label={category.title}
+                        count={mergedCounts[category.key] || 0}
+                        onClick={() => {
+                          const nav = dashboardPendingApprovalListUrl(category.key);
+                          if (nav) navigate(nav);
+                        }}
+                      />
+                    ))}
+                  </div>
+                )}
+                <p className="text-[11px] text-muted-foreground text-center mt-auto pt-3">
+                  Tasks where action is required from me.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="h-full flex flex-col">
+              <div className="flex items-center gap-2 px-3 pt-3 pb-2 border-b">
+                <FileText className="h-5 w-5 text-muted-foreground" />
+                <h2 className="text-sm font-semibold uppercase text-primary">My Requests</h2>
+              </div>
+              <CardContent className="p-3 flex-1 flex flex-col">
+                {requestStatsLoading ? (
+                  <div className="space-y-3">
+                    {[...Array(5)].map((_, i) => (
+                      <Skeleton key={i} className="h-6" />
+                    ))}
+                  </div>
+                ) : (
+                  <div>
+                    {myRequestStats.map((stat, index) => {
+                      const getNavigation = () => {
+                        switch (stat.title) {
+                          case "Draft Requisitions":
+                            return "/app/purchase-requests?status=Draft&page=1&limit=10";
+                          case "Pending Requisitions":
+                            return "/app/purchase-requests?status=Pending%20Approval,More%20Info%20Required&page=1&limit=10";
+                          case "Draft Orders":
+                            return "/app/purchase-orders?status=Draft&page=1&limit=10";
+                          case "Approved Orders":
+                            return "/app/purchase-orders?status=Approved&page=1&limit=10";
+                          case "Pending Invoices":
+                            return "/app/invoices?status=Pending%20Approval,More%20Info%20Required&page=1&limit=10";
+                          default:
+                            return "";
+                        }
+                      };
+                      return (
+                        <ListRow
+                          key={index}
+                          label={stat.title}
+                          count={stat.count}
+                          onClick={() => {
+                            const nav = getNavigation();
+                            if (nav) navigate(nav);
+                          }}
+                        />
+                      );
+                    })}
+                  </div>
+                )}
+                <p className="text-[11px] text-muted-foreground text-center mt-auto pt-3">
+                  Work in progress activities.
+                </p>
+              </CardContent>
+            </Card>
           </div>
 
-          <Card>
-            <CardContent className="p-3 h-[225px] overflow-y-auto custom-scrollbar">
+          <div className="grid gap-4 md:grid-cols-2">
+            <Card className="h-full flex flex-col">
+              <div className="flex items-center gap-2 px-3 pt-3 pb-2 border-b">
+                <Activity className="h-5 w-5 text-muted-foreground" />
+                <h2 className="text-sm font-semibold uppercase text-primary">Recent Activity</h2>
+              </div>
+              <CardContent className="p-3 flex-1">
+                {activitiesLoading ? (
+                  <div className="space-y-3">
+                    {[...Array(5)].map((_, i) => (
+                      <Skeleton key={i} className="h-8" />
+                    ))}
+                  </div>
+                ) : recentActivities.length === 0 ? (
+                  <div className="text-center py-6 text-sm text-muted-foreground">
+                    No recent activities
+                  </div>
+                ) : (
+                  <div>
+                    {recentActivities.map((activity, index) => (
+                      <ActivityItem
+                        key={index}
+                        activity={activity}
+                        index={index}
+                      />
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {isFinanceRole && (
+              <Card className="h-full flex flex-col">
+                <div className="flex items-center gap-2 px-3 pt-3 pb-2 border-b">
+                  <BarChart3 className="h-5 w-5 text-muted-foreground" />
+                  <h2 className="text-sm font-semibold uppercase text-primary">Suppliers vs Amount</h2>
+                </div>
+                <CardContent className="p-3 flex-1 min-h-[220px]">
+                  {suppliersSpendLoading ? (
+                    <Skeleton className="h-full" />
+                  ) : suppliersSpend.length === 0 ? (
+                    <div className="h-full flex items-center justify-center text-sm text-muted-foreground">
+                      No supplier spend data
+                    </div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={suppliersSpend} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                        <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                        <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `$${Math.round(v / 1000)}k`} />
+                        <Tooltip formatter={(v: number) => `$${v.toLocaleString()}`} />
+                        <Bar dataKey="amount" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
+        </div>
+
+        <div className="flex flex-col h-full">
+          <Card className="flex-1 flex flex-col">
+            <div className="flex items-center justify-between px-3 pt-3 pb-2 border-b">
+              <div className="flex items-center gap-2">
+                <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
+                  <Clock className="h-3.5 w-3.5" />
+                </div>
+                <h2 className="text-sm font-semibold uppercase text-primary">Tasks To Do</h2>
+              </div>
+              <Link href="/app/my-tasks">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  data-testid="link-view-all-tasks"
+                >
+                  View All
+                  <ArrowUpRight className="h-4 w-4 ml-1" />
+                </Button>
+              </Link>
+            </div>
+
+            <CardContent className="p-3 flex-1 flex flex-col">
               {tasksLoading ? (
                 <div className="space-y-3">
                   {[...Array(6)].map((_, i) => (
@@ -1074,7 +1144,7 @@ function AppDashboardContent() {
                   ))}
                 </div>
               ) : tasks.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full text-center">
+                <div className="flex flex-col items-center justify-center flex-1 text-center">
                   <Clock className="h-8 w-8 text-muted-foreground/40 mb-2" />
                   <p className="text-sm text-muted-foreground">
                     No pending tasks
@@ -1082,7 +1152,7 @@ function AppDashboardContent() {
                 </div>
               ) : (
                 <div>
-                  {tasks.slice(0, 3).map((task, index) => (
+                  {tasks.slice(0, 5).map((task, index) => (
                     <TaskItemComponent
                       key={task.taskId || index}
                       task={task}
@@ -1091,116 +1161,13 @@ function AppDashboardContent() {
                   ))}
                 </div>
               )}
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <Activity className="h-5 w-5 text-muted-foreground" />
-            <div>
-              <h2 className="text-sm font-semibold">Recent Activity</h2>
-              <p className="text-xs text-muted-foreground">
-                My Top 5 recent activities.
+              <p className="text-[11px] text-muted-foreground text-center mt-auto pt-3">
+                List of tasks to be completed on priority.
               </p>
-            </div>
-          </div>
-          <Card>
-            <CardContent className="p-3">
-              {activitiesLoading ? (
-                <div className="space-y-3">
-                  {[...Array(5)].map((_, i) => (
-                    <Skeleton key={i} className="h-8" />
-                  ))}
-                </div>
-              ) : recentActivities.length === 0 ? (
-                <div className="text-center py-6 text-sm text-muted-foreground">
-                  No recent activities
-                </div>
-              ) : (
-                <div>
-                  {recentActivities.map((activity, index) => (
-                    <ActivityItem
-                      key={index}
-                      activity={activity}
-                      index={index}
-                    />
-                  ))}
-                </div>
-              )}
             </CardContent>
           </Card>
         </div>
       </div>
-      {["ROLE_SUPERADMIN", "ROLE_SYSADMIN", "ROLE_FINANCE_OFFICER", "ROLE_FINANCE_MANAGER"].includes(userRole) ? 
-        <div className="grid gap-4 lg:grid-cols-2">
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Wallet className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <h2 className="text-sm font-semibold">Available Budgets</h2>
-                <p className="text-xs text-muted-foreground">
-                  List of budgets available to use for procurement.
-                </p>
-              </div>
-            </div>
-            <Card>
-              <CardContent className="p-3 h-[350px] overflow-y-auto custom-scrollbar">
-                {budgetsLoading ? (
-                  <div className="space-y-3">
-                    {[...Array(3)].map((_, i) => (
-                      <Skeleton key={i} className="h-16" />
-                    ))}
-                  </div>
-                ) : availableBudgets.length === 0 ? (
-                  <div className="text-center py-6 text-sm text-muted-foreground">
-                    No budgets available
-                  </div>
-                ) : (
-                  <div>
-                    {availableBudgets.map((budget, index) => (
-                      <BudgetItem key={index} budget={budget} index={index} />
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <MessageSquare className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <h2 className="text-sm font-semibold">Recent Comments</h2>
-                <p className="text-xs text-muted-foreground">
-                  Top 5 comments posted by me.
-                </p>
-              </div>
-            </div>
-            <Card>
-              <CardContent className="p-3 h-[350px] overflow-y-auto custom-scrollbar">
-                {commentsLoading ? (
-                  <div className="space-y-3">
-                    {[...Array(3)].map((_, i) => (
-                      <Skeleton key={i} className="h-12" />
-                    ))}
-                  </div>
-                ) : recentComments.length === 0 ? (
-                  <div className="text-center py-6 text-sm text-muted-foreground">
-                    No comments yet
-                  </div>
-                ) : (
-                  <div>
-                    {recentComments.map((comment, index) => (
-                      <CommentItem key={index} comment={comment} index={index} />
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      : <></>}
     </div>
   );
 }

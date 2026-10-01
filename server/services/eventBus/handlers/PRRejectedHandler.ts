@@ -27,7 +27,7 @@ class PrRejectedHandler extends BaseEmailHandler<PRRejectedEvent> {
       prNumber: event.prNumber,
       prDescription: event.prDescription,
       linkUrl: appUrl,
-      orgName: event.orgName || "Prokraya",
+      orgName: event.orgName || "S2P Labs",
       rejectComments: event.rejectComments,
       orgLogoPath: event.orgLogoPath || '',
     };

@@ -8,6 +8,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { FormSheet } from "@/components/form-sheet";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -34,14 +35,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -53,7 +46,6 @@ import {
 } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
-import { useAISettings } from "@/hooks/use-ai-settings";
 import { formatDate } from "@/lib/common-functions";
 import { generateTablePdf } from "@/lib/generate-table-pdf";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -85,10 +77,6 @@ import {
   UserCheck,
   UserPlus,
   Users,
-  Trophy,
-  Sparkles,
-  TrendingUp,
-  Filter,
   X,
   XCircle,
 } from "lucide-react";
@@ -256,12 +244,8 @@ export default function VendorReview() {
   const [page, setPage] = useState(initialPage);
   const [limit, setLimit] = useState(initialLimit);
   const [createSheetOpen, setCreateSheetOpen] = useState(false);
-  const { isAIEnabled } = useAISettings();
   const [inviteSheetOpen, setInviteSheetOpen] = useState(false);
-  const [sortBy, setSortBy] = useState("id");
-  const [selectedMetrics, setSelectedMetrics] = useState<string[]>(["BWR", "OTDR", "IC", "FR", "PC"]);
   const { toast } = useToast();
-  const [isRankVisible, setIsRankVisible] = useState(false);
 
   // Sync filters when URL query changes (dashboard cards, browser back/forward, same path new search)
   useEffect(() => {
@@ -372,28 +356,6 @@ export default function VendorReview() {
     country: defaultOrgCountryLabel,
   });
 
-  const runRankMutation = useMutation({
-    mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/supplier-rank/run");
-      return res.json();
-    },
-    onSuccess: (data) => {
-      setIsRankVisible(true);
-      queryClient.invalidateQueries({ queryKey: ["/api/dbo/suppliers"] });
-      toast({
-        title: "Ranking complete",
-        description: `${data.count} suppliers ranked.`,
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Ranking failed",
-        description: error.message || "Failed to run supplier ranking.",
-        variant: "destructive",
-      });
-    },
-  });
-
   const createSupplierMutation = useMutation({
     mutationFn: async (formData: typeof emptyCreateForm) => {
       const res = await apiRequest(
@@ -437,8 +399,6 @@ export default function VendorReview() {
     listQueryParams.append("status", statusFilter);
   }
   if (search) listQueryParams.append("search", search);
-  if (sortBy) listQueryParams.append("sortBy", sortBy);
-  if (selectedMetrics.length > 0) listQueryParams.append("metrics", selectedMetrics.join(","));
   listQueryParams.append("page", page.toString());
   listQueryParams.append("limit", limit.toString());
 
@@ -457,8 +417,6 @@ export default function VendorReview() {
   const pagination = suppliersData?.pagination;
   const statusCounts = suppliersData?.statusCounts || {};
   const totalSuppliers = Object.values(statusCounts).reduce((a, b) => a + b, 0);
-  const rankControlsDisabled = !isRankVisible || runRankMutation.isPending;
-  const rankControlsTooltip = "Run AI Vendor Rank to enable sorting and KPI metrics.";
 
   const statCards = [
     {
@@ -1138,7 +1096,7 @@ export default function VendorReview() {
     <div className="p-4 space-y-3">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
-          <h1 className="text-xl font-bold" data-testid="text-page-title">
+          <h1 className="text-xl font-bold text-primary" data-testid="text-page-title">
             Suppliers
           </h1>
           <p className="text-sm text-muted-foreground">
@@ -1146,22 +1104,6 @@ export default function VendorReview() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {isAIEnabled('AI_SUPPLIER_RANK') && (
-            <Button
-              size="sm"
-              variant="outline"
-              className="text-primary border-primary/20 hover:bg-primary/5 gap-1.5"
-              onClick={() => runRankMutation.mutate()}
-              disabled={runRankMutation.isPending}
-            >
-              {runRankMutation.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Sparkles className="h-4 w-4" />
-              )}
-              {runRankMutation.isPending ? "Ranking..." : "Ai Supplier Rank"}
-            </Button>
-          )}
           <Button
             size="sm"
             variant="outline"
@@ -1185,7 +1127,7 @@ export default function VendorReview() {
           </Button>
         </div>
 
-        <Sheet
+        <FormSheet
           open={inviteSheetOpen}
           onOpenChange={(open) => {
             setInviteSheetOpen(open);
@@ -1198,23 +1140,16 @@ export default function VendorReview() {
               setInvPage(1);
             }
           }}
+          title="Invite Suppliers"
+          onSubmit={handleInviteSubmit}
+          submitLabel={inviteMutation.isPending ? "Inviting..." : "Invite"}
+          isSubmitting={inviteMutation.isPending}
+          widthClassName="w-full sm:max-w-[60vw]"
         >
-          <SheetContent
-            className="w-[60vw] sm:max-w-[60vw] overflow-y-auto p-4"
-            data-testid="sheet-invite-supplier"
-          >
-            <SheetHeader className="space-y-0 pb-1">
-              <SheetTitle className="text-base">Invite Suppliers</SheetTitle>
-              <p className="text-xs text-muted-foreground text-right">
-                * indicates mandatory fields
+              <p className="text-xs text-muted-foreground mb-4">
+                <span className="text-destructive">*</span> Indicates mandatory fields
               </p>
-            </SheetHeader>
-
-            <form onSubmit={(e) => {
-              e.preventDefault();
-              handleInviteSubmit();
-            }}>
-              <div className="space-y-4 mt-3">
+              <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label className="text-sm" htmlFor="inv-company">
@@ -1301,37 +1236,15 @@ export default function VendorReview() {
                     </div>
                   </div>
                 )}
+              </div>
 
-                <div className="flex justify-end gap-3">
-                  <Button
-                    type="reset"
-                    variant="outline"
-                    onClick={() => setInviteSheetOpen(false)}
-                    data-testid="button-cancel-invite"
-                  >
-                    CANCEL
-                  </Button>
-                  <Button
-                    type="submit"
-                    disabled={inviteMutation.isPending}
-                    data-testid="button-send-invite"
-                  >
-                    {inviteMutation.isPending && (
-                      <RefreshCw className="h-4 w-4 mr-1.5 animate-spin" />
-                    )}
-                    INVITE
-                  </Button>
+              <div className="mt-6 pt-4 border-t space-y-3">
+                <div>
+                  <h3 className="text-sm font-semibold">List of Invitations</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Browse and manage all invitations sent for suppliers.
+                  </p>
                 </div>
-              </div>
-            </form>
-
-            <div className="mt-6 pt-4 border-t space-y-3">
-              <div>
-                <h3 className="text-sm font-semibold">List of Invitations</h3>
-                <p className="text-xs text-muted-foreground">
-                  Browse and manage all invitations sent for suppliers.
-                </p>
-              </div>
 
               <div className="flex flex-wrap gap-2 items-center justify-between">
                 <div className="relative flex-1 max-w-xs">
@@ -1634,9 +1547,8 @@ export default function VendorReview() {
                   </div>
                 </div>
               )}
-            </div>
-          </SheetContent>
-        </Sheet>
+              </div>
+      </FormSheet>
       </div>
 
       <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4">
@@ -1703,113 +1615,6 @@ export default function VendorReview() {
                   <SelectItem value="Rejected">Rejected ({statusCounts["Rejected"] || 0})</SelectItem>
                 </SelectContent>
               </Select>
-
-              {isAIEnabled('AI_SUPPLIER_RANK') && (
-                <>
-                  {rankControlsDisabled ? (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <span className="inline-flex">
-                          <Select value={sortBy} onValueChange={setSortBy} disabled={rankControlsDisabled}>
-                            <SelectTrigger className="w-fit min-w-[160px] h-8 text-sm" data-testid="select-sort-by">
-                              <div className="flex items-center gap-2">
-                                <TrendingUp className="h-3.5 w-3.5" />
-                                <SelectValue placeholder="Sort by" />
-                              </div>
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="id">ID (Default)</SelectItem>
-                              <SelectItem value="rank_asc">High to Low (Rank)</SelectItem>
-                              <SelectItem value="rank_desc">Low to High (Rank)</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </span>
-                      </TooltipTrigger>
-                      <TooltipContent className="text-xs">
-                        {rankControlsTooltip}
-                      </TooltipContent>
-                    </Tooltip>
-                  ) : (
-                    <Select value={sortBy} onValueChange={setSortBy} disabled={rankControlsDisabled}>
-                      <SelectTrigger className="w-fit min-w-[160px] h-8 text-sm" data-testid="select-sort-by">
-                        <div className="flex items-center gap-2">
-                          <TrendingUp className="h-3.5 w-3.5" />
-                          <SelectValue placeholder="Sort by" />
-                        </div>
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="id">ID (Default)</SelectItem>
-                        <SelectItem value="rank_asc">High to Low (Rank)</SelectItem>
-                        <SelectItem value="rank_desc">Low to High (Rank)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
-
-                  {rankControlsDisabled ? (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <span className="inline-flex">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-8 text-sm gap-2"
-                            data-testid="button-metrics-filter"
-                            disabled={rankControlsDisabled}
-                          >
-                            <Filter className="h-3.5 w-3.5" />
-                            Metrics ({selectedMetrics.length})
-                          </Button>
-                        </span>
-                      </TooltipTrigger>
-                      <TooltipContent className="text-xs">
-                        {rankControlsTooltip}
-                      </TooltipContent>
-                    </Tooltip>
-                  ) : (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-8 text-sm gap-2"
-                          data-testid="button-metrics-filter"
-                          disabled={rankControlsDisabled}
-                        >
-                          <Filter className="h-3.5 w-3.5" />
-                          Metrics ({selectedMetrics.length})
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-56">
-                        <div className="p-2">
-                          <p className="text-xs font-semibold text-muted-foreground mb-2 px-2">Active KPI Metrics</p>
-                          {["BWR", "OTDR", "IC", "FR", "PC"].map((metric) => (
-                            <div
-                              key={metric}
-                              className="flex items-center space-x-2 px-2 py-1.5 cursor-pointer hover:bg-accent rounded-sm"
-                              onClick={() => {
-                                setSelectedMetrics(prev => 
-                                  prev.includes(metric) 
-                                    ? prev.filter(m => m !== metric)
-                                    : [...prev, metric]
-                                );
-                              }}
-                            >
-                              <Checkbox checked={selectedMetrics.includes(metric)} />
-                              <span className="text-sm">
-                                {metric === "BWR" && "Bid Win Rate"}
-                                {metric === "OTDR" && "On-Time Delivery Ratio"}
-                                {metric === "IC" && "Issue Count"}
-                                {metric === "FR" && "Fulfillment Rate"}
-                                {metric === "PC" && "Price Competitiveness"}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  )}
-                </>
-              )}
 
               {/* Export Menu */}
               <DropdownMenu>
@@ -1895,14 +1700,6 @@ export default function VendorReview() {
                         Name
                       </span>
                     </TableHead>
-                    {isAIEnabled('AI_SUPPLIER_RANK') && isRankVisible && (
-                      <TableHead className="text-xs font-medium w-[100px]">
-                        <span className="flex items-center gap-1.5">
-                          <Trophy className="h-3.5 w-3.5" />
-                          Rank
-                        </span>
-                      </TableHead>
-                    )}
                     <TableHead className="text-xs font-medium w-[100px]">
                       <span className="flex items-center gap-1.5">
                         <Clock className="h-3.5 w-3.5" />
@@ -1983,17 +1780,6 @@ export default function VendorReview() {
                           </TooltipContent>
                         </Tooltip>
                       </TableCell>
-                      {isAIEnabled('AI_SUPPLIER_RANK') && isRankVisible && (
-                        <TableCell className="py-2">
-                          {((supplier as any).rank && (supplier.status === 'Active' || supplier.status === 'Approved')) ? (
-                            <Badge variant="outline" className="font-bold border-primary/30 text-primary bg-primary/5">
-                              #{ (supplier as any).rank }
-                            </Badge>
-                          ) : (
-                            <span className="text-muted-foreground">-</span>
-                          )}
-                        </TableCell>
-                      )}
                       <TableCell className="py-2">
                         <StatusBadge status={supplier.status} />
                       </TableCell>
@@ -2196,32 +1982,23 @@ export default function VendorReview() {
         </CardContent>
       </Card>
 
-      <Sheet
+      <FormSheet
         open={createSheetOpen}
         onOpenChange={(open) => {
           setCreateSheetOpen(open);
           if (!open) setCreateForm(buildInitialCreateForm());
         }}
+        title="Create Supplier"
+        description="Add a new supplier with organization, contact, and banking details."
+        onSubmit={handleCreateSupplier}
+        submitLabel={createSupplierMutation.isPending ? "Creating..." : "Create Supplier"}
+        isSubmitting={createSupplierMutation.isPending}
+        widthClassName="w-full sm:max-w-3xl"
       >
-        <SheetContent
-          className="w-[60vw] sm:max-w-[60vw] overflow-y-auto"
-          side="right"
-        >
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleCreateSupplier();
-            }}
-          >
-            <SheetHeader>
-              <SheetTitle>Create Supplier</SheetTitle>
-              <SheetDescription>
-                Add a new supplier with organization, contact, and banking
-                details.
-              </SheetDescription>
-            </SheetHeader>
-
-            <div className="space-y-6 py-4">
+          <p className="text-xs text-muted-foreground mb-4">
+            <span className="text-destructive">*</span> Indicates mandatory fields
+          </p>
+            <div className="space-y-6">
               <div>
                 <h3 className="text-sm font-semibold mb-3">
                   Organization Details
@@ -2542,31 +2319,7 @@ export default function VendorReview() {
               </div>
             </div>
 
-            <SheetFooter className="flex justify-end gap-2 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setCreateSheetOpen(false);
-                  setCreateForm(buildInitialCreateForm());
-                }}
-                data-testid="button-cancel-create"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={createSupplierMutation.isPending}
-                data-testid="button-submit-create"
-              >
-                {createSupplierMutation.isPending
-                  ? "Creating..."
-                  : "Create Supplier"}
-              </Button>
-            </SheetFooter>
-          </form>
-        </SheetContent>
-      </Sheet>
+      </FormSheet>
 
       <AlertDialog
         open={!!resetPasswordSupplier}

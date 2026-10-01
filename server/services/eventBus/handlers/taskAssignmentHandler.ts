@@ -245,7 +245,7 @@ class TaskAssignmentHandler implements EventHandler<TaskAssignmentEvent> {
       submittedBy,
       department,
       linkUrl: appUrl,
-      orgName: event.orgName || "Prokraya",
+      orgName: event.orgName || "S2P Labs",
       srmsRefNo: event.srmsRefNo?.trim() || snapshot.refNumber,
       invoiceNo: event.invoiceNo || "",
       description: event.description || "",

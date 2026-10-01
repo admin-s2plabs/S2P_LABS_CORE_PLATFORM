@@ -537,7 +537,7 @@ export default function WorkflowTemplates() {
         <Card>
           <CardContent className="p-3">
             <div className="flex items-center justify-between">
-              <div className="text-xs text-muted-foreground">AI Agents Used</div>
+              <div className="text-xs text-muted-foreground">Agents Used</div>
               <Brain className="h-3.5 w-3.5 text-purple-500" />
             </div>
             <div className="text-xl font-bold mt-0.5">4</div>

@@ -102,7 +102,7 @@ function ruleBasedRecommendation(
   return "Vendor delivery history looks reliable; proceed with the planned required date.";
 }
 
-const DELIVERY_RISK_PROMPT = `You are an AI Delivery Risk Prediction agent for Prokraya, an enterprise procurement platform. Your job is to analyze a vendor's delivery history and predict the risk of delays for an upcoming Purchase Order.
+const DELIVERY_RISK_PROMPT = `You are an AI Delivery Risk Prediction agent for S2P Labs, an enterprise procurement platform. Your job is to analyze a vendor's delivery history and predict the risk of delays for an upcoming Purchase Order.
 
 ## ANALYSIS APPROACH
 

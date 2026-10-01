@@ -1456,7 +1456,7 @@ router.put("/api/product-categories/:categoryId", async (req, res) => {
   }
 });
 
-router.put("/api/product-categories/:categoryId", async (req, res) => {
+router.delete("/api/product-categories/:categoryId", async (req, res) => {
   try {
     const categoryId = req.params.categoryId;
     const result = await service.deleteProductCategory(categoryId);

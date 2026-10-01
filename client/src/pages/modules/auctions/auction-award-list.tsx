@@ -1,9 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
-} from "@/components/ui/dialog";
+import { FormSheet } from "@/components/form-sheet";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -468,39 +466,31 @@ export default function AuctionAwardList() {
       </Card>
 
       {/* ── Submit for Approval Dialog ── */}
-      <Dialog open={submitOpen} onOpenChange={setSubmitOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Send className="h-4 w-4 text-primary" />
-              Submit Award for Approval
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">
-              Award #{selectedAwardId} — please add notes before submitting.
-            </p>
-            <Textarea
-              value={awardNotes}
-              onChange={(e) => setAwardNotes(e.target.value)}
-              placeholder="Award Notes (required)"
-              rows={4}
-            />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setSubmitOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={() => submitMut.mutate()} disabled={submitMut.isPending}>
-              {submitMut.isPending ? (
-                <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Submitting…</>
-              ) : (
-                <><Send className="h-4 w-4 mr-2" />Submit for Approval</>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <FormSheet
+        open={submitOpen}
+        onOpenChange={setSubmitOpen}
+        title={
+          <span className="flex items-center gap-2">
+            <Send className="h-4 w-4 text-primary" />
+            Submit Award for Approval
+          </span>
+        }
+        onSubmit={() => submitMut.mutate()}
+        submitLabel={submitMut.isPending ? "Submitting…" : "Submit for Approval"}
+        isSubmitting={submitMut.isPending}
+      >
+        <div className="space-y-2">
+          <p className="text-sm text-muted-foreground">
+            Award #{selectedAwardId} — please add notes before submitting.
+          </p>
+          <Textarea
+            value={awardNotes}
+            onChange={(e) => setAwardNotes(e.target.value)}
+            placeholder="Award Notes (required)"
+            rows={4}
+          />
+        </div>
+      </FormSheet>
     </div>
   );
 }

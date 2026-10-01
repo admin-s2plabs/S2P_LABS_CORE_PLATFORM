@@ -31,7 +31,7 @@ class BudgetApprovedHandler extends BaseEmailHandler<BudgetApprovedEvent> {
       budgetId: event.budgetId,
       budgetName: event.budgetName,
       linkUrl: appUrl,
-      orgName: event.orgName || "Prokraya",
+      orgName: event.orgName || "S2P Labs",
       orgLogoPath: event.orgLogoPath || '',
     };
   }

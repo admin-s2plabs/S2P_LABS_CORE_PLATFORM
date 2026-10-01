@@ -10,13 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle
-} from "@/components/ui/sheet";
+import { FormSheet } from "@/components/form-sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -282,7 +276,7 @@ export default function CategoriesOld() {
     <div className="p-4 space-y-3 bg-background min-h-screen">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
-          <h1 className="text-xl font-bold" data-testid="text-page-title">
+          <h1 className="text-xl font-bold text-primary" data-testid="text-page-title">
             Categories
           </h1>
           <p className="text-sm text-muted-foreground">
@@ -464,20 +458,19 @@ export default function CategoriesOld() {
         </CardContent>
       </Card>
 
-      <Sheet open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <SheetContent side="right" className="sm:max-w-[450px] p-0 flex flex-col h-full border-l border-slate-200">
-          <div className="p-6 border-b border-slate-100">
-            <SheetHeader>
-              <SheetTitle className="text-xl font-bold text-slate-900">
-                {editingCategory ? "Update" : "Add New"}
-              </SheetTitle>
-              <SheetDescription className="text-sm font-medium text-slate-400">
-                * Indicates mandatory fields
-              </SheetDescription>
-            </SheetHeader>
-          </div>
-
-          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+      <FormSheet
+        open={isAddDialogOpen}
+        onOpenChange={setIsAddDialogOpen}
+        title={editingCategory ? "Update Category" : "Add New Category"}
+        onSubmit={handleSubmit}
+        submitLabel={editingCategory ? "Update" : "Create"}
+        isSubmitting={createMutation.isPending || updateMutation.isPending}
+        submitDisabled={createMutation.isPending || updateMutation.isPending}
+      >
+          <p className="text-xs text-muted-foreground mb-4">
+            <span className="text-destructive">*</span> Indicates mandatory fields
+          </p>
+          <div className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="type" className="text-sm font-bold text-slate-700">Type <span className="text-destructive">*</span></Label>
               <Select
@@ -540,27 +533,7 @@ export default function CategoriesOld() {
               />
             </div>
           </div>
-
-          <div className="p-6 border-t border-slate-100 bg-white">
-            <div className="flex items-center justify-end gap-3">
-              <Button
-                variant="outline"
-                onClick={() => setIsAddDialogOpen(false)}
-                className="border-slate-200 text-slate-900 h-10 px-6 font-semibold hover:bg-slate-50"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleSubmit}
-                className="bg-[#3b2a82] hover:bg-[#2d2063] text-white h-10 px-6 font-semibold shadow-sm"
-                disabled={createMutation.isPending || updateMutation.isPending}
-              >
-                {editingCategory ? "Update" : "Create"}
-              </Button>
-            </div>
-          </div>
-        </SheetContent>
-      </Sheet>
+      </FormSheet>
     </div>
   );
 }

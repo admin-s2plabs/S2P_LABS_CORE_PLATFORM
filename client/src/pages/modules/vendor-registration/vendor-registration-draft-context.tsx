@@ -1,4 +1,4 @@
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest } from "@/lib/queryClient";
 import { useQuery } from "@tanstack/react-query";
 import {
   createContext,
@@ -59,7 +59,7 @@ function emptyDraft(): VendorRegistrationDraftSession {
 }
 
 /** True only after at least one document was processed or there is extracted / user draft data. */
-export function hasMeaningfulDraftContent(d: VendorRegistrationDraftSession | null): boolean {
+function hasMeaningfulDraftContent(d: VendorRegistrationDraftSession | null): boolean {
   if (!d) return false;
   if (Array.isArray(d.uploadedDocumentTypes) && d.uploadedDocumentTypes.length > 0) return true;
   const hasValues = (obj: Record<string, string> | undefined) =>
@@ -88,68 +88,17 @@ function parsePersistedDraft(raw: string): VendorRegistrationDraftSession | null
 type VendorRegistrationDraftContextValue = {
   draft: VendorRegistrationDraftSession | null;
   missingMandatory: MissingMandatoryPayload | null;
-  highlightFromAi: boolean;
-  setHighlightFromAi: (v: boolean) => void;
-  /** Enable/disable automatic server-session persistence of draft changes (off while on AI chat). */
-  setServerAutoSaveEnabled: (enabled: boolean) => void;
-  /** Persist the current local draft to the server session immediately (used by Confirm & Continue). */
-  persistDraftToServerNow: () => Promise<void>;
-  applyServerDraft: (
-    draft: VendorRegistrationDraftSession,
-    missing?: MissingMandatoryPayload | null
-  ) => void;
   setCompanyField: (key: string, value: string) => void;
   setBankingField: (key: string, value: string) => void;
   markUserLockedCompany: (key: string) => void;
   markUserLockedBanking: (key: string) => void;
-  confirmDraftOnServer: () => Promise<void>;
-  clearDraftLocalAndServer: () => Promise<{ profileReset: boolean }>;
   clearCompanyDraftLocalAndServer: () => Promise<void>;
   clearBankingDraftLocal: () => void;
   refreshDraftFromServer: () => Promise<void>;
-  /** Merge company/banking patch, update field meta as user, persist to server session (use for AI Apply). */
-  applySessionDraftMergeAndSync: (patch: {
-    company?: Record<string, string>;
-    banking?: Record<string, string>;
-  }) => Promise<void>;
-  computeMissingLocal: (d: VendorRegistrationDraftSession) => MissingMandatoryPayload;
 };
 
 const VendorRegistrationDraftContext =
   createContext<VendorRegistrationDraftContextValue | null>(null);
-
-function mergeUserPatchIntoDraft(
-  prev: VendorRegistrationDraftSession | null,
-  patch: { company?: Record<string, string>; banking?: Record<string, string> },
-): VendorRegistrationDraftSession {
-  const base = prev || emptyDraft();
-  const company = { ...base.company, ...(patch.company || {}) };
-  const banking = { ...base.banking, ...(patch.banking || {}) };
-  const fieldMeta = { ...base.fieldMeta };
-  for (const k of Object.keys(patch.company || {})) {
-    const mk = `company.${k}`;
-    const pm = base.fieldMeta[mk];
-    fieldMeta[mk] = {
-      confidence: pm?.confidence ?? 100,
-      source: "user",
-      needsReview: false,
-      userLocked: true,
-      lastDocumentType: pm?.lastDocumentType,
-    };
-  }
-  for (const k of Object.keys(patch.banking || {})) {
-    const mk = `banking.${k}`;
-    const pm = base.fieldMeta[mk];
-    fieldMeta[mk] = {
-      confidence: pm?.confidence ?? 100,
-      source: "user",
-      needsReview: false,
-      userLocked: true,
-      lastDocumentType: pm?.lastDocumentType,
-    };
-  }
-  return { ...base, company, banking, fieldMeta };
-}
 
 function computeMissing(d: VendorRegistrationDraftSession): MissingMandatoryPayload {
   const company = MANDATORY_COMPANY_KEYS.filter((k) => {
@@ -185,16 +134,8 @@ export function VendorRegistrationDraftProvider({ children }: { children: ReactN
 
   const [draft, setDraft] = useState<VendorRegistrationDraftSession | null>(null);
   const [missingMandatory, setMissingMandatory] = useState<MissingMandatoryPayload | null>(null);
-  const [highlightFromAi, setHighlightFromAi] = useState(false);
   const latestDraftRef = useRef<VendorRegistrationDraftSession | null>(null);
   latestDraftRef.current = draft;
-  // When false (e.g. while on the AI chat), draft changes are NOT auto-persisted to
-  // the server session — the data lives only in local state until the user explicitly
-  // confirms (Confirm & Continue), at which point persistDraftToServerNow() is called.
-  const serverAutoSaveRef = useRef(true);
-  const setServerAutoSaveEnabled = useCallback((enabled: boolean) => {
-    serverAutoSaveRef.current = enabled;
-  }, []);
   const draftHydratedScopeRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -203,7 +144,7 @@ export function VendorRegistrationDraftProvider({ children }: { children: ReactN
     }
     draftHydratedScopeRef.current = storageScope;
 
-    const raw = readScopedSessionRaw(storageScope, "draft");
+    const raw = readScopedSessionRaw(storageScope);
     const persisted = raw ? parsePersistedDraft(raw) : null;
     if (persisted && hasMeaningfulDraftContent(persisted)) {
       setDraft(persisted);
@@ -232,10 +173,9 @@ export function VendorRegistrationDraftProvider({ children }: { children: ReactN
     setMissingMandatory(computeMissing(draft));
   }, [draft, draftStorageKey]);
 
-  /** Debounced persist so manual form blur/setField and AI extraction stay aligned with server session. */
+  /** Debounced persist so manual form blur/setField stay aligned with server session. */
   useEffect(() => {
     if (!draft || !hasMeaningfulDraftContent(draft)) return;
-    if (!serverAutoSaveRef.current) return;
     const t = window.setTimeout(() => {
       const d = latestDraftRef.current;
       if (!d || !hasMeaningfulDraftContent(d)) return;
@@ -340,35 +280,6 @@ export function VendorRegistrationDraftProvider({ children }: { children: ReactN
     });
   }, []);
 
-  const confirmDraftOnServer = useCallback(async () => {
-    const res = await apiRequest("POST", "/api/vendor/registration/confirm-draft", {});
-    const data = await res.json();
-    if (data.draft) {
-      applyServerDraft(data.draft, null);
-    }
-    await queryClient.invalidateQueries({ queryKey: ["/api/vendor/documents"] });
-  }, [applyServerDraft]);
-
-  const clearDraftLocalAndServer = useCallback(async (): Promise<{ profileReset: boolean }> => {
-    let profileReset = false;
-    try {
-      const res = await apiRequest("POST", "/api/vendor/registration/clear-draft", {});
-      try {
-        const data = (await res.json()) as { profileReset?: boolean };
-        profileReset = !!data.profileReset;
-      } catch {
-        /* ignore parse */
-      }
-    } catch {
-      /* ignore */
-    }
-    setDraft(null);
-    setMissingMandatory(null);
-    setHighlightFromAi(false);
-    removeAllVendorDraftKeysForScope(scopeRef.current);
-    return { profileReset };
-  }, []);
-
   const clearCompanyDraftLocalAndServer = useCallback(async () => {
     try {
       await apiRequest("POST", "/api/vendor/registration/clear-company-draft", {});
@@ -404,8 +315,7 @@ export function VendorRegistrationDraftProvider({ children }: { children: ReactN
       applyServerDraft(data.draft, data.missingMandatory ?? null);
       return;
     }
-    // Server holds no saved draft. Preserve any local unconfirmed draft — the AI chat
-    // keeps extracted fields local until the user clicks Confirm & Continue.
+    // Server holds no saved draft. Preserve any local unsaved draft.
     const localDraft = latestDraftRef.current;
     if (localDraft && hasMeaningfulDraftContent(localDraft)) {
       setMissingMandatory(computeMissing(localDraft));
@@ -416,99 +326,30 @@ export function VendorRegistrationDraftProvider({ children }: { children: ReactN
     removeAllVendorDraftKeysForScope(scopeRef.current);
   }, [applyServerDraft]);
 
-  const applySessionDraftMergeAndSync = useCallback(
-    async (patch: { company?: Record<string, string>; banking?: Record<string, string> }) => {
-      let merged: VendorRegistrationDraftSession | null = null;
-      setDraft((prev) => {
-        merged = mergeUserPatchIntoDraft(prev, patch);
-        return merged;
-      });
-      if (merged && hasMeaningfulDraftContent(merged)) {
-        if (!serverAutoSaveRef.current) {
-          // AI chat: keep edits local until Confirm & Continue.
-          setMissingMandatory(computeMissing(merged));
-          return;
-        }
-        try {
-          const res = await apiRequest("POST", "/api/vendor/registration/draft", { draft: merged });
-          try {
-            const data = (await res.json()) as {
-              missingMandatory?: MissingMandatoryPayload | null;
-            };
-            if (data.missingMandatory) {
-              setMissingMandatory(data.missingMandatory);
-            } else {
-              setMissingMandatory(computeMissing(merged));
-            }
-          } catch {
-            setMissingMandatory(computeMissing(merged));
-          }
-        } catch {
-          setMissingMandatory(computeMissing(merged));
-        }
-      }
-    },
-    []
-  );
-
-  /** Push the current local draft to the server session on demand (used by Confirm & Continue). */
-  const persistDraftToServerNow = useCallback(async () => {
-    const d = latestDraftRef.current;
-    if (!d || !hasMeaningfulDraftContent(d)) return;
-    try {
-      const res = await apiRequest("POST", "/api/vendor/registration/draft", { draft: d });
-      try {
-        const data = (await res.json()) as {
-          missingMandatory?: MissingMandatoryPayload | null;
-        };
-        setMissingMandatory(data.missingMandatory ?? computeMissing(d));
-      } catch {
-        setMissingMandatory(computeMissing(d));
-      }
-    } catch {
-      /* offline — sessionStorage still holds draft */
-    }
-  }, []);
 
 
   const value = useMemo(
     () => ({
       draft,
       missingMandatory,
-      highlightFromAi,
-      setHighlightFromAi,
-      setServerAutoSaveEnabled,
-      persistDraftToServerNow,
-      applyServerDraft,
       setCompanyField,
       setBankingField,
       markUserLockedCompany,
       markUserLockedBanking,
-      confirmDraftOnServer,
-      clearDraftLocalAndServer,
       clearCompanyDraftLocalAndServer,
       clearBankingDraftLocal,
       refreshDraftFromServer,
-      applySessionDraftMergeAndSync,
-      computeMissingLocal: computeMissing,
     }),
     [
       draft,
       missingMandatory,
-      highlightFromAi,
-      setServerAutoSaveEnabled,
-      persistDraftToServerNow,
-      applyServerDraft,
       setCompanyField,
       setBankingField,
       markUserLockedCompany,
       markUserLockedBanking,
-      confirmDraftOnServer,
-      clearDraftLocalAndServer,
       clearCompanyDraftLocalAndServer,
       clearBankingDraftLocal,
       refreshDraftFromServer,
-      applySessionDraftMergeAndSync,
     ]
   );
 
@@ -530,9 +371,3 @@ export function useVendorRegistrationDraft() {
 export function useVendorRegistrationDraftOptional() {
   return useContext(VendorRegistrationDraftContext);
 }
-
-export {
-  AI_HIGHLIGHT_NEUTRAL_COMPANY_KEYS,
-  bankingFieldHighlightClass,
-  companyFieldHighlightClass,
-} from "./vendor-registration-field-states";

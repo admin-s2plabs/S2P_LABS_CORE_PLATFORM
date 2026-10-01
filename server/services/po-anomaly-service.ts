@@ -23,7 +23,7 @@ export interface AnomalyResult {
   analyzedAt: string;
 }
 
-const ANOMALY_SYSTEM_PROMPT = `You are an AI Purchase Order Anomaly Detection agent for Prokraya, an enterprise procurement platform. Your job is to analyze a Purchase Order against historical data and identify potential issues.
+const ANOMALY_SYSTEM_PROMPT = `You are an AI Purchase Order Anomaly Detection agent for S2P Labs, an enterprise procurement platform. Your job is to analyze a Purchase Order against historical data and identify potential issues.
 
 ## ANALYSIS TYPES
 

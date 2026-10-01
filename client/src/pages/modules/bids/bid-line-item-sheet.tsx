@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Check, ChevronsUpDown, Loader2, Pencil, Plus } from "lucide-react";
+import { Check, ChevronsUpDown, Pencil, Plus } from "lucide-react";
 import type { CreateBidPreviewLineItem } from "@shared/agent-sourcing-preview";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,14 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { FormSheet } from "@/components/form-sheet";
 import {
   Command,
   CommandEmpty,
@@ -184,22 +177,25 @@ export function BidLineItemSheet({
   };
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-[600px] sm:max-w-[600px] overflow-y-auto">
-        <SheetHeader>
-          <SheetTitle className="flex items-center gap-2">
-            {editingLine ? <Pencil className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
-            {editingLine ? "Edit Line Item" : "Add Line Item"}
-          </SheetTitle>
-          <SheetDescription>
-            {editingLine ? "Update the line item details." : "Add a new line item to this bid."}
-          </SheetDescription>
-        </SheetHeader>
-
-        <div className="space-y-6 pt-2 pb-6">
+    <FormSheet
+      open={open}
+      onOpenChange={onOpenChange}
+      title={editingLine ? "Edit Line Item" : "Add Line Item"}
+      description={editingLine ? "Update the line item details." : "Add a new line item to this bid."}
+      onCancel={() => onOpenChange(false)}
+      onSubmit={handleSubmit}
+      submitLabel={editingLine ? "Update Line" : "Add Line"}
+      isSubmitting={submitting}
+      submitDisabled={disabled || !form.description.trim()}
+      widthClassName="sm:max-w-2xl"
+    >
+      <p className="text-xs text-muted-foreground mb-4">
+        <span className="text-destructive">*</span> Indicates mandatory fields.
+      </p>
+      <div className="space-y-6">
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
-              <Label htmlFor="agent-line-item">Item</Label>
+              <Label htmlFor="agent-line-item">Item <span className="text-destructive">*</span></Label>
               <Popover open={itemOpen} onOpenChange={setItemOpen}>
                 <PopoverTrigger asChild>
                   <Button
@@ -369,27 +365,7 @@ export function BidLineItemSheet({
               />
             </div>
           </div>
-        </div>
-
-        <SheetFooter>
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={disabled || submitting}
-            data-testid="button-cancel-agent-line"
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            disabled={disabled || submitting || !form.description.trim()}
-            data-testid="button-submit-agent-line"
-          >
-            {submitting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
-            {editingLine ? "Update Line" : "Add Line"}
-          </Button>
-        </SheetFooter>
-      </SheetContent>
-    </Sheet>
+      </div>
+    </FormSheet>
   );
 }

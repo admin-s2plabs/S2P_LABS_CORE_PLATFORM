@@ -1,4 +1,4 @@
-import { AlertTriangle, ArrowRight, BarChart3, CheckCircle, Clock, DollarSign, FileText, Receipt, Zap } from "lucide-react";
+import { AlertTriangle, BarChart3, CheckCircle, Clock, DollarSign, FileText, Receipt, Zap } from "lucide-react";
 import { Helmet } from "react-helmet-async";
 import { Link } from "wouter";
 import { CommonShortForm } from "../components/CommonShortForm";
@@ -7,7 +7,7 @@ import { LogoBlack } from "../components/LogoImport";
 export function EInvoicingPage() {
   const features = [
     { icon: Zap, title: "Automated 3-Way Matching", description: "Instantly match PO, GRN, and Invoice with 99% accuracy", color: "bg-violet-50 text-violet-600" },
-    { icon: Receipt, title: "Invoice Processing", description: "Extract and validate invoice data automatically with AI", color: "bg-teal-50 text-teal-600" },
+    { icon: Receipt, title: "Invoice Processing", description: "Extract and validate invoice data automatically", color: "bg-teal-50 text-teal-600" },
     { icon: AlertTriangle, title: "Exception Management", description: "Intelligent flagging and resolution of invoice discrepancies", color: "bg-orange-50 text-orange-600" },
     { icon: CheckCircle, title: "Approval Workflows", description: "Smart routing for invoice approvals based on policies", color: "bg-teal-50 text-teal-600" },
     { icon: DollarSign, title: "Payment Optimization", description: "Optimize payment timing for cash flow and early payment discounts", color: "bg-blue-50 text-blue-600" },
@@ -21,17 +21,17 @@ export function EInvoicingPage() {
           async
           src="https://www.googletagmanager.com/gtag/js?id=G-KDV6R2SDN2"
         ></script>
-        <meta property="og:title" content="eInvoicing Software | Prokraya" />
-        <meta property="og:description" content="Automate invoice processing, 3-way matching, approvals, and exception handling with AI-powered invoice automation software." />
+        <meta property="og:title" content="eInvoicing Software | S2P Labs" />
+        <meta property="og:description" content="Automate invoice processing, 3-way matching, approvals, and exception handling with invoice automation software." />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://prokraya.ai/einvoicing" />
-        <meta property="og:site_name" content="Prokraya" />
+        <meta property="og:site_name" content="S2P Labs" />
         <meta property="og:image" content={LogoBlack} />
         <meta name="twitter:card" content={LogoBlack} />
         <meta name="twitter:site" content="@prokraya" />
-        <title>eInvoicing Software | AI-Powered Invoice Processing Automation | Prokraya</title>
-        <meta name="description" content="Automate invoice processing with AI-powered data extraction, 3-way matching, exception management, and approval workflows. Reduce processing time by 90% and eliminate manual errors." />
-        <meta name="keywords" content="eInvoicing software, invoice processing software, accounts payable automation, invoice automation, 3-way matching software, AP automation software, invoice approval workflow, AI invoice processing" />
+        <title>eInvoicing Software | Invoice Processing Automation | S2P Labs</title>
+        <meta name="description" content="Automate invoice processing with automated data extraction, 3-way matching, exception management, and approval workflows. Reduce processing time by 90% and eliminate manual errors." />
+        <meta name="keywords" content="eInvoicing software, invoice processing software, accounts payable automation, invoice automation, 3-way matching software, AP automation software, invoice approval workflow" />
       </Helmet>
 
       <div className="flex flex-col">
@@ -45,12 +45,9 @@ export function EInvoicingPage() {
               Software
             </h1>
             <p className="text-lg text-gray-500 max-w-2xl mx-auto mb-8">
-              Automate invoice processing with intelligent 3-way matching, AI-powered data extraction, and automated exception handling. Reduce processing time by 90% and eliminate errors.
+              Automate invoice processing with intelligent 3-way matching, automated data extraction, and automated exception handling. Reduce processing time by 90% and eliminate errors.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Link href="/book-demo" className="inline-flex items-center justify-center gap-2 px-7 py-3 bg-violet-600 text-white font-semibold rounded-lg hover:bg-violet-700 transition-colors">
-                Request Demo <ArrowRight className="w-4 h-4" />
-              </Link>
               <Link href="/contact-us" className="inline-flex items-center justify-center px-7 py-3 border border-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors">
                 Contact Sales
               </Link>
@@ -82,7 +79,7 @@ export function EInvoicingPage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center max-w-2xl mx-auto mb-12">
               <h2 className="text-3xl font-bold text-gray-900 mb-3">Intelligent Invoice Processing</h2>
-              <p className="text-gray-500">AI-powered automation from receipt to payment</p>
+              <p className="text-gray-500">End-to-end automation from receipt to payment</p>
             </div>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
               {features.map((feature, index) => (
@@ -109,7 +106,7 @@ export function EInvoicingPage() {
               {[
                 { icon: FileText, title: "Purchase Order", description: "System retrieves PO details", color: "bg-violet-50 text-violet-600" },
                 { icon: CheckCircle, title: "Goods Receipt", description: "Validates received quantities", color: "bg-teal-50 text-teal-600" },
-                { icon: Receipt, title: "Invoice", description: "Extracts invoice data with AI", color: "bg-teal-50 text-teal-600" },
+                { icon: Receipt, title: "Invoice", description: "Extracts invoice data automatically", color: "bg-teal-50 text-teal-600" },
               ].map((item, index) => (
                 <div key={index} className="bg-white border border-gray-100 rounded-2xl p-6 text-center">
                   <div className={`w-14 h-14 ${item.color} rounded-2xl flex items-center justify-center mx-auto mb-4`}>
@@ -124,18 +121,18 @@ export function EInvoicingPage() {
               <Zap className="w-10 h-10 mx-auto mb-4 text-teal-300" />
               <h3 className="text-xl font-bold mb-3">Match, Validate & Approve Automatically</h3>
               <p className="text-teal-100 max-w-xl mx-auto text-sm">
-                Our AI Invoice Agent matches all three documents in seconds, validates amounts and quantities, and automatically approves matches or flags exceptions for review.
+                Our Invoice Agent matches all three documents in seconds, validates amounts and quantities, and automatically approves matches or flags exceptions for review.
               </p>
             </div>
           </div>
         </section>
 
-        {/* AI Invoice Agent */}
+        {/* Invoice Agent */}
         <section className="py-20 bg-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid lg:grid-cols-2 gap-12 items-start">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-3">AI Invoice Agent</h2>
+                <h2 className="text-2xl font-bold text-gray-900 mb-3">Invoice Agent</h2>
                 <p className="text-gray-500 mb-6">Your intelligent invoice assistant that processes, matches, and approves invoices 24/7.</p>
                 <div className="space-y-3">
                   {["Extract data from any invoice format", "Match with PO and GRN automatically", "Detect and flag discrepancies", "Route exceptions to appropriate approvers", "Track payment status in real-time", "Provide analytics on invoice trends"].map((cap, i) => (
@@ -174,17 +171,6 @@ export function EInvoicingPage() {
         </section>
 
         <CommonShortForm reactedPage="E Invoicing" />
-
-        {/* CTA */}
-        <section className="py-20 bg-gradient-to-br from-slate-900 via-violet-950 to-slate-900 text-white">
-          <div className="max-w-2xl mx-auto px-4 text-center">
-            <h2 className="text-3xl font-bold mb-3">Ready to Automate Invoice Processing?</h2>
-            <p className="text-gray-400 mb-8">Join organizations processing thousands of invoices error-free</p>
-            <Link href="/book-demo" className="inline-flex items-center gap-2 px-7 py-3 bg-violet-600 text-white font-semibold rounded-lg hover:bg-violet-700 transition-colors">
-              Schedule a Demo <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-        </section>
       </div>
     </>
   );

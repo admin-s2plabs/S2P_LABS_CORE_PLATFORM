@@ -94,11 +94,11 @@ app.use(async (req, res, next) => {
     path.includes("/api/countries") ||
     path.includes("/api/auth/check-org-name") ||
     path.includes("/api/auth/check-email") ||
-    path.includes("/api/free-trial/register")||
-    path.includes("ai-prokraya-storage")||
+    path.includes("/api/free-trial/register") ||
+    path.includes("ai-prokraya-storage") ||
     path.includes("agenticprokraya") ||
-    path.includes("verify-domain")||
-    path.includes("/api/auth/send-login-otp")||
+    path.includes("verify-domain") ||
+    path.includes("/api/auth/send-login-otp") ||
     path.includes("/api/auth/verify-login-otp") ||
     path.includes("/api/addscriptgoogle") ||
     path.includes("/api/makerightchoice") ||
@@ -206,7 +206,7 @@ async function verifyKnowledgeLayer(): Promise<void> {
   const { tools } = verifyProcurementKnowledgeLayer();
   console.log(
     `[knowledge-layer] ready — ${templates} template(s), ${partials} partial(s), ` +
-      `procurement: ${tools} tools verified (assets: ${aiAssetsDir()})`,
+    `procurement: ${tools} tools verified (assets: ${aiAssetsDir()})`,
   );
 }
 
@@ -252,7 +252,7 @@ async function verifyKnowledgeLayer(): Promise<void> {
     {
       port,
       host: "0.0.0.0",
-      reusePort: true,
+      ...(process.platform !== "win32" ? { reusePort: true } : {}),
     },
     () => {
       log(`serving on port ${port}`);

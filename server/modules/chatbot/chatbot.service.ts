@@ -185,7 +185,7 @@ export async function handleTalktrack(res: Response, ctx: any): Promise<void> {
     : "";
   const catText =
     cfg.categories?.length
-      ? `\n\nCRITICAL DIRECTIVE: The prospect procures: ${cfg.categories.join(", ")}. Weave in how Prokraya is suited for these categories.`
+      ? `\n\nCRITICAL DIRECTIVE: The prospect procures: ${cfg.categories.join(", ")}. Weave in how S2P Labs is suited for these categories.`
       : "";
   let gtmHook = "";
   if (cfg.audience === "CFO / Finance") {
@@ -211,11 +211,11 @@ export async function handleTalktrack(res: Response, ctx: any): Promise<void> {
   const audPriority = audiencePriority(cfg.audience, isChannel);
   const lengthSpec = lengthForTime(cfg.time);
   const erpRule = hasERP
-    ? `ERP IN PLACE – ${cfg.erp}: frame Prokraya as layering ON TOP of ${cfg.erp}. Use "complements and extends ${cfg.erp}" and never imply replacement. Anchor points: ${(ctx.erpPoints || []).join(" | ") || "(layer on top; the system of record stays put)"}.`
+    ? `ERP IN PLACE – ${cfg.erp}: frame S2P Labs as layering ON TOP of ${cfg.erp}. Use "complements and extends ${cfg.erp}" and never imply replacement. Anchor points: ${(ctx.erpPoints || []).join(" | ") || "(layer on top; the system of record stays put)"}.`
     : `NO ERP OF RECORD – do not invent one. Lead with "one platform, one data set."`;
 
   const prompt =
-    `You are a top-tier enterprise pre-sales lead writing the spoken talk track a presenter will say out loud during a live Prokraya demo.\n\n` +
+    `You are a top-tier enterprise pre-sales lead writing the spoken talk track a presenter will say out loud during a live S2P Labs demo.\n\n` +
     `CONTEXT:\n` +
     `- Engagement: ${isChannel ? "Channel partner" : "Direct client"}\n` +
     `- Prospect: ${companyName}, ${cfg.size || "(size n/a)"} ${cfg.industry || "(industry n/a)"} in ${cfg.region || "(region n/a)"}\n` +
@@ -279,12 +279,12 @@ export async function handleEmail(res: Response, ctx: any): Promise<void> {
     {
       role: "user",
       content:
-        `You are a senior enterprise sales copywriter for Prokraya.\n` +
+        `You are a senior enterprise sales copywriter for S2P Labs.\n` +
         `Rewrite the post-demo FOLLOW-UP EMAIL so it reads bespoke to this prospect.\n\n` +
         `HARD RULES:\n` +
         `- Max 120 words.\n` +
         `- Structure: (a) specific one-line recap of a key point the prospect raised (from REP_NOTES; if absent, recap the core value prop); (b) agreed next step stated plainly; (c) reference to exactly one attachment.\n` +
-        `- Subject line: "Follow-up: [topic] - next step" or "[Company] x Prokraya - [agreed item]".\n` +
+        `- Subject line: "Follow-up: [topic] - next step" or "[Company] x S2P Labs - [agreed item]".\n` +
         `- No re-pitching. Exactly one metric maximum.\n` +
         `- No exclamation marks, no buzzwords.${intellText}${gtmHook}\n\n` +
         `Return subject line on first line, blank line, then body.\n\n` +
@@ -296,7 +296,7 @@ export async function handleEmail(res: Response, ctx: any): Promise<void> {
 
 // ── /api/chatbot/salespitch ───────────────────────────────────────────────────
 
-const SALES_SYSTEM_KB = `You are SARTHI – Prokraya's AI Sales Intelligence Engine.
+const SALES_SYSTEM_KB = `You are SARTHI – S2P Labs' AI Sales Intelligence Engine.
 
 VERIFIED METRICS (use only these): 2.6× ROI; 58% faster procurement cycles; 95%+ AI invoice match accuracy; 6–8 weeks to go live; 7 AI agents; 50+ pre-built ERP connectors.
 CONFIRMED CLIENT REFERENCES: DAFZA (Dubai Airport Freezone), Eagle Hills, Hassad Food, IntelliSmart (Government of India), Benetton (United Colors of Benetton). NEVER cite CriticalRiver as a client. NEVER invent client names.
@@ -308,7 +308,7 @@ RED LINES – NEVER DO THESE:
 - NEVER say "disruption" in a CTO conversation
 
 OUTPUT STRUCTURE – use EXACTLY these tags:
-[SNAPSHOT] 3–4 sentences: company, region, industry, ERP, persona, pain, why they're looking at Prokraya now.
+[SNAPSHOT] 3–4 sentences: company, region, industry, ERP, persona, pain, why they're looking at S2P Labs now.
 [HOOK] 3 tracks: **CFO Track:**, **CPO Track:**, **End-User Track:**
 [PRICEIQ] 2–3 sentences explaining PriceIQ for this deal.
 [NETRA] 2–3 sentences explaining Netra for this deal.
@@ -326,7 +326,7 @@ Repeat 5 times: [DQ_Q] [DQ_WHY] [DQ_LISTEN]
 Repeat 3 times: [OBJ_Q] [OBJ_REFRAME] [OBJ_PROOF] [OBJ_BRIDGE]
 --- EMAIL ---
 [EMAIL_1_TO] [EMAIL_1_SUBJ] [EMAIL_1_BODY] [EMAIL_2_TO] [EMAIL_2_SUBJ] [EMAIL_2_BODY]
-Sign all emails: Vedaanshu Kumar / Prokraya / vedaanshu.kumar@prokraya.com / +1 (408) 333-7765
+Sign all emails: Vedaanshu Kumar / S2P Labs / vedaanshu.kumar@prokraya.com / +1 (408) 333-7765
 --- KILL SCRIPTS ---
 [KILL_SCRIPT] One punchy cold-call script (max 3 sentences) to unseat the competitor, or "No specific competitor identified."`;
 
@@ -334,7 +334,7 @@ export async function handleSalesPitch(res: Response, ctx: any): Promise<void> {
   const cfg = ctx.cfg || {};
   const catText =
     cfg.categories?.length
-      ? `\n\nThe prospect procures: ${cfg.categories.join(", ")}. Weave in how Prokraya is uniquely suited for these categories.`
+      ? `\n\nThe prospect procures: ${cfg.categories.join(", ")}. Weave in how S2P Labs is uniquely suited for these categories.`
       : "";
   let gtmHook = "";
   if (cfg.audience === "CFO / Finance") {
@@ -369,7 +369,7 @@ export async function handleSpeakerNotes(
 ): Promise<void> {
   const prompt =
     `You are an elite enterprise presentation strategist.\n\n` +
-    `Generate slide-by-slide speaker notes for all 12 Prokraya slides for a ${time} presentation.\n\n` +
+    `Generate slide-by-slide speaker notes for all 12 S2P Labs slides for a ${time} presentation.\n\n` +
     `RULES:\n` +
     `- Clear, executive-ready, insightful (not descriptive).\n` +
     `- NO bullet points, asterisks, or list markers – prose paragraphs only.\n` +
@@ -389,7 +389,7 @@ export async function handleSpeakerNotes(
     `Slide 10: Differentiators That Deliver Value (Free suppliers, ERP-agnostic)\n` +
     `Slide 11: Key Clientele (DAFZA, Hassad, Benetton, Eagle Hills)\n` +
     `Slide 12: Thank You (Contact and closing question)\n\n` +
-    `Format each slide as: ### Slide N: [Title] followed by prose paragraphs. Use ONLY facts from Prokraya's verified data.\n\n` +
+    `Format each slide as: ### Slide N: [Title] followed by prose paragraphs. Use ONLY facts from S2P Labs' verified data.\n\n` +
     `PROSPECT CONTEXT:\n${JSON.stringify(ctx).slice(0, 9000)}`;
 
   return streamReply(
@@ -426,7 +426,7 @@ function getPersonaSetup(
   }
 
   const systemPrompt =
-    `You are ${name}, ${role} at ${context.company || "the prospect company"}, a company in the ${context.industry || "enterprise"} industry currently using ${context.erp || "legacy ERP"} for procurement. You are being pitched a new S2P platform by a Prokraya sales rep.\n\n` +
+    `You are ${name}, ${role} at ${context.company || "the prospect company"}, a company in the ${context.industry || "enterprise"} industry currently using ${context.erp || "legacy ERP"} for procurement. You are being pitched a new S2P platform by a S2P Labs sales rep.\n\n` +
     `Ground rules:\n` +
     `1. Never break character. Never mention you are an AI.\n` +
     `2. Every objection must reference something specific to the company's situation.\n` +
@@ -461,7 +461,7 @@ export async function startSparring(
           setup.systemPrompt +
           '\nRespond with a JSON object: { "reply": "Your opening hostile challenge" }',
       },
-      { role: "user", content: "I am the Prokraya sales rep. We are starting the meeting now." },
+      { role: "user", content: "I am the S2P Labs sales rep. We are starting the meeting now." },
     ],
   });
 

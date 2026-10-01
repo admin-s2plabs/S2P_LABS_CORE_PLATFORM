@@ -6,8 +6,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
+import { FormSheet } from "@/components/form-sheet";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -577,67 +577,54 @@ export default function CostCenterSetup() {
           </CardContent>
         </Card>
 
-        {/* Add/Edit Detail Sheet */}
-        <Sheet open={showDetailSheet} onOpenChange={setShowDetailSheet}>
-          <SheetContent className="w-[50vw] sm:max-w-[50vw] overflow-y-auto">
-            <SheetHeader className="space-y-1 pb-3">
-              <SheetTitle className="text-base">{editingDetail ? 'Edit Item' : 'Add Item'}</SheetTitle>
-              <p className="text-xs text-muted-foreground">* Indicates mandatory fields</p>
-            </SheetHeader>
-
-            <div className="mt-2 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-sm" htmlFor="item-code">Code <span className="text-destructive">*</span></Label>
-                  <Input
-                    id="item-code"
-                    value={detailForm.code}
-                    onChange={(e) => setDetailForm(f => ({ ...f, code: e.target.value }))}
-                    placeholder="Enter code"
-                    data-testid="input-item-code"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-sm" htmlFor="item-data-area">Data Area ID</Label>
-                  <Input
-                    id="item-data-area"
-                    value={detailForm.data_area_id}
-                    onChange={(e) => setDetailForm(f => ({ ...f, data_area_id: e.target.value }))}
-                    placeholder="Enter data area ID"
-                    data-testid="input-item-data-area"
-                  />
-                </div>
-              </div>
-
+        {/* Add/Edit Detail FormSheet */}
+        <FormSheet
+          open={showDetailSheet}
+          onOpenChange={setShowDetailSheet}
+          title={editingDetail ? 'Edit Item' : 'Add Item'}
+          onCancel={() => setShowDetailSheet(false)}
+          onSubmit={handleSaveDetail}
+          submitLabel={editingDetail ? 'Update' : 'Create'}
+          isSubmitting={createDetailMutation.isPending || updateDetailMutation.isPending}
+          widthClassName="sm:max-w-2xl"
+        >
+          <p className="text-xs text-muted-foreground mb-4"><span className="text-destructive">*</span> Indicates mandatory fields</p>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-sm" htmlFor="item-value">Value <span className="text-destructive">*</span></Label>
+                <Label className="text-sm" htmlFor="item-code">Code <span className="text-destructive">*</span></Label>
                 <Input
-                  id="item-value"
-                  value={detailForm.value}
-                  onChange={(e) => setDetailForm(f => ({ ...f, value: e.target.value }))}
-                  placeholder="Enter value/description"
-                  data-testid="input-item-value"
+                  id="item-code"
+                  value={detailForm.code}
+                  onChange={(e) => setDetailForm(f => ({ ...f, code: e.target.value }))}
+                  placeholder="Enter code"
+                  data-testid="input-item-code"
                 />
               </div>
-
-              <div className="flex justify-end gap-2 pt-4">
-                <Button variant="outline" onClick={() => setShowDetailSheet(false)} data-testid="button-cancel-item">
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleSaveDetail}
-                  disabled={createDetailMutation.isPending || updateDetailMutation.isPending}
-                  data-testid="button-save-item"
-                >
-                  {(createDetailMutation.isPending || updateDetailMutation.isPending) && (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  )}
-                  {editingDetail ? 'Update' : 'Create'}
-                </Button>
+              <div className="space-y-2">
+                <Label className="text-sm" htmlFor="item-data-area">Data Area ID</Label>
+                <Input
+                  id="item-data-area"
+                  value={detailForm.data_area_id}
+                  onChange={(e) => setDetailForm(f => ({ ...f, data_area_id: e.target.value }))}
+                  placeholder="Enter data area ID"
+                  data-testid="input-item-data-area"
+                />
               </div>
             </div>
-          </SheetContent>
-        </Sheet>
+
+            <div className="space-y-2">
+              <Label className="text-sm" htmlFor="item-value">Value <span className="text-destructive">*</span></Label>
+              <Input
+                id="item-value"
+                value={detailForm.value}
+                onChange={(e) => setDetailForm(f => ({ ...f, value: e.target.value }))}
+                placeholder="Enter value/description"
+                data-testid="input-item-value"
+              />
+            </div>
+          </div>
+        </FormSheet>
 
         {/* Delete Detail Dialog */}
         <AlertDialog open={!!deletingDetail} onOpenChange={() => setDeletingDetail(null)}>
@@ -865,58 +852,45 @@ export default function CostCenterSetup() {
         </CardContent>
       </Card>
 
-      {/* Add/Edit Master Sheet */}
-      <Sheet open={showMasterSheet} onOpenChange={setShowMasterSheet}>
-        <SheetContent className="w-[50vw] sm:max-w-[50vw] overflow-y-auto">
-          <SheetHeader className="space-y-1 pb-3">
-            <SheetTitle className="text-base">{editingMaster ? 'Edit Segment Type' : 'Add Segment Type'}</SheetTitle>
-            <p className="text-xs text-muted-foreground">* Indicates mandatory fields</p>
-          </SheetHeader>
-
-          <div className="mt-2 space-y-4">
-            <div className="space-y-2">
-              <Label className="text-sm" htmlFor="segment-type">Segment Type <span className="text-destructive">*</span></Label>
-              <Input
-                id="segment-type"
-                value={masterForm.segment_type}
-                onChange={(e) => setMasterForm(f => ({ ...f, segment_type: e.target.value }))}
-                placeholder="Enter segment type name"
-                readOnly={!!editingMaster}
-                className={editingMaster ? "bg-muted" : ""}
-                data-testid="input-segment-type"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm" htmlFor="segment-description">Description</Label>
-              <Textarea
-                id="segment-description"
-                value={masterForm.description}
-                onChange={(e) => setMasterForm(f => ({ ...f, description: e.target.value }))}
-                placeholder="Enter description"
-                rows={3}
-                data-testid="input-segment-description"
-              />
-            </div>
-
-            <div className="flex justify-end gap-2 pt-4">
-              <Button variant="outline" onClick={() => setShowMasterSheet(false)} data-testid="button-cancel-segment">
-                Cancel
-              </Button>
-              <Button
-                onClick={handleSaveMaster}
-                disabled={createMasterMutation.isPending || updateMasterMutation.isPending}
-                data-testid="button-save-segment"
-              >
-                {(createMasterMutation.isPending || updateMasterMutation.isPending) && (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                )}
-                {editingMaster ? 'Update' : 'Create'}
-              </Button>
-            </div>
+      {/* Add/Edit Master FormSheet */}
+      <FormSheet
+        open={showMasterSheet}
+        onOpenChange={setShowMasterSheet}
+        title={editingMaster ? 'Edit Segment Type' : 'Add Segment Type'}
+        onCancel={() => setShowMasterSheet(false)}
+        onSubmit={handleSaveMaster}
+        submitLabel={editingMaster ? 'Update' : 'Create'}
+        isSubmitting={createMasterMutation.isPending || updateMasterMutation.isPending}
+        widthClassName="sm:max-w-2xl"
+      >
+        <p className="text-xs text-muted-foreground mb-4"><span className="text-destructive">*</span> Indicates mandatory fields</p>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label className="text-sm" htmlFor="segment-type">Segment Type <span className="text-destructive">*</span></Label>
+            <Input
+              id="segment-type"
+              value={masterForm.segment_type}
+              onChange={(e) => setMasterForm(f => ({ ...f, segment_type: e.target.value }))}
+              placeholder="Enter segment type name"
+              readOnly={!!editingMaster}
+              className={editingMaster ? "bg-muted" : ""}
+              data-testid="input-segment-type"
+            />
           </div>
-        </SheetContent>
-      </Sheet>
+
+          <div className="space-y-2">
+            <Label className="text-sm" htmlFor="segment-description">Description</Label>
+            <Textarea
+              id="segment-description"
+              value={masterForm.description}
+              onChange={(e) => setMasterForm(f => ({ ...f, description: e.target.value }))}
+              placeholder="Enter description"
+              rows={3}
+              data-testid="input-segment-description"
+            />
+          </div>
+        </div>
+      </FormSheet>
 
       {/* Delete Master Dialog */}
       <AlertDialog open={!!deletingMaster} onOpenChange={() => setDeletingMaster(null)}>

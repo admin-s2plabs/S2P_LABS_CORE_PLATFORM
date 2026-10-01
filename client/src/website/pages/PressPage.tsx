@@ -3,10 +3,10 @@ import { Link } from "wouter";
 
 export function PressPage() {
   const pressItems = [
-    { title: "Prokraya Raises Series A to Accelerate AI-Powered Procurement Platform", outlet: "TechCrunch", date: "Mar 2026", tag: "Funding" },
-    { title: "How Prokraya is Transforming Enterprise Procurement with AI Agents", outlet: "Forbes", date: "Feb 2026", tag: "Feature" },
-    { title: "Prokraya Named a Top Procurement Technology Company to Watch in 2026", outlet: "Spend Matters", date: "Jan 2026", tag: "Award" },
-    { title: "AI-Driven Source-to-Pay: A Conversation with Prokraya's Founders", outlet: "Supply Chain Dive", date: "Dec 2025", tag: "Interview" },
+    { title: "S2P Labs Raises Series A to Accelerate Procurement Platform", outlet: "TechCrunch", date: "Mar 2026", tag: "Funding" },
+    { title: "How S2P Labs is Transforming Enterprise Procurement", outlet: "Forbes", date: "Feb 2026", tag: "Feature" },
+    { title: "S2P Labs Named a Top Procurement Technology Company to Watch in 2026", outlet: "Spend Matters", date: "Jan 2026", tag: "Award" },
+    { title: "Modern Source-to-Pay: A Conversation with S2P Labs' Founders", outlet: "Supply Chain Dive", date: "Dec 2025", tag: "Interview" },
   ];
 
   return (
@@ -18,7 +18,7 @@ export function PressPage() {
           <span className="inline-block px-3 py-1 text-xs font-semibold text-violet-700 bg-violet-50 rounded-full mb-5 uppercase tracking-wider">Press & Media</span>
           <h1 className="text-4xl lg:text-5xl font-extrabold text-gray-900 leading-tight mb-5">Latest News & Press</h1>
           <p className="text-lg text-gray-500 max-w-2xl mx-auto">
-            Stay up to date with the latest Prokraya announcements, coverage, and media resources.
+            Stay up to date with the latest S2P Labs announcements, coverage, and media resources.
           </p>
         </div>
       </section>

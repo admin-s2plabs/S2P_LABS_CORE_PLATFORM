@@ -405,7 +405,7 @@ export default function SupplierContracts() {
     <div className="p-4 space-y-3">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
-          <h1 className="text-xl font-bold" data-testid="text-page-title">My Contracts</h1>
+          <h1 className="text-xl font-bold text-primary" data-testid="text-page-title">My Contracts</h1>
           <p className="text-sm text-muted-foreground">View contracts you are a party to</p>
         </div>
       </div>

@@ -4,11 +4,11 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { FormSheet } from "@/components/form-sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { useAISettings } from "@/hooks/use-ai-settings";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency, formatDate, handleDownloadDocument } from "@/lib/common-functions";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -33,7 +33,6 @@ import {
   Paperclip,
   Send,
   Shield,
-  Sparkles,
   ThumbsUp,
   User,
   Users
@@ -100,12 +99,10 @@ export default function BidCommScore({ id }: { id?: string }) {
     enabled: !!bidId,
   });
 
-  const { isAIEnabled } = useAISettings();
   const [selectedResponseId, setSelectedResponseId] = useState<string | null>(null);
   const [scoreResponseId, setScoreResponseId] = useState<string | null>(null);
   const [confirmSubmit, setConfirmSubmit] = useState(false);
   const [confirmApprove, setConfirmApprove] = useState(false);
-  const [aiAutoScoring, setAiAutoScoring] = useState(false);
   const { toast } = useToast();
 
   const [, navigate] = useLocation();
@@ -121,26 +118,6 @@ export default function BidCommScore({ id }: { id?: string }) {
     queryKey: [`/api/dbo/bids/${bidId}/comm-score-status`],
     enabled: !!bidId,
   });
-
-  const handleAiAutoScoreAll = useCallback(async () => {
-    if (!bidId) return;
-    setAiAutoScoring(true);
-    try {
-      const res = await apiRequest("POST", `/api/dbo/bids/${bidId}/ai/auto-score-comm`);
-      const result = await res.json();
-      queryClient.invalidateQueries({ queryKey: [`/api/dbo/bids/${bidId}/evaluate`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/dbo/bids/${bidId}/comm-score-status`] });
-      if (result.success === false) {
-        toast({ title: "AI Scoring Failed", description: result.message || "Could not auto-score responses.", variant: "destructive" });
-        return;
-      }
-      toast({ title: "AI Scoring Complete", description: result.message || "Finance criteria and financial bid scores have been applied for all suppliers." });
-    } catch (err: any) {
-      toast({ title: "AI Scoring Failed", description: err.message || "Could not auto-score responses.", variant: "destructive" });
-    } finally {
-      setAiAutoScoring(false);
-    }
-  }, [bidId, toast]);
 
   const approveMutation = useMutation({
     mutationFn: async () => {
@@ -435,23 +412,6 @@ export default function BidCommScore({ id }: { id?: string }) {
                 <Badge variant="secondary" className="text-xs">{totalResponses}</Badge>
               )}
             </div>
-            {isAIEnabled('AI_COMM_EVALUATION') && (sessionTeam === "Commercial Review Team" || scoreStatus?.userTeams?.includes("Commercial Review Team")) && totalResponses > 0 && !scoreStatus?.submitted && !scoreStatus?.approved && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleAiAutoScoreAll}
-                disabled={aiAutoScoring}
-                data-testid="button-ai-auto-score-comm"
-                className="gap-1.5"
-              >
-                {aiAutoScoring ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Sparkles className="h-3.5 w-3.5" />
-                )}
-                {aiAutoScoring ? "AI Scoring..." : "AI Auto Score"}
-              </Button>
-            )}
           </div>
         </CardHeader>
         <CardContent className="px-4 pb-4 pt-0">
@@ -569,19 +529,6 @@ function CommScoreSheet({ responseId, bidId, existingScores, onClose }: { respon
     enabled: !!responseId,
   });
 
-  const sessionTeam = useMemo(() => {
-    const taskId = sessionStorage.getItem("currentTaskId") || "";
-    if (taskId.includes("Commercial_Approve_Team")) return "Commercial Approve Team";
-    if (taskId.includes("Commercial_Review_Team")) return "Commercial Review Team";
-    return "";
-  }, []);
-
-  const { data: scoreStatus } = useQuery<{ userTeams: string[] }>({
-    queryKey: [`/api/dbo/bids/${bidId}/comm-score-status`],
-    enabled: !!bidId,
-  });
-  const isCommercialReviewer = sessionTeam === "Commercial Review Team" || scoreStatus?.userTeams?.includes("Commercial Review Team");
-
   const resp = data?.response;
   const allRequirements = data?.requirements || [];
   const requirements = allRequirements.filter((req: any) => {
@@ -607,89 +554,6 @@ function CommScoreSheet({ responseId, bidId, existingScores, onClose }: { respon
   const scoreTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const remarkTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const commercialPriceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [aiScoring, setAiScoring] = useState(false);
-  const [aiFinancialScoring, setAiFinancialScoring] = useState(false);
-
-  const handleAiAutoScore = useCallback(async () => {
-    if (!bidId || !responseId || requirements.length === 0) return;
-    setAiScoring(true);
-    try {
-      const res = await apiRequest("GET", `/api/dbo/bids/${bidId}/ai/commercial-eval`);
-      if (!res.ok) throw new Error("Failed to get AI scores");
-      const aiData = await res.json();
-      const aiResp = (aiData.responses || []).find((r: any) => String(r.responseId) === String(responseId));
-      if (!aiResp) {
-        toast({ title: "No AI Scores", description: "AI could not find scores for this supplier response.", variant: "destructive" });
-        setAiScoring(false);
-        return;
-      }
-      const aiReqScores = aiResp.requirementScores || [];
-      const updated = requirements.map((req: any, idx: number) => {
-        const aiScore = aiReqScores.find((rs: any) => String(rs.requirementId) === String(req.bid_req_id));
-        if (!aiScore) return scores[idx] || { reqId: String(req.id), score: "", remarks: "" };
-        const maxWeight = parseFloat(req.weight) || 10;
-        const scaledScore = Math.round((Number(aiScore.suggestedScore) / 10) * maxWeight * 10) / 10;
-        const clampedScore = Math.min(scaledScore, maxWeight);
-        return {
-          reqId: String(req.id),
-          score: String(clampedScore),
-          remarks: aiScore.rationale || scores[idx]?.remarks || "",
-        };
-      });
-      setScores(updated);
-
-      const savePromises: Promise<any>[] = [];
-      for (const s of updated) {
-        if (s.score !== "" && s.score !== undefined) {
-          savePromises.push(
-            apiRequest("POST", `/api/dbo/bids/response/requirement/${s.reqId}/score`, { score: s.score }).catch(() => { }),
-            apiRequest("POST", `/api/dbo/bids/response/requirement/${s.reqId}/comments`, { comments: s.remarks }).catch(() => { })
-          );
-        }
-      }
-      await Promise.all(savePromises);
-      queryClient.invalidateQueries({ queryKey: ["/api/dbo/bids/response", responseId, "detail"] });
-      queryClient.invalidateQueries({ queryKey: [`/api/dbo/bids/${bidId}/evaluate`] });
-      toast({ title: "AI Scores Applied", description: "AI-suggested scores have been filled in. Review and adjust as needed." });
-    } catch (err: any) {
-      toast({ title: "AI Scoring Failed", description: err.message || "Could not get AI scores", variant: "destructive" });
-    } finally {
-      setAiScoring(false);
-    }
-  }, [bidId, responseId, requirements, scores, toast]);
-
-  const handleAiFinancialBidScore = useCallback(async () => {
-    if (!bidId || !responseId || lines.length === 0) return;
-    setAiFinancialScoring(true);
-    try {
-      const res = await apiRequest("GET", `/api/dbo/bids/${bidId}/ai/financial-bid-eval`);
-      if (!res.ok) throw new Error("Failed to get AI financial bid scores");
-      const aiData = await res.json();
-      const aiResp = (aiData.responses || []).find((r: any) => String(r.responseId) === String(responseId));
-      if (!aiResp) {
-        toast({ title: "No AI Scores", description: "AI could not find financial bid scores for this supplier response.", variant: "destructive" });
-        setAiFinancialScoring(false);
-        return;
-      }
-
-      const maxWeight = requirements.length === 0 ? 100 : 50;
-      const scaledScore = Math.round((Number(aiResp.suggestedPriceScore) / 100) * maxWeight * 10) / 10;
-      const clampedScore = Math.min(scaledScore, maxWeight);
-
-      const remarks = aiResp.overallRationale || "";
-
-      setCommercialPriceScore({ score: String(clampedScore), remarks });
-      await apiRequest("POST", `/api/dbo/bids/response/${responseId}/commercial-price-score`, { score: String(clampedScore), remarks });
-
-      queryClient.invalidateQueries({ queryKey: ["/api/dbo/bids/response", responseId, "detail"] });
-      queryClient.invalidateQueries({ queryKey: [`/api/dbo/bids/${bidId}/evaluate`] });
-      toast({ title: "AI Scores Applied", description: "Overall financial bid score has been applied. Review and adjust as needed." });
-    } catch (err: any) {
-      toast({ title: "AI Scoring Failed", description: err.message || "Could not get AI financial bid scores", variant: "destructive" });
-    } finally {
-      setAiFinancialScoring(false);
-    }
-  }, [bidId, responseId, lines.length, requirements.length, toast]);
 
   useEffect(() => {
     if (requirements.length > 0 && responseId && responseId !== prevResponseId.current) {
@@ -821,18 +685,15 @@ function CommScoreSheet({ responseId, bidId, existingScores, onClose }: { respon
   }, [saveCommercialPriceScore]);
 
   return (
-    <Sheet open={!!responseId} onOpenChange={(open) => { if (!open) handleClose(); }}>
-      <SheetContent className="sm:!max-w-[90vw] !w-[90vw] overflow-y-auto" data-testid="sheet-comm-score">
-        <SheetHeader>
-          <SheetTitle className="flex items-center gap-2">
-            <ClipboardCheck className="h-4 w-4" />
-            Commercial Scoring — {responseId}
-          </SheetTitle>
-          <SheetDescription>
-            {resp ? `${resp.supplier_name || "Supplier"} — ${resp.bidtitle || ""}` : "Loading commercial details..."}
-          </SheetDescription>
-        </SheetHeader>
-
+    <FormSheet
+      open={!!responseId}
+      onOpenChange={(open) => { if (!open) handleClose(); }}
+      title={`Commercial Scoring — ${responseId}`}
+      description={resp ? `${resp.supplier_name || "Supplier"} — ${resp.bidtitle || ""}` : "Loading commercial details..."}
+      onSubmit={handleClose}
+      submitLabel="Ok"
+      widthClassName="sm:!max-w-[90vw] !w-[90vw]"
+    >
         {isLoading ? (
           <div className="space-y-4 mt-6">
             <Skeleton className="h-32" />
@@ -898,23 +759,6 @@ function CommScoreSheet({ responseId, bidId, existingScores, onClose }: { respon
                 </div>
                 <h4 className="text-sm font-semibold">Commercial Evaluation Criteria</h4>
                 </div>
-                {requirements.length > 0 && isCommercialReviewer && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleAiAutoScore}
-                    disabled={aiScoring}
-                    data-testid="button-ai-auto-score-comm-sheet"
-                    className="gap-1.5"
-                  >
-                    {aiScoring ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-3.5 w-3.5" />
-                    )}
-                    {aiScoring ? "Scoring..." : "AI Auto Score"}
-                  </Button>
-                )}
               </div>
               {requirements.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-4">No requirements defined.</p>
@@ -979,23 +823,6 @@ function CommScoreSheet({ responseId, bidId, existingScores, onClose }: { respon
                     </div>
                     <h4 className="text-sm font-semibold">Financial Bid</h4>
                     </div>
-                    {isCommercialReviewer && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleAiFinancialBidScore}
-                        disabled={aiFinancialScoring}
-                        data-testid="button-ai-auto-score-financial-bid"
-                        className="gap-1.5"
-                      >
-                        {aiFinancialScoring ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                          <Sparkles className="h-3.5 w-3.5" />
-                        )}
-                        {aiFinancialScoring ? "Scoring..." : "AI Auto Score"}
-                      </Button>
-                    )}
                   </div>
                   <div className="border rounded-md overflow-x-auto">
                     <Table>
@@ -1167,12 +994,6 @@ function CommScoreSheet({ responseId, bidId, existingScores, onClose }: { respon
                 <div className="flex items-center gap-3">
                   <span className="font-semibold">Your Commercial Score:</span>
                   <span className="font-semibold text-primary font-mono" data-testid="text-total-score-percent">
-                    {/* {(() => {
-                      const totalGiven = scores.reduce((sum, s) => sum + (parseFloat(s?.score) || 0), 0);
-                      const totalMax = requirements.reduce((sum: number, req: any) => sum + (parseFloat(req.weight) || 0), 0);
-                      return totalMax > 0 ? `${totalGiven} / ${totalMax} (${Math.round((totalGiven / totalMax) * 100)}%)` : "0 / 0";
-                    })()} */
-                    }
                     {(() => {
                       const totalGiven = computeCommercialScorePercent(
                         scores,
@@ -1185,18 +1006,11 @@ function CommScoreSheet({ responseId, bidId, existingScores, onClose }: { respon
                   </span>
                   <span className="text-xs text-muted-foreground ml-1">scored out of total weightage</span>
                 </div>
-                <Button
-                  onClick={() => handleClose()}
-                  data-testid="button-ok-close"
-                >
-                  Ok
-                </Button>
               </div>
             </div>
           </div>
         )}
-      </SheetContent>
-    </Sheet>
+    </FormSheet>
   );
 }
 

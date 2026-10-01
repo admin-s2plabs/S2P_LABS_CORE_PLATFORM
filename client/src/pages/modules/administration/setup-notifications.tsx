@@ -7,8 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
+import { FormSheet } from "@/components/form-sheet";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -492,16 +492,26 @@ export default function SetupNotifications() {
         </CardContent>
       </Card>
 
-      <Sheet open={showSheet} onOpenChange={setShowSheet}>
-        <SheetContent className="w-[65vw] sm:max-w-[65vw] overflow-y-auto p-4">
-          <SheetHeader className="space-y-0 pb-1">
-            <SheetTitle className="text-base">{editing ? "Edit Notification" : "Define Notification"}</SheetTitle>
-            <p className="text-xs text-muted-foreground text-right">* indicates mandatory fields</p>
-          </SheetHeader>
-
-          <div className="space-y-4 mt-2">
-            <div className="space-y-1.5">
-              <Label className="text-sm">Select Notification Name <span className="text-orange-500">*</span></Label>
+      <FormSheet
+        open={showSheet}
+        onOpenChange={(open) => {
+          setShowSheet(open);
+          if (!open) {
+            setEditing(null);
+            resetForm();
+          }
+        }}
+        title={editing ? "Edit Notification" : "Define Notification"}
+        onCancel={() => { setShowSheet(false); setEditing(null); resetForm(); }}
+        onSubmit={handleSubmit}
+        submitLabel={editing ? "Update" : "Add"}
+        isSubmitting={createMutation.isPending || updateMutation.isPending}
+        widthClassName="sm:max-w-4xl"
+      >
+        <p className="text-xs text-muted-foreground mb-4"><span className="text-destructive">*</span> Indicates mandatory fields</p>
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            <Label className="text-sm">Select Notification Name <span className="text-orange-500">*</span></Label>
               <Select
                 value={form.event_id}
                 onValueChange={(value) => {
@@ -664,29 +674,8 @@ export default function SetupNotifications() {
                 />
               )}
             </div>
-
-            <div className="flex justify-end gap-2 pt-4">
-              <Button
-                variant="outline"
-                onClick={() => { setShowSheet(false); setEditing(null); resetForm(); }}
-                data-testid="button-cancel"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleSubmit}
-                disabled={createMutation.isPending || updateMutation.isPending}
-                data-testid="button-submit"
-              >
-                {(createMutation.isPending || updateMutation.isPending) && (
-                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                )}
-                {editing ? "Update" : "Add"}
-              </Button>
-            </div>
-          </div>
-        </SheetContent>
-      </Sheet>
+        </div>
+      </FormSheet>
 
       <Dialog open={!!previewing} onOpenChange={() => setPreviewing(null)}>
         <DialogContent className="max-w-3xl max-h-[80vh]">

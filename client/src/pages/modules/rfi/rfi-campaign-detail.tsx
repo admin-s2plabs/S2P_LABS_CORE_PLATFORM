@@ -34,14 +34,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { FormSheet } from "@/components/form-sheet";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -645,58 +638,52 @@ function QuestionFormDialog({
   });
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[520px]">
-        <DialogHeader>
-          <DialogTitle>{isEdit ? "Edit Question" : "Add Question"}</DialogTitle>
-          <DialogDescription>Write a custom question for this campaign.</DialogDescription>
-        </DialogHeader>
-        <div className="space-y-4">
-          <div>
-            <Label>Question text</Label>
-            <Input className="mt-1.5" value={text} onChange={(e) => setText(e.target.value)} data-testid="input-question-text" />
-          </div>
-          <div>
-            <Label>Question type</Label>
-            <Select value={type} onValueChange={setType}>
-              <SelectTrigger className="mt-1.5" data-testid="select-question-type">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="text">Text</SelectItem>
-                <SelectItem value="single_select">Single-select</SelectItem>
-                <SelectItem value="multi_select">Multi-select</SelectItem>
-                <SelectItem value="number">Number</SelectItem>
-                <SelectItem value="date">Date</SelectItem>
-                <SelectItem value="file_upload">File-upload</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          {SELECT_TYPES.has(type) && (
-            <div>
-              <Label>Options (comma separated)</Label>
-              <Input className="mt-1.5" value={optionsText} onChange={(e) => setOptionsText(e.target.value)} />
-            </div>
-          )}
-          <label className="flex items-center gap-2.5 text-sm">
-            <Checkbox checked={required} onCheckedChange={(v) => setRequired(!!v)} />
-            Required question
-          </label>
+    <FormSheet
+      open={open}
+      onOpenChange={onOpenChange}
+      title={isEdit ? "Edit Question" : "Add Question"}
+      description="Write a custom question for this campaign."
+      onSubmit={() => mutation.mutate()}
+      submitLabel={isEdit ? "Save Changes" : "Add Question"}
+      isSubmitting={mutation.isPending}
+      submitDisabled={!text.trim()}
+      widthClassName="sm:max-w-[520px]"
+    >
+      <p className="text-xs text-muted-foreground mb-4">
+        <span className="text-destructive">*</span> Indicates mandatory fields
+      </p>
+      <div className="space-y-4">
+        <div>
+          <Label>Question text <span className="text-destructive">*</span></Label>
+          <Input className="mt-1.5" value={text} onChange={(e) => setText(e.target.value)} data-testid="input-question-text" />
         </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button
-            onClick={() => mutation.mutate()}
-            disabled={!text.trim() || mutation.isPending}
-            data-testid="button-save-question"
-          >
-            {mutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            {isEdit ? "Save Changes" : "Add Question"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        <div>
+          <Label>Question type</Label>
+          <Select value={type} onValueChange={setType}>
+            <SelectTrigger className="mt-1.5" data-testid="select-question-type">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="text">Text</SelectItem>
+              <SelectItem value="single_select">Single-select</SelectItem>
+              <SelectItem value="multi_select">Multi-select</SelectItem>
+              <SelectItem value="number">Number</SelectItem>
+              <SelectItem value="date">Date</SelectItem>
+              <SelectItem value="file_upload">File-upload</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        {SELECT_TYPES.has(type) && (
+          <div>
+            <Label>Options (comma separated)</Label>
+            <Input className="mt-1.5" value={optionsText} onChange={(e) => setOptionsText(e.target.value)} />
+          </div>
+        )}
+        <label className="flex items-center gap-2.5 text-sm">
+          <Checkbox checked={required} onCheckedChange={(v) => setRequired(!!v)} />
+          Required question
+        </label>
+      </div>
+    </FormSheet>
   );
 }

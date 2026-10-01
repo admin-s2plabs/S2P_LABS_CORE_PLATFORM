@@ -555,7 +555,7 @@ export default function Contracts() {
       {/* Page title */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
-          <h1 className="text-xl font-bold" data-testid="text-page-title">Contracts</h1>
+          <h1 className="text-xl font-bold text-primary" data-testid="text-page-title">Contracts</h1>
           <p className="text-sm text-muted-foreground">Manage and track all supplier contracts</p>
         </div>
       </div>

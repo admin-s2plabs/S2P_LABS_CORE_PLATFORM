@@ -1,4 +1,3 @@
-import { FmpSupplierHint, type SupplierFmpView } from "@/components/fmpi/fmp-supplier-hint";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -9,7 +8,6 @@ import {
 import { formatCurrency, formatDate } from "@/lib/common-functions";
 import { useQuery } from "@tanstack/react-query";
 import {
-  AlertCircle,
   ArrowLeft,
   Calendar,
   ClipboardList,
@@ -84,12 +82,6 @@ export default function SupplierBidResponseView() {
     enabled: !!responseId,
   });
 
-  const targetBidId = bidId || data?.response?.bidrefno || data?.response?.bid_id;
-  const { data: fmpData } = useQuery<{ enabled: boolean; lines: Record<string, SupplierFmpView> }>({
-    queryKey: ["/api/dbo/suppbids", targetBidId, "fmp"],
-    enabled: !!targetBidId,
-  });
-  const fmpLines = fmpData?.enabled ? fmpData.lines : undefined;
 
   if (isLoading) {
     return (
@@ -292,12 +284,6 @@ export default function SupplierBidResponseView() {
         <CardHeader className="py-3 px-4">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <SectionHeader icon={ClipboardList} title="Financial Bid" />
-            {fmpLines && (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-purple-50 text-purple-900 border border-purple-200/80 dark:bg-purple-950/40 dark:text-purple-200 dark:border-purple-800/60 text-xs font-medium whitespace-nowrap shadow-xs">
-                <AlertCircle className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400 shrink-0" aria-hidden="true" />
-                <span>AI can make mistakes. Please verify.</span>
-              </span>
-            )}
           </div>
         </CardHeader>
         <CardContent className="px-4 pb-4 pt-0">
@@ -333,11 +319,6 @@ export default function SupplierBidResponseView() {
                       <TableCell className="py-2">
                         <div className="text-sm font-medium">{line.description}</div>
                         {line.product_category && <div className="text-xs text-muted-foreground">{line.product_category}</div>}
-                        <FmpSupplierHint
-                          fmp={line.bid_line_id ? (fmpLines?.[String(line.bid_line_id)] || fmpLines?.[String(line.id)]) : fmpLines?.[String(line.id)]}
-                          currency={currency}
-                          testId={`text-fmp-line-${line.id}`}
-                        />
                       </TableCell>
                       <TableCell className="text-sm text-right font-mono py-2">{line.quantity}</TableCell>
                       <TableCell className="text-sm py-2">{line.uom || "-"}</TableCell>

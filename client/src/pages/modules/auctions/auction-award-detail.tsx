@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
+import { FormSheet } from "@/components/form-sheet";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -919,25 +920,21 @@ export default function AuctionAwardDetail() {
       )}
 
       {/* ── Submit Dialog ── */}
-      <Dialog open={submitOpen} onOpenChange={setSubmitOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Submit Award for Approval</DialogTitle>
-          </DialogHeader>
-          <Textarea
-            value={submitNotes}
-            onChange={(e) => setSubmitNotes(e.target.value)}
-            placeholder="Award Notes (required)"
-            rows={4}
-          />
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setSubmitOpen(false)}>Cancel</Button>
-            <Button onClick={() => submitMut.mutate()} disabled={submitMut.isPending}>
-              {submitMut.isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Submitting…</> : "Submit for Approval"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <FormSheet
+        open={submitOpen}
+        onOpenChange={setSubmitOpen}
+        title="Submit Award for Approval"
+        onSubmit={() => submitMut.mutate()}
+        submitLabel={submitMut.isPending ? "Submitting…" : "Submit for Approval"}
+        isSubmitting={submitMut.isPending}
+      >
+        <Textarea
+          value={submitNotes}
+          onChange={(e) => setSubmitNotes(e.target.value)}
+          placeholder="Award Notes (required)"
+          rows={4}
+        />
+      </FormSheet>
 
       {/* ── Approve / Reject Dialog ── */}
       <Dialog open={approvalOpen} onOpenChange={setApprovalOpen}>

@@ -1,14 +1,7 @@
+import { FormSheet } from "@/components/form-sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
 import { useSidebar } from "@/components/ui/sidebar";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
@@ -685,19 +678,33 @@ export const CollaborationPanel = forwardRef<CollaborationPanelRef, Collaboratio
     );
 
     const addDocumentSheet = (
-      <Sheet open={isAddDocOpen} onOpenChange={(open) => {
-        setIsAddDocOpen(open);
-        if (!open) {
+      <FormSheet
+        open={isAddDocOpen}
+        onOpenChange={(open) => {
+          setIsAddDocOpen(open);
+          if (!open) {
+            setSelectedFile(null);
+            setFileValidationError(null);
+          }
+        }}
+        title="Add Document"
+        description={`Upload a document to attach to this ${entityType.toLowerCase()}.`}
+        onCancel={() => {
+          setIsAddDocOpen(false);
           setSelectedFile(null);
           setFileValidationError(null);
-        }
-      }}>
-        <SheetContent className="sm:max-w-md">
-          <SheetHeader>
-            <SheetTitle>Add Document</SheetTitle>
-            <SheetDescription>Upload a document to attach to this {entityType.toLowerCase()}.</SheetDescription>
-          </SheetHeader>
-          <div className="space-y-4 mt-4">
+        }}
+        onSubmit={() => {
+          if (selectedFile) {
+            addDocumentMutation.mutate(selectedFile);
+          }
+        }}
+        submitLabel="Upload"
+        isSubmitting={addDocumentMutation.isPending}
+        submitDisabled={!selectedFile}
+        widthClassName="sm:max-w-md"
+      >
+          <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="document-file">Select File</Label>
               <Input
@@ -717,32 +724,7 @@ export const CollaborationPanel = forwardRef<CollaborationPanelRef, Collaboratio
               )}
             </div>
           </div>
-          <SheetFooter className="mt-4">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setIsAddDocOpen(false);
-                setSelectedFile(null);
-                setFileValidationError(null);
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={() => {
-                if (selectedFile) {
-                  addDocumentMutation.mutate(selectedFile);
-                }
-              }}
-              disabled={!selectedFile || addDocumentMutation.isPending}
-              data-testid="button-upload-document"
-            >
-              {addDocumentMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Upload
-            </Button>
-          </SheetFooter>
-        </SheetContent>
-      </Sheet>
+      </FormSheet>
     );
 
     if (isInline) {

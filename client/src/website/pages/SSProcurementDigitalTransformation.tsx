@@ -26,7 +26,7 @@ const solutionsList = [
         id: 1,
         heading: "Multi-Region enabled platform",
         content:
-            "Prokraya was deployed with regional configurations for Europe, the Middle East, and Africa, enabling localized workflows while providing global reporting to headquarters supervisors for configurations.",
+            "S2P Labs was deployed with regional configurations for Europe, the Middle East, and Africa, enabling localized workflows while providing global reporting to headquarters supervisors for configurations.",
     },
     {
         id: 2,
@@ -50,7 +50,7 @@ const solutionsList = [
         id: 5,
         heading: "End-to-End Integration",
         content:
-            "Invoices submitted by suppliers via Prokraya were automatically pushed back to Oracle EBS post-approval for financial processing. Supplier master data was synced from Oracle EBS to Prokraya, ensuring consistency in vendor information across platforms.",
+            "Invoices submitted by suppliers via S2P Labs were automatically pushed back to Oracle EBS post-approval for financial processing. Supplier master data was synced from Oracle EBS to S2P Labs, ensuring consistency in vendor information across platforms.",
     },
     {
         id: 6,
@@ -127,7 +127,7 @@ const ScrollContentSwitcher = ({ sections }: { sections: any }) => {
                         Our approach
                     </h2>
                     <p className="mb-0 font-bold">
-                        The Prokraya platform was introduced to digitize and unify the end-to-end procurement process with the following key implementations.
+                        The S2P Labs platform was introduced to digitize and unify the end-to-end procurement process with the following key implementations.
                     </p>
                 </div>
             </div>
@@ -213,7 +213,7 @@ export const SSProcurementDigitalTransformation = () => {
                     </div>
                     <div className="left-[20px] md:left-[60px] absolute top-[45%] -translate-y-[42%] z-10 max-w-[90%] md:max-w-[60%] px-4 md:px-0">
                         <h1 className="relative text-4xl lg:text-5xl font-extrabold text-gray-900 text-white tracking-[1.2px] mb-0 drop-shadow-md">
-                            How Prokraya Enabled Salable, Compliant, and Efficient Procurement through integrated digital transformation
+                            How S2P Labs Enabled Salable, Compliant, and Efficient Procurement through integrated digital transformation
                         </h1>
                     </div>
                 </div>
@@ -225,7 +225,7 @@ export const SSProcurementDigitalTransformation = () => {
                         <div className="grid grid-cols-1 items-center md:grid-cols-2">
                             <div className="bg-[#005f9a] lg:p-[60px] p-[20px] text-white">
                                 <p className="mb-0">
-                                    Prokraya S2P platform supported a large real estate and
+                                    S2P Labs S2P platform supported a large real estate and
                                     infrastructure firm in streamlining its procurement operations
                                     <br />
                                     <br />
@@ -259,7 +259,7 @@ export const SSProcurementDigitalTransformation = () => {
                         Challenges
                     </h3>
                     <p className="mx-auto max-w-4xl text-gray-600 pb-10">
-                        Prokraya worked in conjunction with the organization's leadership team
+                        S2P Labs worked in conjunction with the organization's leadership team
                         and business stakeholders to pinpoint the following areas of concern
                         that require attention.
                     </p>

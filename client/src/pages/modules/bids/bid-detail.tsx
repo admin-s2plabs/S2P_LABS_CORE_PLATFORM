@@ -9,11 +9,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { FmpBenchmarkCard, type FmpSnapshot } from "@/components/fmpi/fmp-benchmark-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Command,
   CommandEmpty,
@@ -36,6 +34,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { FormSheet } from "@/components/form-sheet";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -51,16 +50,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Switch } from "@/components/ui/switch";
 import {
   Table,
   TableBody,
@@ -74,10 +64,8 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useAISettings } from "@/hooks/use-ai-settings";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency, formatDate } from "@/lib/common-functions";
 import {
@@ -92,7 +80,6 @@ import {
   AlertCircle,
   ArrowLeft,
   BookOpen,
-  Brain,
   Calendar,
   Check,
   CheckCircle2,
@@ -107,7 +94,6 @@ import {
   File,
   FolderTree,
   Gavel,
-  Lightbulb,
   Loader2,
   Mail,
   MapPin,
@@ -116,24 +102,19 @@ import {
   Pencil,
   Phone,
   Plus,
-  RefreshCw,
   Save,
   Scale,
   ScrollText,
   Search,
   Send,
-  Sparkles,
-  Target,
   ThumbsDown,
   ThumbsUp,
   Trash2,
-  TrendingUp,
   User,
   Users,
   X,
-  Zap
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation, useRoute } from "wouter";
 import BidFormSheet from "./bid-form-sheet";
 
@@ -157,690 +138,12 @@ const bidTypeLabels: Record<string, string> = {
   Tender: "Open Tender",
 };
 
-const AI_VENDOR_RECS_BATCH_SIZE = 3;
 
 function formatDateTime(dateString: string | null): string {
   if (!dateString) return "-";
   return new Date(dateString).toLocaleDateString("en-IN", {
     day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit",
   });
-}
-
-function AIVendorRecsDialog({
-  open,
-  onOpenChange,
-  recommendations,
-  onInvite,
-}: {
-  open: boolean;
-  onOpenChange: (v: boolean) => void;
-  recommendations: any[];
-  onInvite: (ids: number[]) => void;
-}) {
-  const [selected, setSelected] = useState<number[]>([]);
-  const [visibleStartIndex, setVisibleStartIndex] = useState(0);
-  const visibleRecommendations = recommendations.slice(
-    visibleStartIndex,
-    visibleStartIndex + AI_VENDOR_RECS_BATCH_SIZE,
-  );
-  const hasPreviousRecommendations = visibleStartIndex > 0;
-  const hasMoreRecommendations =
-    visibleStartIndex + AI_VENDOR_RECS_BATCH_SIZE < recommendations.length;
-
-  useEffect(() => {
-    if (open) {
-      const initialRecommendations = recommendations.slice(0, AI_VENDOR_RECS_BATCH_SIZE);
-      setVisibleStartIndex(0);
-      setSelected(initialRecommendations.map((r) => r.supplierId));
-    }
-  }, [open, recommendations]);
-
-  const loadMoreRecommendations = () => {
-    const nextStartIndex = Math.min(
-      visibleStartIndex + AI_VENDOR_RECS_BATCH_SIZE,
-      recommendations.length,
-    );
-    const nextRecommendations = recommendations.slice(
-      nextStartIndex,
-      nextStartIndex + AI_VENDOR_RECS_BATCH_SIZE,
-    );
-
-    setVisibleStartIndex(nextStartIndex);
-    setSelected(nextRecommendations.map((r) => r.supplierId));
-  };
-
-  const showPreviousRecommendations = () => {
-    const previousStartIndex = Math.max(
-      visibleStartIndex - AI_VENDOR_RECS_BATCH_SIZE,
-      0,
-    );
-    const previousRecommendations = recommendations.slice(
-      previousStartIndex,
-      previousStartIndex + AI_VENDOR_RECS_BATCH_SIZE,
-    );
-
-    setVisibleStartIndex(previousStartIndex);
-    setSelected(previousRecommendations.map((r) => r.supplierId));
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-purple-600" />
-            AI-Recommended Suppliers
-          </DialogTitle>
-          <DialogDescription>
-            Select suppliers to invite based on AI analysis of past bid
-            performance
-          </DialogDescription>
-        </DialogHeader>
-        {recommendations.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            <Users className="h-10 w-10 mx-auto mb-3 opacity-50" />
-            <p className="text-sm font-medium mb-1">
-              No matching supplier recommendations at this time
-            </p>
-            <p className="text-xs">
-              All approved suppliers may already be invited, or there isn't enough
-              bid history for these categories. Please select suppliers manually.
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {visibleRecommendations.map((v: any) => (
-              <div
-                key={v.supplierId}
-                className={`rounded-lg border p-3 cursor-pointer transition-colors ${selected.includes(v.supplierId) ? "border-purple-400 bg-purple-50/50 dark:bg-purple-950/20" : "hover:bg-muted/50"}`}
-                onClick={() =>
-                  setSelected((prev) =>
-                    prev.includes(v.supplierId)
-                      ? prev.filter((id) => id !== v.supplierId)
-                      : [...prev, v.supplierId],
-                  )
-                }
-                data-testid={`card-ai-vendor-${v.supplierId}`}
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div onClick={(e) => e.stopPropagation()}>
-                      <Checkbox
-                        checked={selected.includes(v.supplierId)}
-                        onCheckedChange={(checked) =>
-                          setSelected((prev) =>
-                            checked
-                              ? [...prev, v.supplierId]
-                              : prev.filter((id) => id !== v.supplierId),
-                          )
-                        }
-                      />
-                    </div>
-                    <div>
-                      <p className="font-medium text-sm">{v.supplierName}</p>
-                      {v.contactEmail && (
-                        <p className="text-xs text-muted-foreground">
-                          {v.contactEmail}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className="h-8 w-8 rounded-full bg-purple-100 dark:bg-purple-900/40 flex items-center justify-center">
-                      <span className="text-xs font-bold text-purple-700 dark:text-purple-300">
-                        {v.score}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-2 ml-9 flex flex-wrap gap-1">
-                  {v.reasons?.slice(0, 3).map((r: string, i: number) => (
-                    <Badge
-                      key={i}
-                      variant="secondary"
-                      className="text-xs font-normal"
-                    >
-                      {r}
-                    </Badge>
-                  ))}
-                </div>
-                <div className="mt-2 ml-9 flex gap-4 text-xs text-muted-foreground">
-                  <span>{v.pastBidsParticipated} bids participated</span>
-                  <span>{v.pastBidsWon} bids won</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          {hasPreviousRecommendations && (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={showPreviousRecommendations}
-              data-testid="button-previous-ai-vendors"
-            >
-              Previous suggestions
-            </Button>
-          )}
-          {hasMoreRecommendations && (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={loadMoreRecommendations}
-              data-testid="button-load-more-ai-vendors"
-            >
-              Load more suggestion
-            </Button>
-          )}
-          <Button
-            onClick={() => onInvite(selected)}
-            disabled={selected.length === 0}
-            data-testid="button-invite-ai-vendors"
-          >
-            <Users className="h-4 w-4 mr-2" />
-            Invite {selected.length} Supplier(s)
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-interface ReconciledItem {
-  id: number | null;
-  action: "keep" | "update" | "remove" | "new";
-  category: string;
-  question: string;
-  value: string;
-  qvtype: string;
-  weight: number;
-  lovOptions: string[];
-  origin: "ai" | "manual";
-  questionChanged: boolean;
-  weightChanged: boolean;
-  originalQuestion?: string;
-  originalWeight?: number;
-}
-
-function RegenerateReqDialog({
-  open,
-  onOpenChange,
-  plan,
-  onApply,
-}: {
-  open: boolean;
-  onOpenChange: (v: boolean) => void;
-  plan: ReconciledItem[];
-  onApply: (selected: ReconciledItem[]) => void;
-}) {
-  // An item is "selectable" when applying it changes the DB (new / update / remove).
-  const isSelectable = (item: ReconciledItem) => item.action !== "keep";
-  // Every actionable change (new / update / remove) is checked by default.
-  const defaultChecked = (item: ReconciledItem) => isSelectable(item);
-
-  const [selected, setSelected] = useState<boolean[]>([]);
-  const [applying, setApplying] = useState(false);
-
-  useEffect(() => {
-    if (open) {
-      setSelected(plan.map((item) => defaultChecked(item)));
-      setApplying(false);
-    }
-  }, [open, plan]);
-
-  const toggle = (idx: number) => {
-    setSelected((prev) => prev.map((v, i) => (i === idx ? !v : v)));
-  };
-
-  // Projected weight total after applying: kept questions + selected non-removed changes.
-  const projectedWeight = plan.reduce((sum, item, idx) => {
-    if (item.action === "keep") return sum + item.weight;
-    if (item.action === "remove") return sum; // removed → excluded
-    // new / update: counts only if the user keeps it selected
-    return sum + (selected[idx] ? item.weight : 0);
-  }, 0);
-
-  const changeCount = plan.filter((item, idx) => isSelectable(item) && selected[idx]).length;
-
-  const handleApply = async () => {
-    const chosen = plan.filter((item, idx) => item.action === "keep" || selected[idx]);
-    setApplying(true);
-    try {
-      await onApply(chosen);
-    } finally {
-      setApplying(false);
-    }
-  };
-
-  const cardClasses = (item: ReconciledItem, checked: boolean) => {
-    if (item.action === "remove") {
-      return "border-red-300 bg-red-50/60 dark:border-red-800 dark:bg-red-950/20";
-    }
-    if (item.action === "new") {
-      return "border-purple-400 bg-purple-50/50 dark:border-purple-700 dark:bg-purple-950/20";
-    }
-    if (item.action === "update") {
-      return "border-amber-300 bg-amber-50/40 dark:border-amber-800 dark:bg-amber-950/20";
-    }
-    // keep
-    return item.origin === "ai"
-      ? "border-purple-200 bg-purple-50/30 dark:border-purple-900 dark:bg-purple-950/10"
-      : "border-border bg-background";
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <RefreshCw className="h-5 w-5 text-purple-600" />
-            Regenerated Evaluation Criteria
-          </DialogTitle>
-          <DialogDescription>
-            Review the AI's suggested changes below. All changes are selected by default — uncheck
-            any you don't want to apply.
-          </DialogDescription>
-        </DialogHeader>
-
-        {plan.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            <Scale className="h-10 w-10 mx-auto mb-3 opacity-50" />
-            <p className="text-sm">No changes suggested</p>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {plan.map((item, idx) => {
-              const checked = selected[idx] || false;
-              const selectable = isSelectable(item);
-              return (
-                <div
-                  key={idx}
-                  className={`rounded-lg border p-3 transition-colors ${cardClasses(item, checked)} ${
-                    selectable ? "cursor-pointer" : ""
-                  } ${selectable && !checked ? "opacity-70" : ""}`}
-                  onClick={() => selectable && toggle(idx)}
-                  data-testid={`card-regen-${idx}`}
-                >
-                  <div className="flex items-start gap-3">
-                    {selectable ? (
-                      <div onClick={(e) => e.stopPropagation()}>
-                        <Checkbox
-                          checked={checked}
-                          onCheckedChange={() => toggle(idx)}
-                          data-testid={`checkbox-regen-${idx}`}
-                        />
-                      </div>
-                    ) : (
-                      <div className="w-4" />
-                    )}
-                    <div className="flex-1 min-w-0 space-y-1.5">
-                      {/* Status badges */}
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        {item.action === "new" && (
-                          <Badge className="bg-purple-600 hover:bg-purple-600 text-white text-[10px]">
-                            New Question
-                          </Badge>
-                        )}
-                        {item.action === "update" && item.questionChanged && (
-                          <Badge className="bg-amber-400 hover:bg-amber-400 text-amber-950 text-[10px]">
-                            Updated Question
-                          </Badge>
-                        )}
-                        {item.action === "update" && item.weightChanged && (
-                          <Badge className="bg-blue-500 hover:bg-blue-500 text-white text-[10px]">
-                            Updated Weight
-                          </Badge>
-                        )}
-                        {item.action === "remove" && (
-                          <Badge className="bg-red-500 hover:bg-red-500 text-white text-[10px]">
-                            Removed Question
-                          </Badge>
-                        )}
-                        {item.action === "keep" && (
-                          <Badge variant="outline" className="text-[10px] text-muted-foreground">
-                            Unchanged
-                          </Badge>
-                        )}
-                        <span className="ml-auto text-xs font-medium text-purple-700 dark:text-purple-400">
-                          Weight: {item.weight}
-                          {item.action === "update" && item.weightChanged && item.originalWeight != null && (
-                            <span className="text-muted-foreground"> (was {item.originalWeight})</span>
-                          )}
-                        </span>
-                      </div>
-
-                      {/* Question text */}
-                      <p
-                        className={`text-sm ${
-                          item.action === "remove" ? "line-through text-muted-foreground" : "text-foreground"
-                        }`}
-                      >
-                        {item.question}
-                      </p>
-                      {item.action === "update" && item.questionChanged && item.originalQuestion && (
-                        <p className="text-xs text-muted-foreground line-through">{item.originalQuestion}</p>
-                      )}
-
-                      {/* Meta */}
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Badge variant="secondary" className="text-[10px]">
-                          {item.category}
-                        </Badge>
-                        <Badge variant="outline" className="text-[10px]">
-                          {item.qvtype}
-                        </Badge>
-                        {item.value && (
-                          <span className="text-xs text-muted-foreground">Expected: {item.value}</span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        <div className="rounded-md bg-muted/50 px-3 py-2 text-xs">
-          <span className="font-semibold">{changeCount}</span> change{changeCount === 1 ? "" : "s"} selected ·
-          projected total weight{" "}
-          <span
-            className={`font-semibold ${
-              projectedWeight === 100
-                ? "text-green-600 dark:text-green-400"
-                : projectedWeight > 100
-                  ? "text-destructive"
-                  : "text-foreground"
-            }`}
-          >
-            {projectedWeight}/100
-          </span>
-          {projectedWeight !== 100 && (
-            <span className="text-muted-foreground"> — adjust selections to reach 100 before publishing.</span>
-          )}
-        </div>
-
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={applying}>
-            Cancel
-          </Button>
-          <Button
-            onClick={handleApply}
-            disabled={applying || plan.length === 0}
-            className="gap-1.5"
-            data-testid="button-apply-regenerated"
-          >
-            {applying ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-            Apply Changes
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function AIReqPreviewDialog({
-  open,
-  onOpenChange,
-  requirements,
-  onAdd,
-}: {
-  open: boolean;
-  onOpenChange: (v: boolean) => void;
-  requirements: any[];
-  onAdd: (reqs: any[]) => void;
-}) {
-  const [selected, setSelected] = useState<number[]>([]);
-  useEffect(() => {
-    if (open) setSelected(requirements.map((_, i) => i));
-  }, [open, requirements]);
-
-  const selectedWeight = selected.reduce(
-    (sum, idx) => sum + (parseInt(requirements[idx]?.weight, 10) || 0),
-    0,
-  );
-
-  const categoryColor = (cat: string) => {
-    if (cat === "Technical") return "secondary";
-    if (cat === "Finance") return "outline";
-    return "outline";
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-purple-600" />
-            AI-Generated Evaluation Criteria
-          </DialogTitle>
-          <DialogDescription>
-            Review and select the criteria you want to add to your bid. Selected
-            criteria will consume{" "}
-            <span className="font-semibold text-foreground">
-              {selectedWeight} weight point{selectedWeight !== 1 ? "s" : ""}
-            </span>{" "}
-            from your remaining budget.
-          </DialogDescription>
-        </DialogHeader>
-
-        {requirements.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            <Scale className="h-10 w-10 mx-auto mb-3 opacity-50" />
-            <p className="text-sm">No criteria generated</p>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {requirements.map((req: any, idx: number) => (
-              <div
-                key={idx}
-                className={`rounded-lg border p-3 cursor-pointer transition-colors ${selected.includes(idx) ? "border-purple-400 bg-purple-50/50 dark:bg-purple-950/20" : "hover:bg-muted/50"}`}
-                onClick={() =>
-                  setSelected((prev) =>
-                    prev.includes(idx)
-                      ? prev.filter((i) => i !== idx)
-                      : [...prev, idx],
-                  )
-                }
-                data-testid={`card-ai-req-${idx}`}
-              >
-                <div className="flex items-start gap-3">
-                  <div onClick={(e) => e.stopPropagation()}>
-                    <Checkbox
-                      checked={selected.includes(idx)}
-                      onCheckedChange={(checked) =>
-                        setSelected((prev) =>
-                          checked
-                            ? [...prev, idx]
-                            : prev.filter((i) => i !== idx),
-                        )
-                      }
-                    />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    {/* Row 1: category, type, weight */}
-                    <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <Badge
-                        variant={
-                          req.category === "General" ? "secondary" : "outline"
-                        }
-                        className="text-xs"
-                      >
-                        {req.category}
-                      </Badge>
-                      <Badge variant="outline" className="text-xs">
-                        {req.qvtype}
-                      </Badge>
-                      <span className="text-xs font-medium text-purple-700 dark:text-purple-400 ml-auto">
-                        Weight: {req.weight}
-                      </span>
-                    </div>
-
-                    {/* Row 2: question */}
-                    <p className="text-sm font-medium">{req.question}</p>
-
-                    {/* Row 3: expected value */}
-                    {req.value && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        <span className="font-medium">Expected:</span>{" "}
-                        {req.value}
-                      </p>
-                    )}
-
-                    {/* Row 4: dropdown options (shown only when type=Dropdown) */}
-                    {req.qvtype === "Dropdown" &&
-                      Array.isArray(req.lovOptions) &&
-                      req.lovOptions.length > 0 && (
-                        <div className="mt-2 flex flex-wrap gap-1">
-                          {req.lovOptions.map((opt: string, oi: number) => (
-                            <span
-                              key={oi}
-                              className="inline-block text-xs bg-muted px-2 py-0.5 rounded"
-                            >
-                              {opt}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Weight summary banner */}
-        {selected.length > 0 && (
-          <div className="rounded-md bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800 px-3 py-2 text-xs text-purple-800 dark:text-purple-300">
-            <span className="font-semibold">{selected.length}</span> criteria
-            selected ·{" "}
-            <span className="font-semibold">{selectedWeight}</span> total weight
-            points will be added
-          </div>
-        )}
-
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button
-            onClick={() => onAdd(selected.map((i) => requirements[i]))}
-            disabled={selected.length === 0}
-            data-testid="button-add-ai-criteria"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add {selected.length} Criteria
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function AIClausePreviewDialog({
-  open,
-  onOpenChange,
-  clauses,
-  onAdd,
-}: {
-  open: boolean;
-  onOpenChange: (v: boolean) => void;
-  clauses: any[];
-  onAdd: (clauses: any[]) => void;
-}) {
-  const [selected, setSelected] = useState<number[]>([]);
-  useEffect(() => {
-    if (open) setSelected(clauses.map((_, i) => i));
-  }, [open, clauses]);
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-purple-600" />
-            AI-Generated Terms & Instructions
-          </DialogTitle>
-          <DialogDescription>
-            Review and select clauses to add to your bid
-          </DialogDescription>
-        </DialogHeader>
-        {clauses.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            <ScrollText className="h-10 w-10 mx-auto mb-3 opacity-50" />
-            <p className="text-sm">No clauses generated</p>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {clauses.map((clause: any, idx: number) => (
-              <div
-                key={idx}
-                className={`rounded-lg border p-3 cursor-pointer transition-colors ${selected.includes(idx) ? "border-purple-400 bg-purple-50/50 dark:bg-purple-950/20" : "hover:bg-muted/50"}`}
-                onClick={() =>
-                  setSelected((prev) =>
-                    prev.includes(idx)
-                      ? prev.filter((i) => i !== idx)
-                      : [...prev, idx],
-                  )
-                }
-                data-testid={`card-ai-clause-${idx}`}
-              >
-                <div className="flex items-start gap-3">
-                  <div onClick={(e) => e.stopPropagation()}>
-                    <Checkbox
-                      checked={selected.includes(idx)}
-                      onCheckedChange={(checked) =>
-                        setSelected((prev) =>
-                          checked
-                            ? [...prev, idx]
-                            : prev.filter((i) => i !== idx),
-                        )
-                      }
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Badge
-                        variant={
-                          clause.type === "terms" ? "secondary" : "outline"
-                        }
-                        className="text-xs capitalize"
-                      >
-                        {clause.type}
-                      </Badge>
-                      {clause.class_ref && (
-                        <span className="text-xs text-muted-foreground">
-                          Ref: {clause.class_ref}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-sm">{clause.class_desc}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button
-            onClick={() => onAdd(selected.map((i) => clauses[i]))}
-            disabled={selected.length === 0}
-            data-testid="button-add-ai-clauses"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add {selected.length} Clause(s)
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
 }
 
 interface Organization {
@@ -891,25 +194,6 @@ export default function BidDetail() {
   const [, navigate] = useLocation();
   const [editAutoOpened, setEditAutoOpened] = useState(false);
 
-  const [showAIStrategyDialog, setShowAIStrategyDialog] = useState(false);
-  const [aiStrategy, setAiStrategy] = useState<any>(null);
-  const [aiStrategyLoading, setAiStrategyLoading] = useState(false);
-  const aiStrategyFingerprintRef = useRef<string | null>(null);
-  const [showAIVendorPanel, setShowAIVendorPanel] = useState(false);
-  const [aiVendorRecs, setAiVendorRecs] = useState<any[]>([]);
-  const [aiVendorLoading, setAiVendorLoading] = useState(false);
-  const [aiReqLoading, setAiReqLoading] = useState(false);
-  const [aiReqPreview, setAiReqPreview] = useState<any[]>([]);
-  const [showAIReqPreview, setShowAIReqPreview] = useState(false);
-  // Regenerate / re-evaluate evaluation criteria (triggered by line/question/document changes)
-  const [regenerateAvailable, setRegenerateAvailable] = useState(false);
-  const [regenLoading, setRegenLoading] = useState(false);
-  const [regenPlan, setRegenPlan] = useState<any[]>([]);
-  const [showRegenDialog, setShowRegenDialog] = useState(false);
-  const [aiClauseLoading, setAiClauseLoading] = useState(false);
-  const [aiTeamSuggestionLoading, setAiTeamSuggestionLoading] = useState(false);
-  const [aiClausePreview, setAiClausePreview] = useState<any[]>([]);
-  const [showAIClausePreview, setShowAIClausePreview] = useState(false);
   const [lineForm, setLineForm] = useState({
     linetype: "Goods",
     description: "",
@@ -925,10 +209,6 @@ export default function BidDetail() {
     needbyto: "",
     itemCode: "",
   });
-  // Item the FMP benchmark was explicitly requested for. Null = trigger armed.
-  const [fmpRequestedItemKey, setFmpRequestedItemKey] = useState<string | null>(
-    null,
-  );
 
   const sanitizeDecimalInput = (value: string) =>
     value.replace(/[^0-9.]/g, "").replace(/(\..*)\./g, "$1");
@@ -987,8 +267,6 @@ export default function BidDetail() {
   const [proxyComments, setProxyComments] = useState("");
   const [proxyRefNumber, setProxyRefNumber] = useState("");
   const [proxyActiveTab, setProxyActiveTab] = useState("financial");
-
-  const { isAIEnabled } = useAISettings();
 
   const { data: bid, isLoading } = useQuery<any>({
     queryKey: ["/api/dbo/bids", bidId],
@@ -1169,92 +447,6 @@ export default function BidDetail() {
   });
   const uomOptions = uomData || [];
 
-  // True only while the item the benchmark was requested for is still the one
-  // in the sheet — picking a different item re-arms the trigger button.
-  const fmpRequested =
-    !!lineForm.itemId && fmpRequestedItemKey === lineForm.itemId;
-
-  const fmpDeliveryLocation =
-    bid?.delivertto_location_name || bid?.shiptoaddress || "";
-
-  // Fair Market Price Intelligence — re-analyses the currently selected line
-  // item on every explicit user action. Deliberately POSTs /recalculate rather
-  // than GET /snapshot: the GET is cache-first (returns the stored row for
-  // STALE_DAYS), so clicking the button would replay an old scrape instead of
-  // re-analysing. staleTime/gcTime 0 does the same job on the client — the
-  // React Query defaults are staleTime: Infinity, which would otherwise serve
-  // the previous result for an item the user already benchmarked this session.
-  const {
-    data: fmpSnapshot,
-    isFetching: fmpFetching,
-    isError: fmpFailed,
-    refetch: refetchFmpSnapshot,
-  } = useQuery<FmpSnapshot>({
-    queryKey: [
-      "/api/fmpi/recalculate",
-      lineForm.itemId,
-      lineForm.currency,
-      lineForm.description,
-      fmpDeliveryLocation,
-      lineForm.quantity,
-    ],
-    queryFn: () =>
-      apiRequest("POST", "/api/fmpi/recalculate", {
-        itemId: lineForm.itemId,
-        itemName: lineForm.itemName || "",
-        itemDescription: lineForm.description || lineForm.itemName || "",
-        categoryCode: lineForm.categoryCode || "",
-        categoryName: lineForm.categoryName || "",
-        currency: lineForm.currency || bid?.currency || "INR",
-        uom: lineForm.uom || "",
-        deliveryLocation: fmpDeliveryLocation || undefined,
-        quantity: lineForm.quantity ? Number(lineForm.quantity) : 1,
-        // Publish the result against this bid line so suppliers can be shown the
-        // same benchmark. Only possible for a saved line — new lines get their
-        // snapshot from the backfill that runs when the toggle is switched on.
-        ...(editingLine?.id ? { docType: "BID", docId: bidId, docLineId: editingLine.id } : {}),
-      }).then((r) => r.json()),
-    enabled: fmpRequested && isAIEnabled("AI_FMP_INTELLIGENCE"),
-    staleTime: 0,
-    gcTime: 0,
-  });
-
-  // Bid-wide switch that publishes the fair market price to invited suppliers.
-  // It lives in the line dialog because that is where the buyer is looking at
-  // the number, but the flag is stored on the bid — turning it on backfills a
-  // benchmark for every line that doesn't have one yet, so the suppliers never
-  // see a half-filled sheet.
-  const fmpVisibilityMutation = useMutation({
-    mutationFn: async (enabled: boolean) => {
-      const res = await apiRequest(
-        "PUT",
-        `/api/dbo/bids/${bidId}/fmp-visibility`,
-        { enabled },
-      );
-      return await res.json();
-    },
-    onSuccess: (data: any) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/dbo/bids", bidId] });
-      const enabled = !!data?.showFmpToSupplier;
-      const pending = Number(data?.pendingBenchmarks) || 0;
-      toast({
-        title: enabled ? "FMPI shared with suppliers" : "FMPI hidden from suppliers",
-        description: enabled
-          ? pending > 0
-            ? `Suppliers can now see the fair market price on each line. Benchmarking ${pending} more line item${pending === 1 ? "" : "s"} in the background.`
-            : "Suppliers can now see the fair market price on each line of this bid."
-          : "Suppliers can no longer see the fair market price on this bid.",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error?.message || "Failed to update FMPI visibility.",
-        variant: "destructive",
-      });
-    },
-  });
-
   const resetLineForm = () => {
     setLineForm({
       linetype: "Goods",
@@ -1272,7 +464,6 @@ export default function BidDetail() {
       itemCode: "",
     });
     setItemEntryMode("master");
-    setFmpRequestedItemKey(null);
   };
 
   const addLineMutation = useMutation({
@@ -1288,7 +479,6 @@ export default function BidDetail() {
       queryClient.invalidateQueries({
         queryKey: ["/api/dbo/bids", bidId, "lines"],
       });
-      setRegenerateAvailable(true);
       toast({ title: "Line Added", description: "Bid line has been added." });
       setAddLineSheetOpen(false);
       resetLineForm();
@@ -1310,7 +500,6 @@ export default function BidDetail() {
       queryClient.invalidateQueries({
         queryKey: ["/api/dbo/bids", bidId, "lines"],
       });
-      setRegenerateAvailable(true);
       toast({
         title: "Line Removed",
         description: "Bid line has been removed.",
@@ -1331,7 +520,6 @@ export default function BidDetail() {
       queryClient.invalidateQueries({
         queryKey: ["/api/dbo/bids", bidId, "lines"],
       });
-      setRegenerateAvailable(true);
       toast({ title: "Line Updated", description: "Bid line has been updated." });
       setAddLineSheetOpen(false);
       setEditingLine(null);
@@ -1408,7 +596,6 @@ export default function BidDetail() {
       queryClient.invalidateQueries({
         queryKey: ["/api/dbo/bids", bidId, "requirements"],
       });
-      setRegenerateAvailable(true);
       toast({
         title: "Criteria Added",
         description: "Evaluation criteria has been added.",
@@ -1446,7 +633,6 @@ export default function BidDetail() {
       queryClient.invalidateQueries({
         queryKey: ["/api/dbo/bids", bidId, "requirements"],
       });
-      setRegenerateAvailable(true);
       toast({
         title: "Criteria Updated",
         description: "Evaluation criteria has been updated.",
@@ -1483,367 +669,12 @@ export default function BidDetail() {
       queryClient.invalidateQueries({
         queryKey: ["/api/dbo/bids", bidId, "requirements"],
       });
-      setRegenerateAvailable(true);
       toast({
         title: "Criteria Removed",
         description: "Evaluation criteria has been removed.",
       });
     },
   });
-
-  const getBidDataFingerprint = () => {
-    const lineItems = lines || [];
-    const categories = Array.from(
-      new Set(lineItems.map((l: any) => l.product_category).filter(Boolean))
-    ).sort();
-    const descriptions = lineItems
-      .map((l: any) => `${l.description}|${l.quantity}|${l.currentprice}`)
-      .sort();
-    const supplierIds = (suppliers || [])
-      .map((s: any) => s.supplier_id)
-      .sort();
-    return JSON.stringify({ categories, descriptions, supplierIds });
-  };
-
-  const fetchAIStrategy = async () => {
-    const lineItems = lines || [];
-    if (lineItems.length === 0) {
-      toast({
-        title: "No Line Items",
-        description: "Add at least one line item before running the AI Strategy Advisor.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const currentFingerprint = getBidDataFingerprint();
-    if (aiStrategy && aiStrategyFingerprintRef.current === currentFingerprint) {
-      setShowAIStrategyDialog(true);
-      return;
-    }
-
-    setAiStrategyLoading(true);
-    try {
-      const categories = Array.from(
-        new Set(lineItems.map((l: any) => l.product_category).filter(Boolean)),
-      );
-      const itemDescriptions = lineItems
-        .map((l: any) => l.description)
-        .filter(Boolean);
-      const supplierIds = (suppliers || [])
-        .map((s: any) => parseInt(String(s.supplier_id), 10))
-        .filter((id) => !isNaN(id) && id > 0);
-      const res = await apiRequest("POST", "/api/dbo/bids/ai/strategy", {
-        bidId,
-        categories,
-        itemDescriptions,
-        supplierIds,
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || err.message || "Could not generate strategy recommendations.");
-      }
-      const data = await res.json();
-      setAiStrategy(data);
-      aiStrategyFingerprintRef.current = currentFingerprint;
-      setShowAIStrategyDialog(true);
-    } catch (e: any) {
-      toast({
-        title: "AI Strategy Advisor",
-        description: e?.message || "Could not generate strategy recommendations.",
-        variant: "destructive",
-      });
-    } finally {
-      setAiStrategyLoading(false);
-    }
-  };
-
-  const fetchAIVendorRecs = async () => {
-    setAiVendorLoading(true);
-    try {
-      const res = await apiRequest(
-        "POST",
-        `/api/dbo/bids/${bidId}/ai/vendor-recommendations`,
-        {},
-      );
-      const data = await res.json();
-      if (Array.isArray(data) && data.length === 0) {
-        setAiVendorRecs([]);
-        setShowAIVendorPanel(true);
-      } else {
-        setAiVendorRecs(data);
-        setShowAIVendorPanel(true);
-      }
-    } catch (e) {
-      setAiVendorRecs([]);
-      setShowAIVendorPanel(true);
-    } finally {
-      setAiVendorLoading(false);
-    }
-  };
-
-  const fetchAIRequirements = async () => {
-    // Client-side pre-call validation: check total existing weight
-    const currentTotal = (requirements || []).reduce((sum: number, r: any) => {
-      const w = parseInt(r.weight || "0", 10);
-      return sum + (isNaN(w) ? 0 : w);
-    }, 0);
-
-    if (currentTotal >= 100) {
-      toast({
-        title: "Cannot Generate AI Criteria",
-        description:
-          "Total weightage already equals 100. Reduce existing criteria weights before generating AI suggestions.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setAiReqLoading(true);
-    try {
-      const res = await apiRequest(
-        "POST",
-        `/api/dbo/bids/${bidId}/ai/generate-requirements`,
-        {},
-      );
-
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.error || "Could not generate requirements.");
-      }
-
-      const data = await res.json();
-      if (!data || data.length === 0) {
-        toast({
-          title: "AI Criteria",
-          description:
-            "No criteria could be generated. The remaining weight budget may be too small.",
-          variant: "destructive",
-        });
-        return;
-      }
-      setAiReqPreview(data);
-      setShowAIReqPreview(true);
-    } catch (e: any) {
-      toast({
-        title: "AI Error",
-        description: e?.message || "Could not generate requirements.",
-        variant: "destructive",
-      });
-    } finally {
-      setAiReqLoading(false);
-    }
-  };
-
-  const fetchAIClauses = async () => {
-    setAiClauseLoading(true);
-    try {
-      const res = await apiRequest(
-        "POST",
-        `/api/dbo/bids/${bidId}/ai/generate-clauses`,
-        {},
-      );
-      const data = await res.json();
-      setAiClausePreview(data);
-      setShowAIClausePreview(true);
-    } catch (e) {
-      toast({
-        title: "AI Error",
-        description: "Could not generate terms & instructions.",
-        variant: "destructive",
-      });
-    } finally {
-      setAiClauseLoading(false);
-    }
-  };
-
-  const fetchAITeamSuggestion = async () => {
-    if (!bidId) return;
-    if (!requirements || requirements.length === 0) {
-      toast({
-        title: "AI Team Suggestion",
-        description: "No evaluation criteria added",
-        variant: "destructive",
-      });
-      return;
-    }
-    setAiTeamSuggestionLoading(true);
-    try {
-      const res = await apiRequest(
-        "POST",
-        `/api/dbo/bids/${bidId}/ai/evaluation-team-suggestion`,
-        {},
-      );
-      const data = await res.json();
-      const added = Number(data?.added || 0);
-      const message =
-        data?.message ||
-        (added > 0
-          ? `Added ${added} member(s).`
-          : "No eligible team members were added.");
-
-      const toastPayload: any = {
-        title: added > 0 ? "AI Team Suggestion Added" : "AI Team Suggestion",
-        description: message,
-      };
-      if (added === 0) {
-        toastPayload.variant = "destructive";
-      }
-      toast(toastPayload);
-
-      queryClient.invalidateQueries({
-        queryKey: ["/api/dbo/bids", bidId, "approvers"],
-      });
-    } catch (e: any) {
-      toast({
-        title: "AI Team Suggestion",
-        description: e?.message || "No evaluation criteria added ",
-        variant: "destructive",
-      });
-    } finally {
-      setAiTeamSuggestionLoading(false);
-    }
-  };
-
-  const addAIClauses = async (selectedClauses: any[]) => {
-    for (const clause of selectedClauses) {
-      await addClauseMutation.mutateAsync(clause);
-    }
-    setShowAIClausePreview(false);
-    setAiClausePreview([]);
-    toast({
-      title: "AI Clauses Added",
-      description: `${selectedClauses.length} terms & instructions have been added.`,
-    });
-  };
-
-  const addAIRequirements = async (selectedReqs: any[]) => {
-    for (const req of selectedReqs) {
-      // Build the lov string from lovOptions array (comma-separated)
-      const lovString =
-        req.qvtype === "Dropdown" &&
-        Array.isArray(req.lovOptions) &&
-        req.lovOptions.length > 0
-          ? req.lovOptions.join(",")
-          : null;
-
-      await addRequirementMutation.mutateAsync({
-        category: req.category,
-        question: req.question,
-        qvoption: "Required",
-        qvtype: req.qvtype || "Text",
-        // Use the AI-generated weight directly (already normalized to remaining budget)
-        weight: String(req.weight || 1),
-        // Save the expected value/benchmark into the target field
-        target: req.value || null,
-        lov: lovString,
-      });
-    }
-    setShowAIReqPreview(false);
-    setAiReqPreview([]);
-    // Adding AI-generated criteria reuses addRequirementMutation, which trips the
-    // regenerate flag. The questions are in sync right after generating+adding, so
-    // clear it to avoid immediately prompting the user to regenerate.
-    setRegenerateAvailable(false);
-    toast({
-      title: "AI Criteria Added",
-      description: `${selectedReqs.length} evaluation criteria have been added successfully.`,
-    });
-  };
-
-  const fetchRegenerate = async () => {
-    setRegenLoading(true);
-    try {
-      const res = await apiRequest(
-        "POST",
-        `/api/dbo/bids/${bidId}/ai/regenerate-requirements`,
-        {},
-      );
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.error || "Could not regenerate evaluation criteria.");
-      }
-      const data = await res.json();
-      if (!Array.isArray(data) || data.length === 0) {
-        toast({
-          title: "Regenerate Evaluation Criteria",
-          description: "No changes were suggested for the current evaluation criteria.",
-        });
-        setRegenerateAvailable(false);
-        return;
-      }
-      setRegenPlan(data);
-      setShowRegenDialog(true);
-    } catch (e: any) {
-      toast({
-        title: "AI Error",
-        description: e?.message || "Could not regenerate evaluation criteria.",
-        variant: "destructive",
-      });
-    } finally {
-      setRegenLoading(false);
-    }
-  };
-
-  const applyRegenerated = async (selectedActions: any[]) => {
-    const actionable = selectedActions.filter((a) => a.action !== "keep");
-    if (actionable.length === 0) {
-      setShowRegenDialog(false);
-      setRegenPlan([]);
-      setRegenerateAvailable(false);
-      return;
-    }
-    try {
-      const res = await apiRequest(
-        "POST",
-        `/api/dbo/bids/${bidId}/ai/apply-regenerated-requirements`,
-        { actions: actionable },
-      );
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.error || "Could not apply the regenerated criteria.");
-      }
-      const summary = await res.json().catch(() => ({}));
-      queryClient.invalidateQueries({
-        queryKey: ["/api/dbo/bids", bidId, "requirements"],
-      });
-      setShowRegenDialog(false);
-      setRegenPlan([]);
-      setRegenerateAvailable(false);
-      toast({
-        title: "Evaluation Criteria Updated",
-        description: `Added ${summary.created ?? 0}, updated ${summary.updated ?? 0}, removed ${summary.removed ?? 0}.`,
-      });
-    } catch (e: any) {
-      toast({
-        title: "AI Error",
-        description: e?.message || "Could not apply the regenerated criteria.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const inviteAIVendors = async (vendorIds: number[]) => {
-    const recsToInvite = aiVendorRecs.filter((v) =>
-      vendorIds.includes(v.supplierId),
-    );
-    for (const v of recsToInvite) {
-      await addSupplierMutation.mutateAsync({
-        supplier_id: v.supplierId,
-        supplier_name: v.supplierName,
-        supplier_site: v.supplierSite || `${v.supplierName}`,
-        supplier_contact: v.contactName || "",
-        supplier_contact_email: v.contactEmail || "",
-        supplier_contact_no: "",
-      });
-    }
-    toast({
-      title: "Suppliers Invited",
-      description: `${recsToInvite.length} AI-recommended supplier(s) invited.`,
-    });
-    setShowAIVendorPanel(false);
-    setAiVendorRecs([]);
-  };
 
   const addClauseMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -1950,7 +781,6 @@ export default function BidDetail() {
       queryClient.invalidateQueries({
         queryKey: ["/api/dbo/bids", bidId, "attachments"],
       });
-      setRegenerateAvailable(true);
       toast({
         title: "Attachment Added",
         description: "Document has been attached successfully.",
@@ -1991,7 +821,6 @@ export default function BidDetail() {
       queryClient.invalidateQueries({
         queryKey: ["/api/dbo/bids", bidId, "attachments"],
       });
-      setRegenerateAvailable(true);
       toast({
         title: "Attachment Added",
         description: "Criteria document has been attached successfully.",
@@ -2065,7 +894,6 @@ export default function BidDetail() {
       queryClient.invalidateQueries({
         queryKey: ["/api/dbo/bids", bidId, "attachments"],
       });
-      setRegenerateAvailable(true);
       toast({
         title: "Attachment Removed",
         description: "Attachment has been removed.",
@@ -2353,15 +1181,6 @@ export default function BidDetail() {
   const isDraft = bid.status === "Draft";
   const isPrCancelled = bid.attribute_15 === "PR Cancelled";
   const bidType = bid.type || "RFQ";
-  const statusUpper = String(bid.status || "").trim().toUpperCase();
-  const typeUpper = String(bidType || "").trim().toUpperCase();
-  const isDraftRfp =
-    statusUpper === "DRAFT RFP" || (statusUpper === "DRAFT" && typeUpper === "RFP");
-  const isDraftTender =
-    statusUpper === "DRAFT TENDER" || (statusUpper === "DRAFT" && typeUpper === "TENDER");
-  const showAITeamSuggestion =
-    isAIEnabled("AI_EVALUATION_TEAM_SUGGESTION") &&
-    (isDraftRfp || isDraftTender);
   const typeLabel = bidTypeLabels[bidType] || bidType;
   const bidNumber = bid.bid_number || bid.attribute_4 || `BID-${bid.id}`;
 
@@ -2756,42 +1575,6 @@ export default function BidDetail() {
         </Card>
       </div>
 
-      {isDraft && isAIEnabled("AI_BID_STRATEGY") && (lines?.length ?? 0) > 0 && (
-        <Card className="border-dashed border-purple-300 dark:border-purple-700 bg-purple-50/50 dark:bg-purple-950/20">
-          <CardContent className="py-3 px-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="h-9 w-9 rounded-lg bg-purple-100 dark:bg-purple-900/40 flex items-center justify-center">
-                  <Brain className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium">AI Bid Strategy Advisor</p>
-                  <p className="text-xs text-muted-foreground">
-                    Get AI-powered recommendations for bid type, duration, and
-                    pricing strategy
-                  </p>
-                </div>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={fetchAIStrategy}
-                disabled={aiStrategyLoading}
-                className="border-purple-300 dark:border-purple-700 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/40"
-                data-testid="button-ai-strategy"
-              >
-                {aiStrategyLoading ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <Sparkles className="h-4 w-4 mr-2" />
-                )}
-                Analyze
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       {!isDraft && (
         <div className="bg-muted/50 border rounded-md p-3 flex items-center gap-2">
           <AlertCircle className="h-4 w-4 text-muted-foreground" />
@@ -3165,23 +1948,6 @@ export default function BidDetail() {
               </CardTitle>
               {(isDraft || bid.status === "Published") && !isPrCancelled && (
                 <div className="flex items-center gap-2">
-                  {isAIEnabled("AI_SMART_VENDOR_SUGGEST") && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={fetchAIVendorRecs}
-                      disabled={aiVendorLoading}
-                      className="border-purple-300 dark:border-purple-700 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/40"
-                      data-testid="button-ai-vendor-suggest"
-                    >
-                      {aiVendorLoading ? (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      ) : (
-                        <Sparkles className="h-4 w-4 mr-2" />
-                      )}
-                      AI Smart Suggest
-                    </Button>
-                  )}
                   <Button
                     size="sm"
                     onClick={() => setShowAddSupplierDialog(true)}
@@ -3319,67 +2085,6 @@ export default function BidDetail() {
                 </div>
                 {isDraft && !isPrCancelled && (
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    {isAIEnabled("AI_GENERATE_REQUIREMENTS") && (() => {
-                      const totalWeight = (requirements || []).reduce(
-                        (sum: number, r: any) => {
-                          const w = parseInt(r.weight || "0", 10);
-                          return sum + (isNaN(w) ? 0 : w);
-                        },
-                        0,
-                      );
-                      const weightBudgetFull = totalWeight >= 100;
-                      return (
-                        <TooltipProvider delayDuration={200}>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              {/* span captures pointer events so the tooltip works even when the button is disabled */}
-                              <span
-                                className={weightBudgetFull || aiReqLoading ? "cursor-not-allowed" : ""}
-                              >
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={fetchAIRequirements}
-                                  disabled={aiReqLoading || weightBudgetFull}
-                                  className="border-purple-300 dark:border-purple-700 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/40 disabled:pointer-events-none disabled:opacity-50"
-                                  data-testid="button-ai-generate-criteria"
-                                >
-                                  {aiReqLoading ? (
-                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                  ) : (
-                                    <Sparkles className="h-4 w-4 mr-2" />
-                                  )}
-                                  AI Generate
-                                </Button>
-                              </span>
-                            </TooltipTrigger>
-                            <TooltipContent side="bottom" className="max-w-xs text-center">
-                              {weightBudgetFull
-                                ? "Reduce the current total weightage below 100 before generating AI evaluation criteria."
-                                : "Generate evaluation criteria using AI"}
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      );
-                    })()}
-                    {isAIEnabled("AI_GENERATE_REQUIREMENTS") &&
-                      (requirements?.length || 0) > 0 && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={fetchRegenerate}
-                          disabled={regenLoading}
-                          className="border-purple-300 dark:border-purple-700 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/40"
-                          data-testid="button-ai-regenerate-criteria"
-                        >
-                          {regenLoading ? (
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          ) : (
-                            <RefreshCw className="h-4 w-4 mr-2" />
-                          )}
-                          Regenerate
-                        </Button>
-                      )}
                     <Button
                       size="sm"
                       onClick={() => setShowAddRequirementDialog(true)}
@@ -3392,43 +2097,6 @@ export default function BidDetail() {
                 )}
               </CardHeader>
               <CardContent className="px-4 pb-4 pt-0">
-                {isDraft && !isPrCancelled && regenerateAvailable &&
-                  isAIEnabled("AI_GENERATE_REQUIREMENTS") &&
-                  (requirements?.length || 0) > 0 && (
-                    <div className="mb-3 flex items-center justify-between gap-3 rounded-md border border-purple-200 bg-purple-50 px-3 py-2 dark:border-purple-800 dark:bg-purple-950/30">
-                      <div className="flex items-center gap-2 text-xs text-purple-800 dark:text-purple-300">
-                        <Sparkles className="h-4 w-4 flex-shrink-0" />
-                        <span>
-                          Bid details changed. Regenerate evaluation questions to keep them aligned with the latest line items and documents.
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={fetchRegenerate}
-                          disabled={regenLoading}
-                          className="border-purple-300 dark:border-purple-700 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/40"
-                          data-testid="button-regenerate-banner"
-                        >
-                          {regenLoading ? (
-                            <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
-                          ) : (
-                            <RefreshCw className="h-4 w-4 mr-1.5" />
-                          )}
-                          Regenerate
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => setRegenerateAvailable(false)}
-                          data-testid="button-dismiss-regenerate"
-                        >
-                          Dismiss
-                        </Button>
-                      </div>
-                    </div>
-                  )}
                 {!requirements || requirements.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
                     <Scale className="h-10 w-10 mx-auto mb-3 opacity-50" />
@@ -3679,23 +2347,6 @@ export default function BidDetail() {
                   <Users className="h-4 w-4" />
                   Evaluation Team ({approvers?.length || 0})
                 </CardTitle>
-                {showAITeamSuggestion && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={fetchAITeamSuggestion}
-                    disabled={aiTeamSuggestionLoading}
-                    className="border-purple-300 dark:border-purple-700 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/40"
-                    data-testid="button-ai-team-suggestion"
-                  >
-                    {aiTeamSuggestionLoading ? (
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-4 w-4 mr-2" />
-                    )}
-                    AI Team Suggestion
-                  </Button>
-                )}
               </CardHeader>
               <CardContent className="px-4 pb-4 pt-0 space-y-4">
                 <div className="text-sm text-muted-foreground space-y-1">
@@ -3885,23 +2536,6 @@ export default function BidDetail() {
               </CardTitle>
               {isDraft && !isPrCancelled && (
                 <div className="flex items-center gap-2">
-                  {isAIEnabled("AI_GENERATE_CLAUSES") && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={fetchAIClauses}
-                      disabled={aiClauseLoading}
-                      className="border-purple-300 dark:border-purple-700 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/40"
-                      data-testid="button-ai-generate-clauses"
-                    >
-                      {aiClauseLoading ? (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      ) : (
-                        <Sparkles className="h-4 w-4 mr-2" />
-                      )}
-                      AI Generate
-                    </Button>
-                  )}
                   <Button
                     size="sm"
                     onClick={() => setShowAddClauseDialog(true)}
@@ -4116,29 +2750,51 @@ export default function BidDetail() {
       </Tabs>
 
       {/* ADD / EDIT LINE SHEET */}
-      <Sheet
+      <FormSheet
         open={addLineSheetOpen}
         onOpenChange={(open) => {
           setAddLineSheetOpen(open);
           if (!open) {
             setEditingLine(null);
             resetLineForm();
-            setFmpRequestedItemKey(null);
           }
         }}
+        title={editingLine ? "Edit Line Item" : "Add Line Item"}
+        description={editingLine ? "Update the line item details." : "Add a new line item to this bid."}
+        onSubmit={() => {
+          if (!lineForm.description) {
+            toast({
+              title: "Required",
+              description: "Description is required.",
+              variant: "destructive",
+            });
+            return;
+          }
+          const payload = {
+            linetype: lineForm.linetype,
+            description: lineForm.description,
+            uom: lineForm.uom || "EA",
+            quantity: parseInt(lineForm.quantity) || 1,
+            currentprice: parseFloat(lineForm.currentprice) || 0,
+            currency: bid?.currency || "INR",
+            product_category: lineForm.categoryName || null,
+            product_category_id: lineForm.categoryCode || null,
+            item_id: lineForm.itemId || null,
+            needbyfrom: lineForm.needbyfrom || null,
+            needbyto: lineForm.needbyto || null,
+          };
+          if (editingLine) {
+            updateLineMutation.mutate({ lineId: editingLine.id, data: payload });
+          } else {
+            addLineMutation.mutate(payload);
+          }
+        }}
+        submitLabel={editingLine ? "Update Line" : "Add Line"}
+        isSubmitting={addLineMutation.isPending || updateLineMutation.isPending}
+        submitDisabled={!lineForm.description}
+        widthClassName="w-full sm:max-w-[600px]"
       >
-        <SheetContent className="w-[600px] sm:max-w-[600px] overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle className="flex items-center gap-2">
-              {editingLine ? <Pencil className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
-              {editingLine ? "Edit Line Item" : "Add Line Item"}
-            </SheetTitle>
-            <SheetDescription>
-              {editingLine ? "Update the line item details." : "Add a new line item to this bid."}
-            </SheetDescription>
-          </SheetHeader>
-
-          <div className="space-y-6 pt-2 pb-6">
+          <div className="space-y-6 pb-6">
             <div className="space-y-4">
               {/* <h4 className="text-sm font-medium">Item Details</h4> */}
 
@@ -4420,111 +3076,6 @@ export default function BidDetail() {
                   />
                 </div>
 
-                {isAIEnabled("AI_FMP_INTELLIGENCE") &&
-                  isDraft &&
-                  !!lineForm.itemId && (
-                    <div className="space-y-2 col-span-2">
-                      {!fmpRequested ? (
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          className="w-full"
-                          onClick={() => setFmpRequestedItemKey(lineForm.itemId)}
-                          data-testid="button-fmp-benchmark"
-                        >
-                          <Sparkles className="h-4 w-4 mr-1" aria-hidden="true" />
-                          AI Fair Market Price
-                        </Button>
-                      ) : fmpFetching ? (
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          className="w-full"
-                          disabled
-                          data-testid="button-fmp-benchmark"
-                        >
-                          <Loader2
-                            className="h-4 w-4 mr-1 animate-spin"
-                            aria-hidden="true"
-                          />
-                          Computing benchmark...
-                          <span className="sr-only">
-                            Computing AI fair market price benchmark, please wait
-                          </span>
-                        </Button>
-                      ) : fmpFailed ? (
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="outline"
-                          className="w-full"
-                          onClick={() => refetchFmpSnapshot()}
-                          data-testid="button-fmp-benchmark"
-                        >
-                          <RefreshCw className="h-4 w-4 mr-1" aria-hidden="true" />
-                          Retry AI Benchmark
-                        </Button>
-                      ) : (
-                        <>
-                          <FmpBenchmarkCard
-                            snapshot={fmpSnapshot}
-                            enteredPrice={
-                              parseFloat(lineForm.currentprice) || null
-                            }
-                            currency={lineForm.currency || bid?.currency || "INR"}
-                            onUseFairPrice={(price) =>
-                              setLineForm((f) => ({
-                                ...f,
-                                currentprice: String(price),
-                              }))
-                            }
-                          />
-                          {/* The trigger button is gone once the card renders, so
-                              this is the only way to re-run the same analysis. */}
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="ghost"
-                            className="w-full"
-                            onClick={() => refetchFmpSnapshot()}
-                            data-testid="button-fmp-reanalyze"
-                          >
-                            <RefreshCw
-                              className="h-4 w-4 mr-1"
-                              aria-hidden="true"
-                            />
-                            Re-analyze
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  )}
-
-                {isAIEnabled("AI_FMP_INTELLIGENCE") && (
-                  <div className="col-span-2 flex items-center justify-between gap-3 rounded-md border p-3">
-                    <div className="space-y-0.5">
-                      <Label
-                        htmlFor="switch-show-fmp-to-supplier"
-                        className="flex items-center gap-2 text-sm font-medium cursor-pointer"
-                      >
-                        <Sparkles className="h-3.5 w-3.5 text-primary" />
-                        Show FMPI to Suppliers
-                      </Label>
-                    </div>
-                    <Switch
-                      id="switch-show-fmp-to-supplier"
-                      checked={!!bid?.show_fmp_to_supplier}
-                      disabled={fmpVisibilityMutation.isPending}
-                      onCheckedChange={(checked: boolean) =>
-                        fmpVisibilityMutation.mutate(checked)
-                      }
-                      data-testid="switch-show-fmp-to-supplier"
-                    />
-                  </div>
-                )}
-
                 <div>
                   <Label htmlFor="line-needbyfrom">Required From</Label>
                   <Input
@@ -4553,58 +3104,7 @@ export default function BidDetail() {
               </div>
             </div>
           </div>
-
-          <SheetFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setAddLineSheetOpen(false);
-                setFmpRequestedItemKey(null);
-              }}
-              data-testid="button-cancel-line"
-            >
-              Cancel
-            </Button>
-            <Button
-              disabled={!lineForm.description || addLineMutation.isPending || updateLineMutation.isPending}
-              data-testid="button-submit-line"
-              onClick={() => {
-                if (!lineForm.description) {
-                  toast({
-                    title: "Required",
-                    description: "Description is required.",
-                    variant: "destructive",
-                  });
-                  return;
-                }
-                const payload = {
-                  linetype: lineForm.linetype,
-                  description: lineForm.description,
-                  uom: lineForm.uom || "EA",
-                  quantity: parseInt(lineForm.quantity) || 1,
-                  currentprice: parseFloat(lineForm.currentprice) || 0,
-                  currency: bid?.currency || "INR",
-                  product_category: lineForm.categoryName || null,
-                  product_category_id: lineForm.categoryCode || null,
-                  item_id: lineForm.itemId || null,
-                  needbyfrom: lineForm.needbyfrom || null,
-                  needbyto: lineForm.needbyto || null,
-                };
-                if (editingLine) {
-                  updateLineMutation.mutate({ lineId: editingLine.id, data: payload });
-                } else {
-                  addLineMutation.mutate(payload);
-                }
-              }}
-            >
-              {(addLineMutation.isPending || updateLineMutation.isPending) && (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              )}
-              {editingLine ? "Update Line" : "Add Line"}
-            </Button>
-          </SheetFooter>
-        </SheetContent>
-      </Sheet>
+      </FormSheet>
 
       <InviteSuppliersSheet
         open={showAddSupplierDialog}
@@ -4615,7 +3115,7 @@ export default function BidDetail() {
       />
 
       {/* ADD CRITERIA SHEET */}
-      <Sheet
+      <FormSheet
         open={showAddRequirementDialog}
         onOpenChange={(open) => {
           setShowAddRequirementDialog(open);
@@ -4632,24 +3132,86 @@ export default function BidDetail() {
             setNewLovOption("");
           }
         }}
+        title={editingRequirement ? "Edit Evaluation Criteria" : "Add Evaluation Criteria"}
+        description={
+          editingRequirement
+            ? "Update the evaluation criteria details."
+            : "Add evaluation criteria used to evaluate and score bid responses."
+        }
+        onSubmit={() => {
+          if (!reqForm.category) {
+            toast({
+              title: "Required",
+              description: "Category is required.",
+              variant: "destructive",
+            });
+            return;
+          }
+          if (!reqForm.question) {
+            toast({
+              title: "Required",
+              description: "Requirement is required.",
+              variant: "destructive",
+            });
+            return;
+          }
+          if (!reqForm.weight) {
+            toast({
+              title: "Required",
+              description: "Weightage is required.",
+              variant: "destructive",
+            });
+            return;
+          }
+          const parsedWeight = Number(reqForm.weight);
+          if (
+            !Number.isInteger(parsedWeight) ||
+            parsedWeight < 1 ||
+            parsedWeight > 100
+          ) {
+            toast({
+              title: "Invalid Weightage",
+              description: "Weightage must be between 1 and 100.",
+              variant: "destructive",
+            });
+            return;
+          }
+          if (
+            reqForm.qvtype === "Dropdown" &&
+            reqForm.lovOptions.length === 0
+          ) {
+            toast({
+              title: "Required",
+              description: "Add at least one dropdown option.",
+              variant: "destructive",
+            });
+            return;
+          }
+          const payload = {
+            category: reqForm.category,
+            question: reqForm.question,
+            qvoption: reqForm.qvoption,
+            qvtype: reqForm.qvtype,
+            weight: reqForm.weight,
+            lov:
+              reqForm.qvtype === "Dropdown"
+                ? reqForm.lovOptions.join(",")
+                : null,
+          };
+          if (editingRequirement) {
+            updateRequirementMutation.mutate(payload);
+          } else {
+            addRequirementMutation.mutate(payload);
+          }
+        }}
+        submitLabel={editingRequirement ? "Update" : "Submit"}
+        isSubmitting={addRequirementMutation.isPending || updateRequirementMutation.isPending}
+        widthClassName="w-full sm:max-w-[600px]"
       >
-        <SheetContent
-          className="w-[600px] sm:max-w-[600px] overflow-y-auto"
-          side="right"
-        >
-          <SheetHeader>
-            <SheetTitle>
-              {editingRequirement
-                ? "Edit Evaluation Criteria"
-                : "Add Evaluation Criteria"}
-            </SheetTitle>
-            <SheetDescription>
-              {editingRequirement
-                ? "Update the evaluation criteria details."
-                : "Add evaluation criteria used to evaluate and score bid responses."}
-            </SheetDescription>
-          </SheetHeader>
-          <div className="space-y-4 pt-2 pb-6">
+          <p className="text-xs text-muted-foreground mb-4">
+            <span className="text-destructive">*</span> Indicates mandatory fields
+          </p>
+          <div className="space-y-4 pb-6">
             <div>
               <Label htmlFor="criteria-category">
                 Category <span className="text-destructive">*</span>
@@ -4838,98 +3400,10 @@ export default function BidDetail() {
               />
             </div>
           </div>
-          <SheetFooter className="gap-2 sm:gap-0">
-            <Button
-              variant="outline"
-              onClick={() => setShowAddRequirementDialog(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={() => {
-                if (!reqForm.category) {
-                  toast({
-                    title: "Required",
-                    description: "Category is required.",
-                    variant: "destructive",
-                  });
-                  return;
-                }
-                if (!reqForm.question) {
-                  toast({
-                    title: "Required",
-                    description: "Requirement is required.",
-                    variant: "destructive",
-                  });
-                  return;
-                }
-                if (!reqForm.weight) {
-                  toast({
-                    title: "Required",
-                    description: "Weightage is required.",
-                    variant: "destructive",
-                  });
-                  return;
-                }
-                const parsedWeight = Number(reqForm.weight);
-                if (
-                  !Number.isInteger(parsedWeight) ||
-                  parsedWeight < 1 ||
-                  parsedWeight > 100
-                ) {
-                  toast({
-                    title: "Invalid Weightage",
-                    description: "Weightage must be between 1 and 100.",
-                    variant: "destructive",
-                  });
-                  return;
-                }
-                if (
-                  reqForm.qvtype === "Dropdown" &&
-                  reqForm.lovOptions.length === 0
-                ) {
-                  toast({
-                    title: "Required",
-                    description: "Add at least one dropdown option.",
-                    variant: "destructive",
-                  });
-                  return;
-                }
-                const payload = {
-                  category: reqForm.category,
-                  question: reqForm.question,
-                  qvoption: reqForm.qvoption,
-                  qvtype: reqForm.qvtype,
-                  weight: reqForm.weight,
-                  lov:
-                    reqForm.qvtype === "Dropdown"
-                      ? reqForm.lovOptions.join(",")
-                      : null,
-                };
-                if (editingRequirement) {
-                  updateRequirementMutation.mutate(payload);
-                } else {
-                  addRequirementMutation.mutate(payload);
-                }
-              }}
-              disabled={
-                addRequirementMutation.isPending ||
-                updateRequirementMutation.isPending
-              }
-              data-testid="button-submit-criteria"
-            >
-              {(addRequirementMutation.isPending ||
-                updateRequirementMutation.isPending) && (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                )}
-              {editingRequirement ? "Update" : "Submit"}
-            </Button>
-          </SheetFooter>
-        </SheetContent>
-      </Sheet>
+      </FormSheet>
 
       {/* ADD CLAUSE DIALOG */}
-      <Sheet
+      <FormSheet
         open={showAddClauseDialog}
         onOpenChange={(open) => {
           setShowAddClauseDialog(open);
@@ -4937,18 +3411,24 @@ export default function BidDetail() {
             setClauseForm({ type: "terms", class_desc: "", class_ref: "" });
           }
         }}
+        title="Add Term / Instruction"
+        description="Add a term or instruction clause to this bid."
+        onSubmit={() => {
+          if (!clauseForm.class_desc) {
+            toast({
+              title: "Required",
+              description: "Description is required.",
+              variant: "destructive",
+            });
+            return;
+          }
+          addClauseMutation.mutate(clauseForm);
+        }}
+        submitLabel="Add"
+        isSubmitting={addClauseMutation.isPending}
+        widthClassName="w-full sm:max-w-[420px]"
       >
-        <SheetContent className="w-[420px] sm:max-w-[420px] overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle className="flex items-center gap-2">
-              <ScrollText className="h-5 w-5" />
-              Add Term / Instruction
-            </SheetTitle>
-            <SheetDescription>
-              Add a term or instruction clause to this bid.
-            </SheetDescription>
-          </SheetHeader>
-          <div className="space-y-4 pt-4 pb-6">
+          <div className="space-y-4 pb-6">
             <div className="space-y-1.5">
               <Label htmlFor="clause-type">Type</Label>
               <Select
@@ -4990,39 +3470,10 @@ export default function BidDetail() {
               />
             </div>
           </div>
-          <SheetFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowAddClauseDialog(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={() => {
-                if (!clauseForm.class_desc) {
-                  toast({
-                    title: "Required",
-                    description: "Description is required.",
-                    variant: "destructive",
-                  });
-                  return;
-                }
-                addClauseMutation.mutate(clauseForm);
-              }}
-              disabled={addClauseMutation.isPending}
-              data-testid="button-submit-clause"
-            >
-              {addClauseMutation.isPending && (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              )}
-              Add
-            </Button>
-          </SheetFooter>
-        </SheetContent>
-      </Sheet>
+      </FormSheet>
 
       {/* ATTACH DOCUMENT SHEET */}
-      <Sheet
+      <FormSheet
         open={showAddAttachmentDialog}
         onOpenChange={(open) => {
           setShowAddAttachmentDialog(open);
@@ -5036,19 +3487,32 @@ export default function BidDetail() {
             setSelectedFile(null);
           }
         }}
+        title="Attach Document"
+        description="Attach a technical specification document to this bid."
+        onSubmit={() => {
+          if (!attachForm.attach_desc) {
+            toast({
+              title: "Required",
+              description: "Description is required.",
+              variant: "destructive",
+            });
+            return;
+          }
+          if (!attachForm.attach_name) {
+            toast({
+              title: "Required",
+              description: "Please select a file.",
+              variant: "destructive",
+            });
+            return;
+          }
+          addAttachmentMutation.mutate(attachForm);
+        }}
+        submitLabel="Attach"
+        isSubmitting={addAttachmentMutation.isPending}
+        widthClassName="w-full sm:max-w-[600px]"
       >
-        <SheetContent className="w-[600px] sm:max-w-[600px] overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle className="flex items-center gap-2">
-              <Paperclip className="h-5 w-5" />
-              Attach Document
-            </SheetTitle>
-            <SheetDescription>
-              Attach a technical specification document to this bid.
-            </SheetDescription>
-          </SheetHeader>
-
-          <div className="space-y-6 pt-2 pb-6">
+          <div className="space-y-6 pb-6">
             <div className="space-y-4">
               <div>
                 <Label htmlFor="attach-desc">Description</Label>
@@ -5120,50 +3584,11 @@ export default function BidDetail() {
                 </p>
               </div>
             </div>
-
-            <SheetFooter>
-              <Button
-                variant="outline"
-                onClick={() => setShowAddAttachmentDialog(false)}
-                data-testid="button-cancel-attach"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={() => {
-                  if (!attachForm.attach_desc) {
-                    toast({
-                      title: "Required",
-                      description: "Description is required.",
-                      variant: "destructive",
-                    });
-                    return;
-                  }
-                  if (!attachForm.attach_name) {
-                    toast({
-                      title: "Required",
-                      description: "Please select a file.",
-                      variant: "destructive",
-                    });
-                    return;
-                  }
-                  addAttachmentMutation.mutate(attachForm);
-                }}
-                disabled={addAttachmentMutation.isPending}
-                data-testid="button-submit-attachment"
-              >
-                {addAttachmentMutation.isPending && (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                )}
-                Attach
-              </Button>
-            </SheetFooter>
           </div>
-        </SheetContent>
-      </Sheet>
+      </FormSheet>
 
       {/* CRITERIA ATTACHMENT SHEET */}
-      <Sheet
+      <FormSheet
         open={showCriteriaAttachmentDialog}
         onOpenChange={(open) => {
           setShowCriteriaAttachmentDialog(open);
@@ -5177,24 +3602,32 @@ export default function BidDetail() {
             setSelectedCriteriaFile(null);
           }
         }}
+        title="Attach Criteria Document"
+        description="Attach evaluation criteria documents to be used during bid evaluation."
+        onSubmit={() => {
+          if (!criteriaAttachForm.attach_desc) {
+            toast({
+              title: "Required",
+              description: "Description is required.",
+              variant: "destructive",
+            });
+            return;
+          }
+          if (!criteriaAttachForm.attach_name) {
+            toast({
+              title: "Required",
+              description: "Please select a file.",
+              variant: "destructive",
+            });
+            return;
+          }
+          addCriteriaAttachmentMutation.mutate(criteriaAttachForm);
+        }}
+        submitLabel="Attach"
+        isSubmitting={addCriteriaAttachmentMutation.isPending}
+        widthClassName="w-full sm:max-w-[600px]"
       >
-        <SheetContent
-          className="w-[600px] sm:max-w-[600px] overflow-y-auto"
-          side="right"
-        >
-          <SheetHeader>
-            <SheetTitle>
-              <div className="flex items-center gap-2">
-                <Paperclip className="h-5 w-5" /> Attach Criteria Document
-              </div>
-            </SheetTitle>
-            <SheetDescription>
-              Attach evaluation criteria documents to be used during bid
-              evaluation.
-            </SheetDescription>
-          </SheetHeader>
-
-          <div className="space-y-4 pt-2 pb-6">
+          <div className="space-y-4 pb-6">
             <div>
               <Label htmlFor="criteria-attach-desc">Description</Label>
               <Input
@@ -5265,49 +3698,11 @@ export default function BidDetail() {
               </p>
             </div>
 
-            <SheetFooter>
-              <Button
-                variant="outline"
-                onClick={() => setShowCriteriaAttachmentDialog(false)}
-                data-testid="button-cancel-criteria-attach"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={() => {
-                  if (!criteriaAttachForm.attach_desc) {
-                    toast({
-                      title: "Required",
-                      description: "Description is required.",
-                      variant: "destructive",
-                    });
-                    return;
-                  }
-                  if (!criteriaAttachForm.attach_name) {
-                    toast({
-                      title: "Required",
-                      description: "Please select a file.",
-                      variant: "destructive",
-                    });
-                    return;
-                  }
-                  addCriteriaAttachmentMutation.mutate(criteriaAttachForm);
-                }}
-                disabled={addCriteriaAttachmentMutation.isPending}
-                data-testid="button-submit-criteria-attachment"
-              >
-                {addCriteriaAttachmentMutation.isPending && (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                )}
-                Attach
-              </Button>
-            </SheetFooter>
           </div>
-        </SheetContent>
-      </Sheet>
+      </FormSheet>
 
       {/* TERMS ATTACHMENT SHEET */}
-      <Sheet
+      <FormSheet
         open={showTermsAttachmentDialog}
         onOpenChange={(open) => {
           setShowTermsAttachmentDialog(open);
@@ -5321,23 +3716,32 @@ export default function BidDetail() {
             setSelectedTermsFile(null);
           }
         }}
+        title="Attach Terms Document"
+        description="Attach terms and instructions documents to this bid."
+        onSubmit={() => {
+          if (!termsAttachForm.attach_desc) {
+            toast({
+              title: "Required",
+              description: "Description is required.",
+              variant: "destructive",
+            });
+            return;
+          }
+          if (!termsAttachForm.attach_name) {
+            toast({
+              title: "Required",
+              description: "Please select a file.",
+              variant: "destructive",
+            });
+            return;
+          }
+          addTermsAttachmentMutation.mutate(termsAttachForm);
+        }}
+        submitLabel="Attach"
+        isSubmitting={addTermsAttachmentMutation.isPending}
+        widthClassName="w-full sm:max-w-[420px]"
       >
-        <SheetContent
-          className="w-[420px] sm:max-w-[420px] overflow-y-auto"
-          side="right"
-        >
-          <SheetHeader>
-            <SheetTitle>
-              <div className="flex items-center gap-2">
-                <Paperclip className="h-5 w-5" /> Attach Terms Document
-              </div>
-            </SheetTitle>
-            <SheetDescription>
-              Attach terms and instructions documents to this bid.
-            </SheetDescription>
-          </SheetHeader>
-
-          <div className="space-y-4 pt-4 pb-6">
+          <div className="space-y-4 pb-6">
             <div className="space-y-1.5">
               <Label htmlFor="terms-attach-desc">Description</Label>
               <Input
@@ -5407,47 +3811,8 @@ export default function BidDetail() {
                 Maximum allowed size is 5MB
               </p>
             </div>
-
-            <SheetFooter>
-              <Button
-                variant="outline"
-                onClick={() => setShowTermsAttachmentDialog(false)}
-                data-testid="button-cancel-terms-attach"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={() => {
-                  if (!termsAttachForm.attach_desc) {
-                    toast({
-                      title: "Required",
-                      description: "Description is required.",
-                      variant: "destructive",
-                    });
-                    return;
-                  }
-                  if (!termsAttachForm.attach_name) {
-                    toast({
-                      title: "Required",
-                      description: "Please select a file.",
-                      variant: "destructive",
-                    });
-                    return;
-                  }
-                  addTermsAttachmentMutation.mutate(termsAttachForm);
-                }}
-                disabled={addTermsAttachmentMutation.isPending}
-                data-testid="button-submit-terms-attachment"
-              >
-                {addTermsAttachmentMutation.isPending && (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                )}
-                Attach
-              </Button>
-            </SheetFooter>
           </div>
-        </SheetContent>
-      </Sheet>
+      </FormSheet>
 
       {/* EDIT HEADER SHEET */}
       <BidFormSheet
@@ -5516,180 +3881,6 @@ export default function BidDetail() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* AI STRATEGY ADVISOR DIALOG */}
-      <Dialog
-        open={showAIStrategyDialog}
-        onOpenChange={setShowAIStrategyDialog}
-      >
-        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Brain className="h-5 w-5 text-purple-600" />
-              AI Bid Strategy Recommendation
-            </DialogTitle>
-            <DialogDescription>
-              Based on analysis of historical bids for similar line items
-            </DialogDescription>
-          </DialogHeader>
-          {aiStrategy && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-lg border p-3 bg-purple-50/50 dark:bg-purple-950/20">
-                  <p className="text-xs text-muted-foreground mb-1">
-                    Recommended Bid Type
-                  </p>
-                  {aiStrategy.recommendedType ? (
-                    <>
-                      <p
-                        className="text-lg font-semibold text-purple-700 dark:text-purple-300"
-                        data-testid="text-ai-rec-type"
-                      >
-                        {aiStrategy.recommendedType}
-                      </p>
-                      <p
-                        className="text-xs text-muted-foreground mt-1"
-                        data-testid="text-ai-rec-type-basis"
-                      >
-                        Based on {aiStrategy.recommendedTypeCount} similar
-                        historical bids
-                      </p>
-                    </>
-                  ) : (
-                    <p
-                      className="text-sm text-muted-foreground"
-                      data-testid="text-ai-rec-type-none"
-                    >
-                      No recommendation — insufficient similar published bid
-                      history
-                    </p>
-                  )}
-                </div>
-                <div className="rounded-lg border p-3 bg-purple-50/50 dark:bg-purple-950/20">
-                  <p className="text-xs text-muted-foreground mb-1">
-                    Recommended Duration
-                  </p>
-                  {aiStrategy.recommendedDuration != null ? (
-                    <p
-                      className="text-lg font-semibold text-purple-700 dark:text-purple-300"
-                      data-testid="text-ai-rec-duration"
-                    >
-                      {aiStrategy.recommendedDuration} days
-                    </p>
-                  ) : (
-                    <p
-                      className="text-sm text-muted-foreground"
-                      data-testid="text-ai-rec-duration"
-                    >
-                      No recommendation — insufficient similar bid history
-                    </p>
-                  )}
-                </div>
-              </div>
-              <div
-                className={`grid gap-3 ${aiStrategy.showAvgResponseRate ? "grid-cols-2" : "grid-cols-1"}`}
-              >
-                {aiStrategy.showAvgResponseRate && (
-                  <div className="rounded-lg border p-3">
-                    <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
-                      <TrendingUp className="h-3 w-3" /> Avg Response Rate
-                    </p>
-                    <p
-                      className="text-sm font-medium"
-                      data-testid="text-ai-avg-response-rate"
-                    >
-                      {aiStrategy.avgResponseRate != null
-                        ? `${aiStrategy.avgResponseRate}%`
-                        : "No historical invitation data for invited suppliers"}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Average of invited supplier&apos;s historical responses 
-                      
-                    </p>
-                  </div>
-                )}
-                <div className="rounded-lg border p-3">
-                  <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
-                    <Users className="h-3 w-3" /> Historical Bids
-                  </p>
-                  <p className="text-sm font-medium">
-                    {aiStrategy.historicalBids} bids analyzed
-                  </p>
-                </div>
-              </div>
-              {aiStrategy.pricingInsight && (
-                <div className="rounded-lg border p-3">
-                  <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
-                    <DollarSign className="h-3 w-3" /> Pricing Insight
-                  </p>
-                  <p className="text-sm">{aiStrategy.pricingInsight}</p>
-                </div>
-              )}
-              <div className="rounded-lg border p-3">
-                <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
-                  <Lightbulb className="h-3 w-3" /> Reasoning
-                </p>
-                <p className="text-sm">{aiStrategy.reasoning}</p>
-              </div>
-              {aiStrategy.tips?.length > 0 && (
-                <div className="rounded-lg border p-3">
-                  <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
-                    <Target className="h-3 w-3" /> Tips
-                  </p>
-                  <ul className="space-y-1">
-                    {aiStrategy.tips.map((tip: string, i: number) => (
-                      <li key={i} className="text-sm flex items-start gap-2">
-                        <Zap className="h-3 w-3 mt-1 text-purple-500 shrink-0" />
-                        <span>{tip}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          )}
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowAIStrategyDialog(false)}
-            >
-              Close
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* AI VENDOR RECOMMENDATIONS DIALOG */}
-      <AIVendorRecsDialog
-        open={showAIVendorPanel}
-        onOpenChange={setShowAIVendorPanel}
-        recommendations={aiVendorRecs}
-        onInvite={inviteAIVendors}
-      />
-
-      {/* AI REQUIREMENTS PREVIEW DIALOG */}
-      <AIReqPreviewDialog
-        open={showAIReqPreview}
-        onOpenChange={setShowAIReqPreview}
-        requirements={aiReqPreview}
-        onAdd={addAIRequirements}
-      />
-
-      {/* AI REGENERATE / RE-EVALUATE DIALOG */}
-      <RegenerateReqDialog
-        open={showRegenDialog}
-        onOpenChange={setShowRegenDialog}
-        plan={regenPlan}
-        onApply={applyRegenerated}
-      />
-
-      {/* AI CLAUSES PREVIEW DIALOG */}
-      <AIClausePreviewDialog
-        open={showAIClausePreview}
-        onOpenChange={setShowAIClausePreview}
-        clauses={aiClausePreview}
-        onAdd={addAIClauses}
-      />
-
       {/* SAVE AS TEMPLATE DIALOG */}
       <Dialog open={showTemplateDialog} onOpenChange={setShowTemplateDialog}>
         <DialogContent>
@@ -5743,19 +3934,30 @@ export default function BidDetail() {
       </Dialog>
 
       {/* Place Proxy Sheet */}
-      <Sheet open={showProxySheet} onOpenChange={(open) => { if (!open) setShowProxySheet(false); }}>
-        <SheetContent className="w-full sm:max-w-3xl overflow-y-auto flex flex-col">
-          <SheetHeader>
-            <SheetTitle className="flex items-center gap-2">
-              <ClipboardList className="h-4 w-4" />
-              Place Proxy Bid Response
-            </SheetTitle>
-            <SheetDescription>
-              Submit a bid response on behalf of an invited vendor.
-            </SheetDescription>
-          </SheetHeader>
-
-          <div className="flex-1 overflow-y-auto space-y-4 py-4">
+      <FormSheet
+        open={showProxySheet}
+        onOpenChange={(open) => { if (!open) setShowProxySheet(false); }}
+        title="Place Proxy Bid Response"
+        description="Submit a bid response on behalf of an invited vendor."
+        onSubmit={
+          (requirements?.length ?? 0) > 0 && proxyActiveTab === "technical"
+            ? () => setProxyActiveTab("financial")
+            : handleSubmitProxy
+        }
+        submitLabel={
+          (requirements?.length ?? 0) > 0 && proxyActiveTab === "technical"
+            ? "Next"
+            : "Submit Response"
+        }
+        isSubmitting={placeProxyMutation.isPending}
+        submitDisabled={
+          (requirements?.length ?? 0) > 0 && proxyActiveTab === "technical"
+            ? false
+            : !proxySupplier
+        }
+        widthClassName="w-full sm:max-w-3xl"
+      >
+          <div className="space-y-4">
             {/* Vendor Select */}
             <div className="space-y-1">
               <Label>
@@ -5964,29 +4166,7 @@ export default function BidDetail() {
               </div>
             )}
           </div>
-
-          <SheetFooter className="border-t pt-4 mt-auto">
-            <Button variant="outline" onClick={() => setShowProxySheet(false)} data-testid="button-proxy-cancel">
-              Cancel
-            </Button>
-            {(requirements?.length ?? 0) > 0 && proxyActiveTab === "technical" && (
-              <Button onClick={() => setProxyActiveTab("financial")} data-testid="button-proxy-next">
-                Next
-              </Button>
-            )}
-            {(proxyActiveTab === "financial" || (requirements?.length ?? 0) === 0) && (
-              <Button
-                onClick={handleSubmitProxy}
-                disabled={placeProxyMutation.isPending || !proxySupplier}
-                data-testid="button-proxy-submit"
-              >
-                {placeProxyMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                Submit Response
-              </Button>
-            )}
-          </SheetFooter>
-        </SheetContent>
-      </Sheet>
+      </FormSheet>
     </div>
   );
 }

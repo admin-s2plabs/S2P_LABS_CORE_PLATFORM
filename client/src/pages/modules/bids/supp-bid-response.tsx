@@ -2,7 +2,6 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { FmpSupplierHint, type SupplierFmpView } from "@/components/fmpi/fmp-supplier-hint";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -12,11 +11,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import {
-  Sheet, SheetContent,
-  SheetDescription, SheetFooter,
-  SheetHeader, SheetTitle,
-} from "@/components/ui/sheet";
+import { FormSheet } from "@/components/form-sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -325,15 +320,6 @@ export default function SupplierBidResponse() {
   const lines = data?.lines || [];
   const currency = resp?.currency || "AED";
 
-  // Published fair market price per bid line. The server returns
-  // `enabled: false` with no lines unless the buyer switched visibility on, so
-  // there is nothing to hide client-side.
-  const targetBidId = bidId || resp?.bidrefno || resp?.bid_id;
-  const { data: fmpData } = useQuery<{ enabled: boolean; lines: Record<string, SupplierFmpView> }>({
-    queryKey: ["/api/dbo/suppbids", targetBidId, "fmp"],
-    enabled: !!targetBidId,
-  });
-  const fmpLines = fmpData?.enabled ? fmpData.lines : undefined;
   const isProxySubmitted = resp?.attribute_5 === "Y";
   const isSubmitted = isProxySubmitted;
   const isNonEditable = isSubmitted || resp?.status === "Closed" || resp?.status === "Submitted";
@@ -614,12 +600,6 @@ export default function SupplierBidResponse() {
         <CardHeader className="py-3 px-4 space-y-2">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <SectionHeader icon={ClipboardList} title="Bid Response" />
-            {fmpLines && (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-purple-50 text-purple-900 border border-purple-200/80 dark:bg-purple-950/40 dark:text-purple-200 dark:border-purple-800/60 text-xs font-medium whitespace-nowrap shadow-xs">
-                <AlertCircle className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400 shrink-0" aria-hidden="true" />
-                <span>AI can make mistakes. Please verify.</span>
-              </span>
-            )}
           </div>
           <p className="text-sm text-muted-foreground bg-muted/50 rounded-md p-3" data-testid="text-instructions">
             Please provide your technical and financial response / quotes for the bid. Please attach all relevant technical and financial proposals support documents. Add any specific notes / comments / documents related to the proposal.
@@ -867,11 +847,6 @@ export default function SupplierBidResponse() {
                             <TableCell className="py-2">
                               <div className="text-sm font-medium">{line.description}</div>
                               {line.product_category && <div className="text-xs text-muted-foreground">{line.product_category}</div>}
-                              <FmpSupplierHint
-                                fmp={line.bid_line_id ? (fmpLines?.[String(line.bid_line_id)] || fmpLines?.[String(line.id)]) : fmpLines?.[String(line.id)]}
-                                currency={currency}
-                                testId={`text-fmp-line-${line.id}`}
-                              />
                             </TableCell>
                             <TableCell className="text-sm text-right font-mono py-2">{line.quantity}</TableCell>
                             <TableCell className="text-sm py-2">{line.uom || "-"}</TableCell>
@@ -1347,30 +1322,46 @@ export default function SupplierBidResponse() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <Sheet open={showTechAttachSheet} onOpenChange={(open) => {
-        setShowTechAttachSheet(open);
-        if (!open) { setTechAttachForm({ attach_name: "", attach_desc: "", attach_type: "application/pdf" }); setSelectedTechFile(null); }
-      }}>
-        <SheetContent className="w-[600px] sm:max-w-[600px] overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle className="flex items-center gap-2">
-              <Paperclip className="h-5 w-5" />
-              Attach Technical Document
-            </SheetTitle>
-            <SheetDescription>
-              Attach a technical specification document to your bid response.
-            </SheetDescription>
-          </SheetHeader>
-          <div className="space-y-6 pt-2 pb-6">
-            <div className="space-y-4">
+      <FormSheet
+        open={showTechAttachSheet}
+        onOpenChange={(open) => {
+          setShowTechAttachSheet(open);
+          if (!open) { setTechAttachForm({ attach_name: "", attach_desc: "", attach_type: "application/pdf" }); setSelectedTechFile(null); }
+        }}
+        title="Attach Technical Document"
+        description="Attach a technical specification document to your bid response."
+        onSubmit={() => {
+          if (!techAttachForm.attach_desc) {
+            toast({ title: "Required", description: "Description is required.", variant: "destructive" });
+            return;
+          }
+          if (!techAttachForm.attach_name || !selectedTechFile) {
+            toast({ title: "Required", description: "Please select a file.", variant: "destructive" });
+            return;
+          }
+          const formData = new FormData();
+          formData.append("file", selectedTechFile);
+          formData.append("attach_desc", techAttachForm.attach_desc);
+          formData.append("attach_name", techAttachForm.attach_name);
+          formData.append("attach_type", techAttachForm.attach_type);
+          addAttachmentMutation.mutate({ formData, source: "Technical" });
+        }}
+        submitLabel="Attach"
+        isSubmitting={addAttachmentMutation.isPending}
+        widthClassName="sm:max-w-2xl"
+      >
+        <p className="text-xs text-muted-foreground mb-4">
+          <span className="text-destructive">*</span> Indicates mandatory fields.
+        </p>
+        <div className="space-y-4">
               <div>
-                <Label htmlFor="tech-attach-desc">Description</Label>
+                <Label htmlFor="tech-attach-desc">Description <span className="text-destructive">*</span></Label>
                 <Input id="tech-attach-desc" value={techAttachForm.attach_desc} onChange={e => setTechAttachForm(f => ({ ...f, attach_desc: e.target.value }))}
                   placeholder="Enter description"
                   data-testid="input-tech-attach-desc" />
               </div>
               <div>
-                <Label htmlFor="tech-attach-file">Attach File</Label>
+                <Label htmlFor="tech-attach-file">Attach File <span className="text-destructive">*</span></Label>
                 <div className="flex items-center gap-2">
                   <Input
                     id="tech-attach-file"
@@ -1405,59 +1396,49 @@ export default function SupplierBidResponse() {
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">Maximum allowed size is 5MB</p>
               </div>
-            </div>
-            <SheetFooter>
-              <Button variant="outline" onClick={() => setShowTechAttachSheet(false)} data-testid="button-cancel-tech-attach">
-                Cancel
-              </Button>
-              <Button onClick={() => {
-                if (!techAttachForm.attach_desc) {
-                  toast({ title: "Required", description: "Description is required.", variant: "destructive" });
-                  return;
-                }
-                if (!techAttachForm.attach_name || !selectedTechFile) {
-                  toast({ title: "Required", description: "Please select a file.", variant: "destructive" });
-                  return;
-                }
-                const formData = new FormData();
-                formData.append("file", selectedTechFile);
-                formData.append("attach_desc", techAttachForm.attach_desc);
-                formData.append("attach_name", techAttachForm.attach_name);
-                formData.append("attach_type", techAttachForm.attach_type);
-                addAttachmentMutation.mutate({ formData, source: "Technical" });
-              }} disabled={addAttachmentMutation.isPending} data-testid="button-submit-tech-attach">
-                {addAttachmentMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                Attach
-              </Button>
-            </SheetFooter>
-          </div>
-        </SheetContent>
-      </Sheet>
+        </div>
+      </FormSheet>
 
-      <Sheet open={showFinAttachSheet} onOpenChange={(open) => {
-        setShowFinAttachSheet(open);
-        if (!open) { setFinAttachForm({ attach_name: "", attach_desc: "", attach_type: "application/pdf" }); setSelectedFinFile(null); }
-      }}>
-        <SheetContent className="w-[600px] sm:max-w-[600px] overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle className="flex items-center gap-2">
-              <Paperclip className="h-5 w-5" />
-              Attach Financial Document
-            </SheetTitle>
-            <SheetDescription>
-              Attach a financial specification document to your bid response.
-            </SheetDescription>
-          </SheetHeader>
-          <div className="space-y-6 pt-2 pb-6">
-            <div className="space-y-4">
+      <FormSheet
+        open={showFinAttachSheet}
+        onOpenChange={(open) => {
+          setShowFinAttachSheet(open);
+          if (!open) { setFinAttachForm({ attach_name: "", attach_desc: "", attach_type: "application/pdf" }); setSelectedFinFile(null); }
+        }}
+        title="Attach Financial Document"
+        description="Attach a financial specification document to your bid response."
+        onSubmit={() => {
+          if (!finAttachForm.attach_desc) {
+            toast({ title: "Required", description: "Description is required.", variant: "destructive" });
+            return;
+          }
+          if (!finAttachForm.attach_name || !selectedFinFile) {
+            toast({ title: "Required", description: "Please select a file.", variant: "destructive" });
+            return;
+          }
+          const formData = new FormData();
+          formData.append("file", selectedFinFile);
+          formData.append("attach_desc", finAttachForm.attach_desc);
+          formData.append("attach_name", finAttachForm.attach_name);
+          formData.append("attach_type", finAttachForm.attach_type);
+          addAttachmentMutation.mutate({ formData, source: "Financial" });
+        }}
+        submitLabel="Attach"
+        isSubmitting={addAttachmentMutation.isPending}
+        widthClassName="sm:max-w-2xl"
+      >
+        <p className="text-xs text-muted-foreground mb-4">
+          <span className="text-destructive">*</span> Indicates mandatory fields.
+        </p>
+        <div className="space-y-4">
               <div>
-                <Label htmlFor="fin-attach-desc">Description</Label>
+                <Label htmlFor="fin-attach-desc">Description <span className="text-destructive">*</span></Label>
                 <Input id="fin-attach-desc" value={finAttachForm.attach_desc} onChange={e => setFinAttachForm(f => ({ ...f, attach_desc: e.target.value }))}
                   placeholder="Enter description"
                   data-testid="input-fin-attach-desc" />
               </div>
               <div>
-                <Label htmlFor="fin-attach-file">Attach File</Label>
+                <Label htmlFor="fin-attach-file">Attach File <span className="text-destructive">*</span></Label>
                 <div className="flex items-center gap-2">
                   <Input
                     id="fin-attach-file"
@@ -1492,34 +1473,8 @@ export default function SupplierBidResponse() {
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">Maximum allowed size is 5MB</p>
               </div>
-            </div>
-            <SheetFooter>
-              <Button variant="outline" onClick={() => setShowFinAttachSheet(false)} data-testid="button-cancel-fin-attach">
-                Cancel
-              </Button>
-              <Button onClick={() => {
-                if (!finAttachForm.attach_desc) {
-                  toast({ title: "Required", description: "Description is required.", variant: "destructive" });
-                  return;
-                }
-                if (!finAttachForm.attach_name || !selectedFinFile) {
-                  toast({ title: "Required", description: "Please select a file.", variant: "destructive" });
-                  return;
-                }
-                const formData = new FormData();
-                formData.append("file", selectedFinFile);
-                formData.append("attach_desc", finAttachForm.attach_desc);
-                formData.append("attach_name", finAttachForm.attach_name);
-                formData.append("attach_type", finAttachForm.attach_type);
-                addAttachmentMutation.mutate({ formData, source: "Financial" });
-              }} disabled={addAttachmentMutation.isPending} data-testid="button-submit-fin-attach">
-                {addAttachmentMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                Attach
-              </Button>
-            </SheetFooter>
-          </div>
-        </SheetContent>
-      </Sheet>
+        </div>
+      </FormSheet>
     </div>
   );
 }

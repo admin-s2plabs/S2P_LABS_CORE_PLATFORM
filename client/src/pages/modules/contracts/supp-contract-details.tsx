@@ -16,6 +16,7 @@ import {
   DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { FormSheet } from "@/components/form-sheet";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -24,7 +25,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import {
   Sheet, SheetContent,
-  SheetDescription, SheetFooter,
+  SheetDescription,
   SheetHeader, SheetTitle,
 } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -32,7 +33,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { useAISettings } from "@/hooks/use-ai-settings";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency, formatDate } from "@/lib/common-functions";
 import { apiRequest } from "@/lib/queryClient";
@@ -50,7 +50,6 @@ import {
   Check,
   CheckCheck,
   CheckCircle2,
-  CheckSquare,
   ChevronDown,
   ChevronLeft, ChevronRight,
   ChevronsUpDown,
@@ -81,13 +80,11 @@ import {
   Save,
   Search,
   Send,
-  Sparkles,
   Square,
   ThumbsDown,
   ThumbsUp,
   Trash2,
   Truck,
-  Upload,
   UploadCloud,
   User,
   X,
@@ -497,7 +494,6 @@ export default function SupplierContractDetail() {
   const [, params] = useRoute("/app/supp-contract-details/:id");
   const contractId = params?.id;
   const { toast } = useToast();
-  const { isAIEnabled } = useAISettings();
   const queryClient = useQueryClient();
   const [, navigate] = useLocation();
   const [acceptOpen, setAcceptOpen] = useState(false);
@@ -516,14 +512,6 @@ export default function SupplierContractDetail() {
   const [sheetPreviewHtml, setSheetPreviewHtml] = useState<string | null>(null);
   const [sheetPreviewLoading, setSheetPreviewLoading] = useState(false);
   const [rightPanel, setRightPanel] = useState<null | 'details' | 'sow' | 'delivery'>(null);
-  const [importOpen, setImportOpen] = useState(false);
-  const [importFile, setImportFile] = useState<File | null>(null);
-  const [importLoading, setImportLoading] = useState(false);
-  const [importIsDragging, setImportIsDragging] = useState(false);
-  const [importClauses, setImportClauses] = useState<any[]>([]);
-  const [importSelectedKeys, setImportSelectedKeys] = useState<Set<number>>(new Set());
-  const [importExpandedKeys, setImportExpandedKeys] = useState<Set<number>>(new Set());
-  const importFileRef = useRef<HTMLInputElement>(null);
   const [delivSchedOpen, setDelivSchedOpen] = useState(false);
   const [editingDelivSched, setEditingDelivSched] = useState<any>(null);
   const emptyDelivForm = { deliverable_name: '', details: '', schedule_type: 'fixed', schedule_date: '', tentative_date: '', elasped_days: '', amt_milestone: '', pcnt_milestone: '', schedule_frequency: '' };
@@ -564,10 +552,6 @@ export default function SupplierContractDetail() {
   const clausesInitialized = useRef(false);
   const [submitNegotiationOpen, setSubmitNegotiationOpen] = useState(false);
   const [submitAcceptanceOpen, setSubmitAcceptanceOpen] = useState(false);
-  const [aiSummaryOpen, setAiSummaryOpen] = useState(false);
-  const [aiSummary, setAiSummary] = useState<null | {
-    summary: string; keyPoints: string[]; redFlags: string[]; signatoryNote: string | null; clausesAnalyzed: number; sowItemsAnalyzed: number;
-  }>(null);
 
   const submitNegotiationMutation = useMutation({
     mutationFn: async () => {
@@ -602,22 +586,6 @@ export default function SupplierContractDetail() {
       setTimeout(() => navigate("/app/supp-contracts"), 800);
     },
     onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
-  });
-
-  const aiSummaryMutation = useMutation({
-    mutationFn: async () => {
-      const res = await apiRequest("POST", `/api/contracts/${contractId}/ai-analysis`);
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || "Failed to generate summary");
-      }
-      return res.json();
-    },
-    onSuccess: (data) => {
-      setAiSummary({ summary: data.summary, keyPoints: data.keyPoints, redFlags: data.redFlags || [], signatoryNote: data.signatoryNote, clausesAnalyzed: data.clausesAnalyzed, sowItemsAnalyzed: data.sowItemsAnalyzed || 0 });
-      setAiSummaryOpen(true);
-    },
-    onError: (err: any) => toast({ title: "AI Summary failed", description: err.message, variant: "destructive" }),
   });
 
   const acceptReviewMutation = useMutation({
@@ -1148,91 +1116,6 @@ export default function SupplierContractDetail() {
     }
   }
 
-  function handleImportFileDrop(file: File) {
-    const name = file.name.toLowerCase();
-    if (!name.endsWith(".pdf") && !name.endsWith(".doc") && !name.endsWith(".docx")) {
-      toast({ title: "Unsupported file type", description: "Please upload a PDF, DOC, or DOCX file.", variant: "destructive" });
-      return;
-    }
-    setImportFile(file);
-    setImportClauses([]);
-    setImportSelectedKeys(new Set());
-    setImportExpandedKeys(new Set());
-  }
-
-  const onImportDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setImportIsDragging(false);
-    const file = e.dataTransfer.files[0];
-    if (file) handleImportFileDrop(file);
-  }, []);
-
-  async function handleImportDocument() {
-    if (!importFile) return;
-    setImportLoading(true);
-    try {
-      const name = importFile.name.toLowerCase();
-      let documentText = "";
-      if (name.endsWith(".pdf")) {
-        const pdfjsLib = await import("pdfjs-dist");
-        pdfjsLib.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/build/pdf.worker.mjs", import.meta.url).href;
-        const arrayBuffer = await importFile.arrayBuffer();
-        const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
-        for (let i = 1; i <= pdf.numPages; i++) {
-          const page = await pdf.getPage(i);
-          const content = await page.getTextContent();
-          documentText += content.items.map((item: any) => item.str).join(" ") + "\n";
-        }
-      } else {
-        const mammoth = await import("mammoth");
-        const arrayBuffer = await importFile.arrayBuffer();
-        const result = await mammoth.extractRawText({ arrayBuffer });
-        documentText = result.value;
-      }
-      if (!documentText.trim()) throw new Error("Could not read any text from this file.");
-      const resp = await apiRequest("POST", "/api/contracts/ai/extract", { documentText, contractId });
-      const result: any = await resp.json();
-      if (!resp.ok) throw new Error(result?.error || "AI extraction failed");
-      const extracted: any[] = result.clauses || [];
-      if (extracted.length === 0) {
-        toast({ title: "No clauses found", description: "AI couldn't identify any clauses. Try a digital PDF or Word document.", variant: "destructive" });
-        return;
-      }
-      setImportClauses(extracted);
-      const sel = new Set<number>();
-      const exp = new Set<number>();
-      extracted.forEach((c: any, i: number) => {
-        if (!c._already_exists) sel.add(i);
-        exp.add(i);
-      });
-      setImportSelectedKeys(sel);
-      setImportExpandedKeys(exp);
-    } catch (err: any) {
-      toast({ title: "Extraction failed", description: err?.message || "Please try again.", variant: "destructive" });
-    } finally {
-      setImportLoading(false);
-    }
-  }
-
-  async function handleAddImportedClauses() {
-    const selected = importClauses.filter((_, i) => importSelectedKeys.has(i));
-    for (let i = 0; i < selected.length; i++) {
-      const clause = selected[i];
-      await addClauseMutation.mutateAsync({
-        terms_name: clause.section_name,
-        term_details: clause.html_content || "",
-        order_by: localClauses.length + i + 1,
-      });
-    }
-    toast({ title: `${selected.length} clause${selected.length !== 1 ? 's' : ''} imported successfully` });
-    setImportOpen(false);
-    setImportFile(null);
-    setImportClauses([]);
-    setImportSelectedKeys(new Set());
-    setImportExpandedKeys(new Set());
-    setPreviewRefreshKey(k => k + 1);
-  }
-
   function extractVariables(): { name: string; clauseIds: number[] }[] {
     const varMap = new Map<string, number[]>();
     const pattern = /\{\{([^}]+)\}\}/g;
@@ -1522,25 +1405,6 @@ export default function SupplierContractDetail() {
             </>
           )}
 
-          {/* AI Summary — Pending Signature only, and feature must be enabled */}
-          {isAIEnabled('AI_CONTRACT_SUMMARY') && contract.status === "Pending Signature" && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                if (aiSummary) { setAiSummaryOpen(true); }
-                else { aiSummaryMutation.mutate(); }
-              }}
-              disabled={aiSummaryMutation.isPending}
-              data-testid="button-ai-summary"
-            >
-              {aiSummaryMutation.isPending
-                ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Summarizing…</>
-                : <><Sparkles className="h-4 w-4 mr-2" />AI Summary</>
-              }
-            </Button>
-          )}
-
           {/* View toggle — always last */}
           <Button
             variant="outline"
@@ -1702,15 +1566,6 @@ export default function SupplierContractDetail() {
                 </DropdownMenuContent>
               </DropdownMenu>
               <span className="w-px h-4 bg-border mx-1" />
-              {canOwnerEdit && (
-                <Button
-                  variant="ghost" size="sm" className="h-7 text-xs gap-1.5 px-2.5"
-                  onClick={() => { setImportOpen(true); setImportFile(null); setImportClauses([]); setImportSelectedKeys(new Set()); setImportExpandedKeys(new Set()); }}
-                  data-testid="button-modern-import"
-                >
-                  <Upload className="h-3.5 w-3.5" /> Import Doc
-                </Button>
-              )}
               <Button
                 variant="ghost" size="sm" className="h-7 text-xs gap-1.5 px-2.5"
                 onClick={handleDownloadContractPdf}
@@ -3024,16 +2879,19 @@ export default function SupplierContractDetail() {
       </Tabs>
       )}
 
-      {/* Add / Edit Delivery Schedule — Side Sheet (works in both Classic and Modern view) */}
-      <Sheet open={delivSchedOpen} onOpenChange={(o) => { setDelivSchedOpen(o); if (!o) setEditingDelivSched(null); }}>
-        <SheetContent className="w-[65vw] sm:max-w-[65vw] overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle>{editingDelivSched ? "Edit Delivery Schedule" : "Add Delivery Schedule"}</SheetTitle>
-            <SheetDescription>
-              <span className="text-destructive">*</span> Indicates mandatory fields.
-            </SheetDescription>
-          </SheetHeader>
-          <div className="flex gap-0 py-4 min-h-0">
+      {/* Add / Edit Delivery Schedule — Form Dialog (works in both Classic and Modern view) */}
+      <FormSheet
+        open={delivSchedOpen}
+        onOpenChange={(o) => { setDelivSchedOpen(o); if (!o) setEditingDelivSched(null); }}
+        title={editingDelivSched ? "Edit Delivery Schedule" : "Add Delivery Schedule"}
+        onSubmit={() => saveDelivSchedMutation.mutate({ ...delivSchedForm, elasped_days: delivSchedForm.elasped_days ? Number(delivSchedForm.elasped_days) : null, amt_milestone: delivSchedForm.amt_milestone ? Number(delivSchedForm.amt_milestone) : null, pcnt_milestone: delivSchedForm.pcnt_milestone ? Number(delivSchedForm.pcnt_milestone) : null })}
+        submitLabel={editingDelivSched ? "Save Changes" : "Add Schedule"}
+        isSubmitting={saveDelivSchedMutation.isPending}
+        submitDisabled={saveDelivSchedMutation.isPending || !delivSchedForm.deliverable_name.trim()}
+        widthClassName="w-full sm:max-w-[65vw]"
+      >
+          <p className="text-xs text-muted-foreground mb-4"><span className="text-destructive">*</span> Indicates mandatory fields</p>
+          <div className="flex gap-0 min-h-0">
             <div className="w-[210px] shrink-0 pr-5 border-r border-border space-y-3">
               <div>
                 <p className="text-sm font-medium mb-0.5">Schedule Type <span className="text-destructive">*</span></p>
@@ -3126,28 +2984,23 @@ export default function SupplierContractDetail() {
                   <Input type="date" value={delivSchedForm.tentative_date} onChange={e => setDelivSchedForm(f => ({ ...f, tentative_date: e.target.value }))} data-testid="input-tentative-date" />
                 </div>
               </div>
-              <div className="flex justify-end gap-2 pt-2 mt-auto">
-                <Button variant="outline" onClick={() => { setDelivSchedOpen(false); setEditingDelivSched(null); }} data-testid="button-cancel-delivery-sched">Cancel</Button>
-                <Button disabled={saveDelivSchedMutation.isPending || !delivSchedForm.deliverable_name.trim()} onClick={() => saveDelivSchedMutation.mutate({ ...delivSchedForm, elasped_days: delivSchedForm.elasped_days ? Number(delivSchedForm.elasped_days) : null, amt_milestone: delivSchedForm.amt_milestone ? Number(delivSchedForm.amt_milestone) : null, pcnt_milestone: delivSchedForm.pcnt_milestone ? Number(delivSchedForm.pcnt_milestone) : null })} data-testid="button-save-delivery-sched">
-                  {saveDelivSchedMutation.isPending && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
-                  {editingDelivSched ? "Save Changes" : "Add Schedule"}
-                </Button>
-              </div>
             </div>
           </div>
-        </SheetContent>
-      </Sheet>
+      </FormSheet>
 
-      {/* Add / Edit Payment Term — Side Sheet (works in both Classic and Modern view) */}
-      <Sheet open={payTermOpen} onOpenChange={(o) => { setPayTermOpen(o); if (!o) setEditingPayTerm(null); }}>
-        <SheetContent className="w-[65vw] sm:max-w-[65vw] overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle>{editingPayTerm ? "Edit Payment Term" : "Add Payment Term"}</SheetTitle>
-            <SheetDescription>
-              <span className="text-destructive">*</span> Indicates mandatory fields.
-            </SheetDescription>
-          </SheetHeader>
-          <div className="flex gap-0 py-4 min-h-0">
+      {/* Add / Edit Payment Term — Form Dialog (works in both Classic and Modern view) */}
+      <FormSheet
+        open={payTermOpen}
+        onOpenChange={(o) => { setPayTermOpen(o); if (!o) setEditingPayTerm(null); }}
+        title={editingPayTerm ? "Edit Payment Term" : "Add Payment Term"}
+        onSubmit={() => savePayTermMutation.mutate({ ...payTermForm, amt_milestone: payTermForm.amt_milestone ? Number(payTermForm.amt_milestone) : null, pcnt_milestone: payTermForm.pcnt_milestone ? Number(payTermForm.pcnt_milestone) : null })}
+        submitLabel={editingPayTerm ? "Save Changes" : "Add Payment Term"}
+        isSubmitting={savePayTermMutation.isPending}
+        submitDisabled={savePayTermMutation.isPending || !payTermForm.name.trim()}
+        widthClassName="w-full sm:max-w-[65vw]"
+      >
+          <p className="text-xs text-muted-foreground mb-4"><span className="text-destructive">*</span> Indicates mandatory fields</p>
+          <div className="flex gap-0 min-h-0">
             <div className="w-[210px] shrink-0 pr-5 border-r border-border space-y-3">
               <div>
                 <p className="text-sm font-medium mb-0.5">Payment Type <span className="text-destructive">*</span></p>
@@ -3186,27 +3039,23 @@ export default function SupplierContractDetail() {
                   <Input type="number" placeholder="0.00" value={payTermForm.amt_milestone} onChange={e => setPayTermForm(f => ({ ...f, amt_milestone: e.target.value }))} data-testid="input-pay-amount" />
                 </div>
               </div>
-              <div className="flex justify-end gap-2 pt-2 mt-auto">
-                <Button variant="outline" onClick={() => { setPayTermOpen(false); setEditingPayTerm(null); }} data-testid="button-cancel-payment-term">Cancel</Button>
-                <Button disabled={savePayTermMutation.isPending || !payTermForm.name.trim()} onClick={() => savePayTermMutation.mutate({ ...payTermForm, amt_milestone: payTermForm.amt_milestone ? Number(payTermForm.amt_milestone) : null, pcnt_milestone: payTermForm.pcnt_milestone ? Number(payTermForm.pcnt_milestone) : null })} data-testid="button-save-payment-term">
-                  {savePayTermMutation.isPending && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
-                  {editingPayTerm ? "Save Changes" : "Add Payment Term"}
-                </Button>
-              </div>
             </div>
           </div>
-        </SheetContent>
-      </Sheet>
+      </FormSheet>
 
       {/* Add / Edit SOW Line Sheet */}
-      <Sheet open={sowSheetOpen} onOpenChange={(o) => { setSowSheetOpen(o); if (!o) { setEditingSow(null); setSowForm(blankSowForm); setItemEntryMode("master"); } }}>
-        <SheetContent className="w-[600px] sm:max-w-[600px] overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle>{editingSow ? "Edit Line Item" : "Add Line Item"}</SheetTitle>
-            <SheetDescription>{editingSow ? "Update the scope of work line details." : "Add a new scope of work line to this contract."}</SheetDescription>
-          </SheetHeader>
-
-          <div className="space-y-6 pt-4 pb-6">
+      <FormSheet
+        open={sowSheetOpen}
+        onOpenChange={(o) => { setSowSheetOpen(o); if (!o) { setEditingSow(null); setSowForm(blankSowForm); setItemEntryMode("master"); } }}
+        title={editingSow ? "Edit Line Item" : "Add Line Item"}
+        description={editingSow ? "Update the scope of work line details." : "Add a new scope of work line to this contract."}
+        onSubmit={submitSowForm}
+        submitLabel={editingSow ? "Save Changes" : "Add Line"}
+        isSubmitting={createSowMutation.isPending || updateSowMutation.isPending}
+        submitDisabled={!sowForm.description.trim() || createSowMutation.isPending || updateSowMutation.isPending}
+        widthClassName="w-full sm:max-w-[600px]"
+      >
+          <div className="space-y-6">
             {/* Item Entry Mode Toggle */}
             <div className="space-y-4">
               <h4 className="text-sm font-medium">Item Details</h4>
@@ -3362,16 +3211,7 @@ export default function SupplierContractDetail() {
               </div>
             </div>
           </div>
-
-          <SheetFooter className="mt-6">
-            <Button variant="outline" onClick={() => setSowSheetOpen(false)}>Cancel</Button>
-            <Button disabled={!sowForm.description.trim() || createSowMutation.isPending || updateSowMutation.isPending} onClick={submitSowForm} data-testid="button-save-sow-line">
-              {(createSowMutation.isPending || updateSowMutation.isPending) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              {editingSow ? "Save Changes" : "Add Line"}
-            </Button>
-          </SheetFooter>
-        </SheetContent>
-      </Sheet>
+      </FormSheet>
 
       {/* Delete Clause Confirmation — lives at root so it works in both Classic and Modern view */}
       <AlertDialog open={deleteClauseId !== null} onOpenChange={(o) => { if (!o) setDeleteClauseId(null); }}>
@@ -3443,74 +3283,63 @@ export default function SupplierContractDetail() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Attach Document Sheet */}
-      <Sheet open={showAttachDialog} onOpenChange={(open) => {
-        setShowAttachDialog(open);
-        if (!open) { setAttachForm({ attach_desc: "", attach_name: "", attach_type: "application/pdf" }); setSelectedFile(null); }
-      }}>
-        <SheetContent className="w-[600px] sm:max-w-[600px] overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle className="flex items-center gap-2">
-              <Paperclip className="h-5 w-5" />
-              Attach Document
-            </SheetTitle>
-          </SheetHeader>
-          <div className="space-y-6 pt-4 pb-6">
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="attach-desc">Description <span className="text-destructive">*</span></Label>
-                <Input id="attach-desc" value={attachForm.attach_desc}
-                  onChange={e => setAttachForm(f => ({ ...f, attach_desc: e.target.value }))}
-                  placeholder="Enter description" data-testid="input-attach-desc" />
-              </div>
-              <div>
-                <Label htmlFor="attach-file">Attach File <span className="text-destructive">*</span></Label>
-                <div className="flex items-center gap-2 mt-1">
-                  <Input id="attach-file" value={attachForm.attach_name} readOnly placeholder="No file chosen" className="flex-1" data-testid="input-attach-name" />
-                  <input
-                    type="file"
-                    className="hidden"
-                    data-testid="file-input-attach"
-                    accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.png,.jpg,.jpeg,.txt"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        if (file.size > 5 * 1024 * 1024) {
-                          toast({ title: "File Too Large", description: "Maximum allowed size is 5MB.", variant: "destructive" });
-                          e.target.value = "";
-                          return;
-                        }
-                        setSelectedFile(file);
-                        setAttachForm(f => ({ ...f, attach_name: file.name, attach_type: file.type || "application/octet-stream" }));
-                      }
-                    }}
-                  />
-                  <Button variant="default" onClick={() => {
-                    const fi = document.querySelector('[data-testid="file-input-attach"]') as HTMLInputElement;
-                    fi?.click();
-                  }} data-testid="button-select-file">Select</Button>
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">Maximum allowed size is 5MB</p>
-              </div>
+      {/* Attach Document Form Dialog */}
+      <FormSheet
+        open={showAttachDialog}
+        onOpenChange={(open) => {
+          setShowAttachDialog(open);
+          if (!open) { setAttachForm({ attach_desc: "", attach_name: "", attach_type: "application/pdf" }); setSelectedFile(null); }
+        }}
+        title="Attach Document"
+        onSubmit={() => {
+          if (!attachForm.attach_desc.trim()) { toast({ title: "Required", description: "Description is required.", variant: "destructive" }); return; }
+          if (!attachForm.attach_name) { toast({ title: "Required", description: "Please select a file.", variant: "destructive" }); return; }
+          addAttachMutation.mutate(attachForm);
+        }}
+        submitLabel="Attach"
+        isSubmitting={addAttachMutation.isPending}
+        submitDisabled={addAttachMutation.isPending}
+        widthClassName="w-full sm:max-w-[600px]"
+      >
+          <p className="text-xs text-muted-foreground mb-4"><span className="text-destructive">*</span> Indicates mandatory fields</p>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="attach-desc">Description <span className="text-destructive">*</span></Label>
+              <Input id="attach-desc" value={attachForm.attach_desc}
+                onChange={e => setAttachForm(f => ({ ...f, attach_desc: e.target.value }))}
+                placeholder="Enter description" data-testid="input-attach-desc" />
             </div>
-            <SheetFooter>
-              <Button variant="outline" onClick={() => setShowAttachDialog(false)} data-testid="button-cancel-attach">Cancel</Button>
-              <Button
-                onClick={() => {
-                  if (!attachForm.attach_desc.trim()) { toast({ title: "Required", description: "Description is required.", variant: "destructive" }); return; }
-                  if (!attachForm.attach_name) { toast({ title: "Required", description: "Please select a file.", variant: "destructive" }); return; }
-                  addAttachMutation.mutate(attachForm);
-                }}
-                disabled={addAttachMutation.isPending}
-                data-testid="button-submit-attachment"
-              >
-                {addAttachMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                Attach
-              </Button>
-            </SheetFooter>
+            <div>
+              <Label htmlFor="attach-file">Attach File <span className="text-destructive">*</span></Label>
+              <div className="flex items-center gap-2 mt-1">
+                <Input id="attach-file" value={attachForm.attach_name} readOnly placeholder="No file chosen" className="flex-1" data-testid="input-attach-name" />
+                <input
+                  type="file"
+                  className="hidden"
+                  data-testid="file-input-attach"
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.png,.jpg,.jpeg,.txt"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      if (file.size > 5 * 1024 * 1024) {
+                        toast({ title: "File Too Large", description: "Maximum allowed size is 5MB.", variant: "destructive" });
+                        e.target.value = "";
+                        return;
+                      }
+                      setSelectedFile(file);
+                      setAttachForm(f => ({ ...f, attach_name: file.name, attach_type: file.type || "application/octet-stream" }));
+                    }
+                  }}
+                />
+                <Button variant="default" onClick={() => {
+                  const fi = document.querySelector('[data-testid="file-input-attach"]') as HTMLInputElement;
+                  fi?.click();
+                }} data-testid="button-select-file">Select</Button>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Maximum allowed size is 5MB</p>
+            </div>
           </div>
-        </SheetContent>
-      </Sheet>
+      </FormSheet>
 
       {/* Delete Attachment Confirmation */}
       <AlertDialog open={deleteAttachId !== null} onOpenChange={(o) => { if (!o) setDeleteAttachId(null); }}>
@@ -3715,361 +3544,6 @@ export default function SupplierContractDetail() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* ── Import Document Slider ── */}
-      <Sheet open={importOpen} onOpenChange={(o) => {
-        if (!o) {
-          setImportOpen(false);
-          setImportFile(null);
-          setImportClauses([]);
-          setImportSelectedKeys(new Set());
-          setImportExpandedKeys(new Set());
-        }
-      }}>
-        <SheetContent className="w-[880px] sm:max-w-[880px] p-0 flex flex-col" side="right">
-          <SheetTitle className="sr-only">Import &amp; Extract Clauses</SheetTitle>
-          {/* Header */}
-          <div className="flex items-center justify-between pl-5 pr-12 py-3 border-b shrink-0">
-            <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-md bg-violet-600 flex items-center justify-center shrink-0">
-                <UploadCloud className="h-4 w-4 text-white" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold leading-none">Import &amp; Extract Clauses</p>
-                <p className="text-xs text-muted-foreground mt-0.5 leading-none">Upload a contract — AI extracts every clause with variables and tags</p>
-              </div>
-              <Badge className="bg-violet-100 text-violet-700 border-0 text-xs gap-1 dark:bg-violet-900/30 dark:text-violet-300 h-5 ml-1">
-                <Sparkles className="w-2.5 h-2.5" /> AI
-              </Badge>
-            </div>
-            {importClauses.length > 0 && (
-              <Button
-                disabled={importSelectedKeys.size === 0 || addClauseMutation.isPending}
-                onClick={handleAddImportedClauses}
-                className="bg-violet-600 hover:bg-violet-700 gap-1.5 h-7 text-xs px-3"
-                data-testid="button-import-add"
-              >
-                {addClauseMutation.isPending
-                  ? <><Loader2 className="h-3 w-3 animate-spin" /> Adding…</>
-                  : <><CheckSquare className="h-3 w-3" /> Add {importSelectedKeys.size > 0 ? `${importSelectedKeys.size} ` : ""}to Contract</>}
-              </Button>
-            )}
-          </div>
-
-          {/* Body: two-column layout */}
-          <div className="flex flex-1 min-h-0 overflow-hidden">
-
-            {/* Left: upload panel */}
-            <div className="w-60 shrink-0 border-r flex flex-col bg-gray-50/40 dark:bg-gray-900/20">
-              <div className="px-4 py-2.5 border-b">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Upload Contract</p>
-              </div>
-              <div className="flex-1 flex flex-col p-3 gap-3 overflow-y-auto">
-                {/* Dropzone */}
-                <div
-                  className={`relative rounded-lg border-2 border-dashed transition-colors cursor-pointer flex flex-col items-center justify-center gap-2 p-5 text-center ${
-                    importIsDragging
-                      ? "border-violet-500 bg-violet-50 dark:bg-violet-900/20"
-                      : importFile
-                      ? "border-violet-300 bg-violet-50/50 dark:bg-violet-900/10"
-                      : "border-gray-200 dark:border-gray-700 hover:border-violet-300 hover:bg-violet-50/30 dark:hover:bg-violet-900/10"
-                  }`}
-                  onDragOver={(e) => { e.preventDefault(); setImportIsDragging(true); }}
-                  onDragLeave={() => setImportIsDragging(false)}
-                  onDrop={onImportDrop}
-                  onClick={() => importFileRef.current?.click()}
-                  data-testid="dropzone-import"
-                >
-                  <input
-                    ref={importFileRef}
-                    type="file"
-                    accept=".pdf,.doc,.docx"
-                    className="hidden"
-                    onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImportFileDrop(f); e.target.value = ""; }}
-                    data-testid="input-import-file"
-                  />
-                  {importFile ? (
-                    <>
-                      <FileText className="h-7 w-7 text-violet-500" />
-                      <p className="text-xs font-medium text-violet-700 dark:text-violet-300 break-all leading-snug">{importFile.name}</p>
-                      <p className="text-xs text-muted-foreground">{(importFile.size / 1024).toFixed(1)} KB</p>
-                      <button
-                        type="button"
-                        className="absolute top-2 right-2 text-muted-foreground hover:text-foreground"
-                        onClick={(e) => { e.stopPropagation(); setImportFile(null); setImportClauses([]); setImportSelectedKeys(new Set()); }}
-                      >
-                        <X className="h-3.5 w-3.5" />
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <UploadCloud className="h-7 w-7 text-muted-foreground/40" />
-                      <p className="text-xs font-medium text-muted-foreground">Drag &amp; drop or click</p>
-                      <p className="text-xs text-muted-foreground/60">PDF, DOC, DOCX</p>
-                    </>
-                  )}
-                </div>
-
-                {/* Extract button */}
-                <Button
-                  disabled={!importFile || importLoading}
-                  onClick={handleImportDocument}
-                  className="w-full bg-violet-600 hover:bg-violet-700 gap-1.5 text-xs h-8"
-                  data-testid="button-import-analyze"
-                >
-                  {importLoading
-                    ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Extracting…</>
-                    : <><Sparkles className="h-3.5 w-3.5" /> Extract Clauses</>}
-                </Button>
-
-                {/* Tips */}
-                {importClauses.length === 0 && !importLoading && (
-                  <div className="rounded-md bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800 p-3">
-                    <p className="text-xs font-medium text-violet-700 dark:text-violet-300 mb-1.5">How it works</p>
-                    <ul className="text-xs text-muted-foreground space-y-1">
-                      <li>• Upload a PDF, DOC, or DOCX file</li>
-                      <li>• AI reads and identifies every clause</li>
-                      <li>• Review and add selected ones to this contract</li>
-                      <li>• Variables and flags are auto-detected</li>
-                    </ul>
-                    <p className="text-xs text-amber-600 dark:text-amber-400 mt-1.5">
-                      Note: Scanned image PDFs cannot be read — use a digital PDF or Word document.
-                    </p>
-                  </div>
-                )}
-
-                {/* Summary after extraction */}
-                {importClauses.length > 0 && (
-                  <div className="rounded-md border p-3 space-y-1.5">
-                    <p className="text-xs font-semibold">{importClauses.length} clauses found</p>
-                    <p className="text-xs text-muted-foreground">
-                      {importSelectedKeys.size} selected
-                      {importClauses.filter((c) => c._already_exists).length > 0 && (
-                        <span className="text-amber-600 dark:text-amber-400">
-                          {" · "}{importClauses.filter((c) => c._already_exists).length} already in this contract
-                        </span>
-                      )}
-                    </p>
-                    <Button size="sm" variant="outline" className="w-full h-7 text-xs" onClick={handleImportDocument} disabled={importLoading}>
-                      <Sparkles className="h-3 w-3 mr-1" /> Re-extract
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Right: clause review */}
-            <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-
-              {/* Empty state */}
-              {importClauses.length === 0 && !importLoading && (
-                <div className="flex-1 flex flex-col items-center justify-center text-center px-10 py-12">
-                  <UploadCloud className="h-10 w-10 text-violet-300 mb-3" />
-                  <h3 className="text-sm font-semibold mb-1">Upload your contract document</h3>
-                  <p className="text-xs text-muted-foreground max-w-xs">
-                    AI will identify every clause and tag it with Mandatory, Negotiable, and Amendable flags — with variables highlighted.
-                  </p>
-                </div>
-              )}
-
-              {/* Loading */}
-              {importLoading && (
-                <div className="flex-1 flex flex-col items-center justify-center gap-3">
-                  <Loader2 className="h-8 w-8 animate-spin text-violet-500" />
-                  <div className="text-center">
-                    <p className="text-sm font-medium">Reading contract and extracting clauses…</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">This takes about 15–25 seconds</p>
-                  </div>
-                </div>
-              )}
-
-              {/* Clause list */}
-              {importClauses.length > 0 && !importLoading && (() => {
-                const existsCount = importClauses.filter((c) => c._already_exists).length;
-                const allSel = importSelectedKeys.size === importClauses.filter((c) => !c._already_exists).length;
-                return (
-                  <>
-                    {/* Sub-header */}
-                    <div className="flex items-center justify-between px-5 py-2 border-b bg-white dark:bg-gray-950 shrink-0 sticky top-0 z-10">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold">Extracted Clauses</span>
-                        <span className="text-xs text-muted-foreground">
-                          {importClauses.length} found · {importSelectedKeys.size} selected
-                          {existsCount > 0 && <span className="text-amber-600 dark:text-amber-400"> · {existsCount} already in this contract</span>}
-                        </span>
-                      </div>
-                      <Button
-                        size="sm" variant="ghost"
-                        className="h-6 text-xs gap-1 px-2"
-                        onClick={() =>
-                          allSel
-                            ? setImportSelectedKeys(new Set())
-                            : setImportSelectedKeys(new Set(importClauses.map((_, i) => i).filter((i) => !importClauses[i]._already_exists)))
-                        }
-                      >
-                        {allSel ? <><Square className="h-3 w-3" /> Deselect All</> : <><CheckSquare className="h-3 w-3" /> Select All</>}
-                      </Button>
-                    </div>
-
-                    {/* Rows */}
-                    <div className="divide-y divide-gray-100 dark:divide-gray-800">
-                      {importClauses.map((clause: any, i: number) => {
-                        const checked  = importSelectedKeys.has(i);
-                        const expanded = importExpandedKeys.has(i);
-                        const exists   = !!clause._already_exists;
-                        return (
-                          <div
-                            key={i}
-                            data-testid={`card-import-clause-${i}`}
-                            className={`transition-colors ${exists ? "opacity-60" : ""} ${checked ? "bg-violet-50/50 dark:bg-violet-900/10" : "bg-white dark:bg-gray-950 hover:bg-gray-50 dark:hover:bg-gray-900/40"}`}
-                          >
-                            <div
-                              className="flex items-start gap-3 px-5 py-2.5 cursor-pointer"
-                              onClick={() => setImportSelectedKeys((prev) => { const n = new Set(prev); n.has(i) ? n.delete(i) : n.add(i); return n; })}
-                            >
-                              <Checkbox
-                                checked={checked}
-                                onCheckedChange={() => setImportSelectedKeys((prev) => { const n = new Set(prev); n.has(i) ? n.delete(i) : n.add(i); return n; })}
-                                className="mt-0.5 shrink-0"
-                                onClick={(e) => e.stopPropagation()}
-                              />
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-1.5 flex-wrap">
-                                  <span className="text-sm font-medium">{clause.section_name}</span>
-                                  {exists && (
-                                    <Badge
-                                      className="text-xs h-4 px-1.5 bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400 border border-amber-200 dark:border-amber-800 font-normal"
-                                      title={`Similar clause already added to this contract: "${clause._match_name}"`}
-                                    >
-                                      Already in Contract
-                                    </Badge>
-                                  )}
-                                  {clause.section_type && (
-                                    <Badge variant="outline" className="text-xs h-4 px-1 font-normal">{clause.section_type}</Badge>
-                                  )}
-                                  {clause.clause_mandatory === "Yes" && (
-                                    <Badge className="text-xs h-4 px-1 bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400 border border-red-200 dark:border-red-800 font-normal">Mandatory</Badge>
-                                  )}
-                                  {clause.clause_negotiable === "Yes" && (
-                                    <Badge className="text-xs h-4 px-1 bg-violet-50 text-violet-600 dark:bg-violet-900/20 dark:text-violet-400 border border-violet-200 dark:border-violet-800 font-normal">Negotiable</Badge>
-                                  )}
-                                  {clause.clause_ammendable === "Yes" && (
-                                    <Badge className="text-xs h-4 px-1 bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 font-normal">Amendable</Badge>
-                                  )}
-                                </div>
-                                {clause.description && (
-                                  <p className="text-xs text-muted-foreground mt-0.5 leading-snug">{clause.description}</p>
-                                )}
-                              </div>
-                              {clause.html_content && (
-                                <button
-                                  type="button"
-                                  className="shrink-0 mt-0.5 text-muted-foreground hover:text-foreground transition-colors"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setImportExpandedKeys((prev) => { const n = new Set(prev); n.has(i) ? n.delete(i) : n.add(i); return n; });
-                                  }}
-                                >
-                                  {expanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
-                                </button>
-                              )}
-                            </div>
-                            {expanded && clause.html_content && (
-                              <div
-                                className="px-5 pb-3 ml-10 text-xs text-muted-foreground leading-relaxed prose prose-xs max-w-none dark:prose-invert"
-                                dangerouslySetInnerHTML={{ __html: clause.html_content }}
-                              />
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </>
-                );
-              })()}
-            </div>
-          </div>
-        </SheetContent>
-      </Sheet>
-
-      {/* ── AI Summary Panel (vendor / signatory) ─────────────────────────────── */}
-      <Sheet open={aiSummaryOpen} onOpenChange={setAiSummaryOpen}>
-        <SheetContent side="right" className="flex flex-col p-0 overflow-hidden" style={{ width: "620px", maxWidth: "620px" }}>
-          <SheetHeader className="px-5 py-4 border-b shrink-0">
-            <SheetTitle className="flex items-center gap-2 text-base">
-              <Sparkles className="h-4 w-4 text-primary" />
-              AI Summary
-            </SheetTitle>
-            <SheetDescription className="text-xs truncate">{contract?.title}</SheetDescription>
-          </SheetHeader>
-
-          <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
-            {aiSummary && (
-              <>
-                {/* Plain-English Summary */}
-                <div className="rounded-lg border bg-muted/40 p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Contract Summary</p>
-                  <p className="text-sm leading-relaxed" data-testid="text-ai-summary">{aiSummary.summary}</p>
-                  <p className="text-[11px] text-muted-foreground mt-3">Based on {aiSummary.clausesAnalyzed} clause{aiSummary.clausesAnalyzed !== 1 ? "s" : ""} analyzed</p>
-                </div>
-
-                {/* Key Points */}
-                {aiSummary.keyPoints.length > 0 && (
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Key Points</p>
-                    <ul className="space-y-2">
-                      {aiSummary.keyPoints.map((pt, i) => (
-                        <li key={i} className="flex gap-2 text-sm">
-                          <span className="mt-0.5 h-4 w-4 shrink-0 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-bold">{i + 1}</span>
-                          <span className="leading-relaxed">{pt}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* Red Flags */}
-                {aiSummary.redFlags && aiSummary.redFlags.length > 0 && (
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-red-600 dark:text-red-400 mb-2">Points to Review</p>
-                    <div className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/30 p-4 space-y-2">
-                      {aiSummary.redFlags.map((flag, i) => (
-                        <div key={i} className="flex items-start gap-2">
-                          <AlertTriangle className="h-3.5 w-3.5 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
-                          <p className="text-xs text-red-700 dark:text-red-300 leading-relaxed">{flag}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Before Signing callout */}
-                {aiSummary.signatoryNote && (
-                  <div className="rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30 p-4">
-                    <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 mb-1">Before You Sign</p>
-                    <p className="text-xs text-blue-700 dark:text-blue-300 leading-relaxed">{aiSummary.signatoryNote}</p>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-
-          <SheetFooter className="px-5 py-3 border-t shrink-0">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => { setAiSummary(null); aiSummaryMutation.mutate(); }}
-              disabled={aiSummaryMutation.isPending}
-              data-testid="button-regenerate-summary"
-            >
-              {aiSummaryMutation.isPending
-                ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Regenerating…</>
-                : <><RefreshCw className="h-4 w-4 mr-2" />Regenerate</>
-              }
-            </Button>
-          </SheetFooter>
-        </SheetContent>
-      </Sheet>
 
     </div>
   );

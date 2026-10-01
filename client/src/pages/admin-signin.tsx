@@ -1,5 +1,4 @@
-import prokrayaLogoDark from "@/assets/images/prokraya-logo-dark.png";
-import prokrayaLogoLight from "@/assets/images/prokraya-logo-light.png";
+import s2pLabsLogo from "@/assets/images/s2plabs_logo.jpeg";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
@@ -215,7 +214,7 @@ export default function AdminSignin({ onLogin }: AdminSigninProps) {
                 <span className="text-sm opacity-70 group-hover:opacity-100 transition-opacity">Back to home</span>
               </div>
             </Link>
-            <img src={prokrayaLogoLight} alt="Prokraya" className="h-10 object-contain object-left" />
+            <img src={s2pLabsLogo} alt="S2P Labs" className="h-10 object-contain object-left" />
             <span className="text-xs text-white/90 font-semibold uppercase tracking-wider ml-[48px] mt-1">AI Agentic Procurement</span>
           </div>
 
@@ -225,7 +224,7 @@ export default function AdminSignin({ onLogin }: AdminSigninProps) {
                 Admin Portal access
               </h1>
               <p className="text-lg text-white/80">
-                Authorized access for Prokraya procurement administrators and system managers.
+                Authorized access for S2P Labs procurement administrators and system managers.
               </p>
             </div>
 
@@ -257,7 +256,7 @@ export default function AdminSignin({ onLogin }: AdminSigninProps) {
         <header className="lg:hidden flex items-center justify-between px-6 py-4 border-b">
           <Link href="/">
             <div className="flex flex-col cursor-pointer">
-              <img src={prokrayaLogoDark} alt="Prokraya" className="h-8 object-contain object-left" />
+              <img src={s2pLabsLogo} alt="S2P Labs" className="h-8 object-contain object-left" />
               <span className="text-[10px] text-primary font-semibold uppercase tracking-wider ml-[38px] bg-primary/10 px-2 py-0.5 rounded">AI-Powered S2P</span>
             </div>
           </Link>
@@ -469,7 +468,7 @@ export default function AdminSignin({ onLogin }: AdminSigninProps) {
                 <span>|</span>
                 <a href="#" className="hover:text-foreground hover:underline">Security</a>
               </div>
-              <p>Copyright © 2026 Prokraya Tech Private Limited, All rights reserved.</p>
+              <p>Copyright © 2026 S2P Labs Tech Private Limited, All rights reserved.</p>
             </div>
           </div>
         </main>

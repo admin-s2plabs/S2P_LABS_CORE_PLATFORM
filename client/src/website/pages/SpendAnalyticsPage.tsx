@@ -1,4 +1,4 @@
-import { AlertCircle, ArrowRight, BarChart3, DollarSign, Lightbulb, PieChart, Target, TrendingDown } from "lucide-react";
+import { AlertCircle, BarChart3, DollarSign, Lightbulb, PieChart, Target, TrendingDown } from "lucide-react";
 import { Helmet } from "react-helmet-async";
 import { Link } from "wouter";
 import { CommonShortForm } from "../components/CommonShortForm";
@@ -7,7 +7,7 @@ import { LogoBlack } from "../components/LogoImport";
 export function SpendAnalyticsPage() {
   const features = [
     { icon: BarChart3, title: "Real-Time Dashboards", description: "Visual spend analytics across categories, vendors, and departments", color: "bg-violet-50 text-violet-600" },
-    { icon: TrendingDown, title: "Savings Opportunities", description: "AI identifies consolidation and negotiation opportunities", color: "bg-teal-50 text-teal-600" },
+    { icon: TrendingDown, title: "Savings Opportunities", description: "Automatically identify consolidation and negotiation opportunities", color: "bg-teal-50 text-teal-600" },
     { icon: Target, title: "Maverick Spend Detection", description: "Automatically detect and flag off-contract spending", color: "bg-red-50 text-red-600" },
     { icon: PieChart, title: "Category Analysis", description: "Deep insights into spending patterns by category", color: "bg-teal-50 text-teal-600" },
     { icon: DollarSign, title: "Budget Tracking", description: "Monitor budgets in real-time with alerts and forecasts", color: "bg-blue-50 text-blue-600" },
@@ -21,16 +21,16 @@ export function SpendAnalyticsPage() {
           async
           src="https://www.googletagmanager.com/gtag/js?id=G-KDV6R2SDN2"
         ></script>
-        <meta property="og:title" content="Spend Analytics Software | Prokraya" />
-        <meta property="og:description" content="Transform procurement data into actionable insights with AI-powered spend analytics, savings identification, and spend optimization." />
+        <meta property="og:title" content="Spend Analytics Software | S2P Labs" />
+        <meta property="og:description" content="Transform procurement data into actionable insights with spend analytics, savings identification, and spend optimization." />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://prokraya.ai/spend-analytics" />
-        <meta property="og:site_name" content="Prokraya" />
+        <meta property="og:site_name" content="S2P Labs" />
         <meta property="og:image" content={LogoBlack} />
         <meta name="twitter:card" content={LogoBlack} />
         <meta name="twitter:site" content="@prokraya" />
-        <title>Spend Analytics Software | Procurement Spend Analysis Platform | Prokraya</title>
-        <meta name="description" content="Gain complete spend visibility with AI-powered spend analytics software. Identify savings opportunities, detect maverick spend, optimize supplier performance, and improve procurement decisions." />
+        <title>Spend Analytics Software | Procurement Spend Analysis Platform | S2P Labs</title>
+        <meta name="description" content="Gain complete spend visibility with spend analytics software. Identify savings opportunities, detect maverick spend, optimize supplier performance, and improve procurement decisions." />
         <meta name="keywords" content="spend analytics software, procurement spend analytics, spend analysis software, spend management software, procurement analytics, maverick spend detection, spend visibility, procurement intelligence" />
       </Helmet>
 
@@ -45,12 +45,9 @@ export function SpendAnalyticsPage() {
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-600 to-violet-500">Software</span>
             </h1>
             <p className="text-lg text-gray-500 max-w-2xl mx-auto mb-8">
-              Transform spending data into actionable insights with AI-powered analytics. Identify savings opportunities, detect maverick spend, and optimize procurement performance in real-time.
+              Transform spending data into actionable insights with powerful analytics. Identify savings opportunities, detect maverick spend, and optimize procurement performance in real-time.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Link href="/book-demo" className="inline-flex items-center justify-center gap-2 px-7 py-3 bg-teal-600 text-white font-semibold rounded-lg hover:bg-teal-700 transition-colors">
-                Request Demo <ArrowRight className="w-4 h-4" />
-              </Link>
               <Link href="/contact-us" className="inline-flex items-center justify-center px-7 py-3 border border-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors">
                 Contact Sales
               </Link>
@@ -66,7 +63,7 @@ export function SpendAnalyticsPage() {
                 { value: "15%", label: "Average Savings Identified" },
                 { value: "100%", label: "Spend Visibility" },
                 { value: "Real-Time", label: "Analytics" },
-                { value: "AI-Powered", label: "Insights" },
+                { value: "Actionable", label: "Insights" },
               ].map((stat, i) => (
                 <div key={i}>
                   <div className="text-4xl font-extrabold mb-1">{stat.value}</div>
@@ -98,12 +95,12 @@ export function SpendAnalyticsPage() {
           </div>
         </section>
 
-        {/* AI Insights */}
+        {/* Spend Insights */}
         <section className="py-20 bg-gray-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid lg:grid-cols-2 gap-12 items-start">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-3">AI-Powered Spend Analysis</h2>
+                <h2 className="text-2xl font-bold text-gray-900 mb-3">Intelligent Spend Analysis</h2>
                 <p className="text-gray-500 mb-6 leading-relaxed">
                   Our Spend Analysis Agent continuously monitors your procurement data to uncover savings opportunities, detect anomalies, and provide actionable recommendations.
                 </p>
@@ -188,17 +185,6 @@ export function SpendAnalyticsPage() {
         </section>
 
         <CommonShortForm reactedPage="Spend Analytics" />
-
-        {/* CTA */}
-        <section className="py-20 bg-gradient-to-br from-slate-900 via-violet-950 to-slate-900 text-white">
-          <div className="max-w-2xl mx-auto px-4 text-center">
-            <h2 className="text-3xl font-bold mb-3">Ready to Unlock Spend Intelligence?</h2>
-            <p className="text-gray-400 mb-8">Start identifying savings and optimizing spend today</p>
-            <Link href="/book-demo" className="inline-flex items-center gap-2 px-7 py-3 bg-teal-600 text-white font-semibold rounded-lg hover:bg-teal-700 transition-colors">
-              Schedule a Demo <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-        </section>
       </div>
     </>
   );

@@ -16,11 +16,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { FormSheet } from "@/components/form-sheet";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -2958,7 +2958,7 @@ export default function AuctionDetail() {
         </DialogContent>
       </Dialog>
 
-      <Dialog
+      <FormSheet
         open={suppliersOpen}
         onOpenChange={(o) => {
           setSuppliersOpen(o);
@@ -2967,93 +2967,74 @@ export default function AuctionDetail() {
             setAddSupplierSearch("");
           }
         }}
+        title="Add suppliers"
+        description="Choose active suppliers to invite. Suppliers already on this auction are not listed."
+        onSubmit={() => addSuppliersMutation.mutate()}
+        submitLabel={
+          addSuppliersMutation.isPending
+            ? "Adding..."
+            : `Add${selectedSuppIds.length ? ` (${selectedSuppIds.length})` : ""}`
+        }
+        isSubmitting={addSuppliersMutation.isPending}
+        submitDisabled={selectedSuppIds.length === 0}
+        widthClassName="sm:max-w-md"
       >
-        <DialogContent className="flex max-h-[85vh] flex-col gap-0  sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Add suppliers</DialogTitle>
-            <DialogDescription>
-              Choose active suppliers to invite. Suppliers already on this auction are not listed.
-            </DialogDescription>
-          </DialogHeader>
-          <Input
-            className="mt-2"
-            placeholder="Search by company name..."
-            value={addSupplierSearch}
-            onChange={(e) => setAddSupplierSearch(e.target.value)}
-          />
-          <div className="mt-3 min-h-0 flex-1 overflow-y-auto rounded-md border p-1">
-            {suppliersQuery.isLoading ? (
-              <div className="flex justify-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-              </div>
-            ) : filteredSuppliersToAdd.length === 0 ? (
-              <p className="p-4 text-center text-sm text-muted-foreground">
-                {invitedSupplierIds.size > 0 && (suppliersQuery.data?.length ?? 0) > 0
-                  ? "All active suppliers are already invited, or none match your search."
-                  : "No suppliers available to add."}
-              </p>
-            ) : (
-              <div className="space-y-1">
-                {filteredSuppliersToAdd.map((s) => (
-                  <label
-                    key={s.id}
-                    className="flex cursor-pointer items-center gap-3 rounded-md px-2 py-2 hover:bg-muted/60"
-                  >
-                    <Checkbox
-                      checked={selectedSuppIds.includes(s.id)}
-                      onCheckedChange={() => toggleAddSupplierSelection(s.id)}
-                    />
-                    <span className="text-sm">{s.companyName ?? `Supplier #${s.id}`}</span>
-                  </label>
-                ))}
-              </div>
-            )}
-          </div>
-          <DialogFooter className="mt-4 shrink-0 gap-2 sm:gap-0">
-            <Button type="button" variant="outline" onClick={() => setSuppliersOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              disabled={selectedSuppIds.length === 0 || addSuppliersMutation.isPending}
-              onClick={() => addSuppliersMutation.mutate()}
-            >
-              {addSuppliersMutation.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                `Add${selectedSuppIds.length ? ` (${selectedSuppIds.length})` : ""}`
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        <p className="text-sm text-muted-foreground mb-3">
+          Choose active suppliers to invite. Suppliers already on this auction are not listed.
+        </p>
+        <Input
+          placeholder="Search by company name..."
+          value={addSupplierSearch}
+          onChange={(e) => setAddSupplierSearch(e.target.value)}
+        />
+        <div className="mt-3 min-h-0 max-h-[50vh] overflow-y-auto rounded-md border p-1">
+          {suppliersQuery.isLoading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : filteredSuppliersToAdd.length === 0 ? (
+            <p className="p-4 text-center text-sm text-muted-foreground">
+              {invitedSupplierIds.size > 0 && (suppliersQuery.data?.length ?? 0) > 0
+                ? "All active suppliers are already invited, or none match your search."
+                : "No suppliers available to add."}
+            </p>
+          ) : (
+            <div className="space-y-1">
+              {filteredSuppliersToAdd.map((s) => (
+                <label
+                  key={s.id}
+                  className="flex cursor-pointer items-center gap-3 rounded-md px-2 py-2 hover:bg-muted/60"
+                >
+                  <Checkbox
+                    checked={selectedSuppIds.includes(s.id)}
+                    onCheckedChange={() => toggleAddSupplierSelection(s.id)}
+                  />
+                  <span className="text-sm">{s.companyName ?? `Supplier #${s.id}`}</span>
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+      </FormSheet>
 
-      <Dialog open={broadcastOpen} onOpenChange={setBroadcastOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Broadcast message</DialogTitle>
-          </DialogHeader>
-          <Textarea
-            value={broadcastMessage}
-            onChange={(e) => setBroadcastMessage(e.target.value)}
-            placeholder="Message to all invited suppliers"
-            rows={4}
-          />
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setBroadcastOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              onClick={() => broadcastMutation.mutate()}
-              disabled={!broadcastMessage.trim() || broadcastMutation.isPending}
-            >
-              {broadcastMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <FormSheet
+        open={broadcastOpen}
+        onOpenChange={setBroadcastOpen}
+        title="Broadcast message"
+        onSubmit={() => broadcastMutation.mutate()}
+        submitLabel={broadcastMutation.isPending ? "Sending..." : "Send"}
+        isSubmitting={broadcastMutation.isPending}
+        submitDisabled={!broadcastMessage.trim()}
+      >
+        <Textarea
+          value={broadcastMessage}
+          onChange={(e) => setBroadcastMessage(e.target.value)}
+          placeholder="Message to all invited suppliers"
+          rows={4}
+        />
+      </FormSheet>
 
-      <Dialog
+      <FormSheet
         open={placeProxyOpen}
         onOpenChange={(o) => {
           setPlaceProxyOpen(o);
@@ -3065,20 +3046,41 @@ export default function AuctionDetail() {
             setProxySupplierErr(false);
           }
         }}
+        title="Place proxy"
+        onSubmit={() => {
+          if (!proxySupplierId) {
+            setProxySupplierErr(true);
+            return;
+          }
+          if (!proxyProof) {
+            toast({
+              title: "Proof required",
+              description: "Please attach a proof document (max 5MB).",
+              variant: "destructive",
+            });
+            return;
+          }
+          if (!filterBasketRows(details, placeProxyRows).length) {
+            toast({
+              title: "No data",
+              description: "No line items to submit.",
+              variant: "destructive",
+            });
+            return;
+          }
+          placeProxyMutation.mutate();
+        }}
+        submitLabel={placeProxyMutation.isPending ? "Confirming..." : "Confirm"}
+        isSubmitting={placeProxyMutation.isPending}
+        widthClassName="sm:max-w-4xl"
       >
-        <DialogContent className="!flex h-[min(90vh,800px)] max-h-[90vh] w-[min(100vw-1.5rem,56rem)] max-w-4xl flex-col gap-0  p-0 shadow-lg sm:rounded-lg">
-          <div className="shrink-0 space-y-1 border-b px-6 py-4 pr-14">
-            <DialogHeader>
-              <DialogTitle>Place proxy</DialogTitle>
-            </DialogHeader>
-          </div>
           {placeProxySuppQuery.isLoading && proxySupplierId ? (
             <div className="flex flex-1 justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
           ) : (
             <>
-              <div className="flex min-h-0 flex-1 flex-col gap-4  px-6 py-4 text-sm">
+              <div className="flex min-h-0 flex-1 flex-col gap-4 text-sm">
                 <p className="shrink-0 text-muted-foreground">
                   Select a supplier on whose behalf you want to bid.
                 </p>
@@ -3244,47 +3246,9 @@ export default function AuctionDetail() {
                   );
                 })()}
               </div>
-              <DialogFooter className="shrink-0 gap-2 border-t px-6 py-4 sm:gap-0">
-                <Button variant="outline" onClick={() => setPlaceProxyOpen(false)}>
-                  Close
-                </Button>
-                <Button
-                  onClick={() => {
-                    if (!proxySupplierId) {
-                      setProxySupplierErr(true);
-                      return;
-                    }
-                    if (!proxyProof) {
-                      toast({
-                        title: "Proof required",
-                        description: "Please attach a proof document (max 5MB).",
-                        variant: "destructive",
-                      });
-                      return;
-                    }
-                    if (!filterBasketRows(details, placeProxyRows).length) {
-                      toast({
-                        title: "No data",
-                        description: "No line items to submit.",
-                        variant: "destructive",
-                      });
-                      return;
-                    }
-                    placeProxyMutation.mutate();
-                  }}
-                  disabled={placeProxyMutation.isPending}
-                >
-                  {placeProxyMutation.isPending ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    "Confirm"
-                  )}
-                </Button>
-              </DialogFooter>
             </>
           )}
-        </DialogContent>
-      </Dialog>
+      </FormSheet>
 
       <Dialog open={withdrawOpen} onOpenChange={setWithdrawOpen}>
         <DialogContent>
@@ -3312,104 +3276,90 @@ export default function AuctionDetail() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={extendOpen} onOpenChange={setExtendOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Extend auction time</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label>Duration</Label>
-              <Input
-                value={extendAmount}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  if (value === "" || Number(value) >= 0) {
-                    setExtendAmount(value);
-                  }
-                }}
-                placeholder="e.g. 15"
-                type="number"
-                min={0}
-                onKeyDown={(e) => {
-                  if (["-", "+", "e", "E"].includes(e.key)) {
-                    e.preventDefault();
-                  }
-                }}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Unit</Label>
-              <Select value={extendUnit} onValueChange={setExtendUnit}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Mins">Minutes</SelectItem>
-                  <SelectItem value="Hrs">Hours</SelectItem>
-                  <SelectItem value="Days">Days</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+      <FormSheet
+        open={extendOpen}
+        onOpenChange={setExtendOpen}
+        title="Extend auction time"
+        onSubmit={() => extendMutation.mutate()}
+        submitLabel={extendMutation.isPending ? "Extending..." : "Extend"}
+        isSubmitting={extendMutation.isPending}
+        submitDisabled={!extendAmount.trim()}
+        widthClassName="sm:max-w-lg"
+      >
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label>Duration</Label>
+            <Input
+              value={extendAmount}
+              onChange={(e) => {
+                const value = e.target.value;
+                if (value === "" || Number(value) >= 0) {
+                  setExtendAmount(value);
+                }
+              }}
+              placeholder="e.g. 15"
+              type="number"
+              min={0}
+              onKeyDown={(e) => {
+                if (["-", "+", "e", "E"].includes(e.key)) {
+                  e.preventDefault();
+                }
+              }}
+            />
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setExtendOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              onClick={() => extendMutation.mutate()}
-              disabled={!extendAmount.trim() || extendMutation.isPending}
-            >
-              {extendMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Extend"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          <div className="space-y-2">
+            <Label>Unit</Label>
+            <Select value={extendUnit} onValueChange={setExtendUnit}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Mins">Minutes</SelectItem>
+                <SelectItem value="Hrs">Hours</SelectItem>
+                <SelectItem value="Days">Days</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </FormSheet>
 
-      <Dialog open={mbdOpen} onOpenChange={setMbdOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Minimum bid difference</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            {normalizedRows.map((row) => {
-              const mbd = (row.columnResponseValues ?? []).find(
-                (c) => c.columnKey === "Minimum Bid Difference"
-              );
-              if (!mbd || row.auRowId == null || mbd.columnId == null) return null;
-              const key = `${row.auRowId}:${mbd.columnId}`;
-              const item =
-                (row.columnResponseValues ?? []).find((c) => c.columnKey === "Item Name")
-                  ?.columnValue ?? `Row ${row.auRowId}`;
-              return (
-                <div key={key} className="space-y-1">
-                  <Label>{item}</Label>
-                  <Input
-                    value={mbdEdits[key] ?? mbd.columnValue ?? ""}
-                    onChange={(e) => {
-                        const value = Number(e.target.value);
-                        if (value < 0) return;
-                       onMbdFieldChange(row.auRowId!, mbd.columnId!, e.target.value)
-                      }}
-                    placeholder="Enter minimum bid difference"
-                  />
-                </div>
-              );
-            })}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setMbdOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              onClick={() => mbdMutation.mutate()}
-              disabled={mbdMutation.isPending || Object.keys(mbdEdits).length === 0}
-            >
-              {mbdMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <FormSheet
+        open={mbdOpen}
+        onOpenChange={setMbdOpen}
+        title="Minimum bid difference"
+        onSubmit={() => mbdMutation.mutate()}
+        submitLabel={mbdMutation.isPending ? "Saving..." : "Save"}
+        isSubmitting={mbdMutation.isPending}
+        submitDisabled={Object.keys(mbdEdits).length === 0}
+        widthClassName="sm:max-w-lg"
+      >
+        <div className="space-y-4">
+          {normalizedRows.map((row) => {
+            const mbd = (row.columnResponseValues ?? []).find(
+              (c) => c.columnKey === "Minimum Bid Difference"
+            );
+            if (!mbd || row.auRowId == null || mbd.columnId == null) return null;
+            const key = `${row.auRowId}:${mbd.columnId}`;
+            const item =
+              (row.columnResponseValues ?? []).find((c) => c.columnKey === "Item Name")
+                ?.columnValue ?? `Row ${row.auRowId}`;
+            return (
+              <div key={key} className="space-y-1">
+                <Label>{item}</Label>
+                <Input
+                  value={mbdEdits[key] ?? mbd.columnValue ?? ""}
+                  onChange={(e) => {
+                      const value = Number(e.target.value);
+                      if (value < 0) return;
+                     onMbdFieldChange(row.auRowId!, mbd.columnId!, e.target.value)
+                    }}
+                  placeholder="Enter minimum bid difference"
+                />
+              </div>
+            );
+          })}
+        </div>
+      </FormSheet>
       <Dialog open={tncOpen} onOpenChange={setTncOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>

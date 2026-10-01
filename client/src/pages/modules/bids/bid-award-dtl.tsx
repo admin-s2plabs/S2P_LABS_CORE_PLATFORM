@@ -7,9 +7,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
-} from "@/components/ui/dialog";
+import { FormSheet } from "@/components/form-sheet";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -727,105 +725,64 @@ export default function BidAwardDetail({ id }: { id: string }) {
         </div>
       </div>
 
-      <Dialog open={submitDialogOpen} onOpenChange={(open) => { if (!submitMutation.isPending) setSubmitDialogOpen(open); }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Submit Award for Approval</DialogTitle>
-            <DialogDescription>
-              Please add your notes before submitting this award for approval. This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2 py-2">
-            <Label htmlFor="award-notes">Award Notes</Label>
-            <Textarea
-              id="award-notes"
-              data-testid="textarea-award-notes"
-              placeholder="Enter award notes or justification..."
-              value={awardNotes}
-              onChange={(e) => setAwardNotes(e.target.value)}
-              className="min-h-[100px]"
-            />
-          </div>
-          <DialogFooter className="gap-2">
-            <Button
-              variant="outline"
-              data-testid="button-cancel-submit"
-              disabled={submitMutation.isPending}
-              onClick={() => setSubmitDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              data-testid="button-confirm-submit"
-              disabled={submitMutation.isPending || !awardNotes.trim()}
-              onClick={() => {
-                if (pendingAwardId && awardNotes.trim()) {
-                  submitMutation.mutate({ awardId: pendingAwardId, notes: awardNotes.trim() });
-                }
-              }}
-            >
-              <Send className="h-4 w-4 mr-2" />
-              {submitMutation.isPending ? "Submitting..." : "Confirm & Submit"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <FormSheet
+        open={submitDialogOpen}
+        onOpenChange={(open) => { if (!submitMutation.isPending) setSubmitDialogOpen(open); }}
+        title="Submit Award for Approval"
+        description="Please add your notes before submitting this award for approval. This action cannot be undone."
+        onSubmit={() => {
+          if (pendingAwardId && awardNotes.trim()) {
+            submitMutation.mutate({ awardId: pendingAwardId, notes: awardNotes.trim() });
+          }
+        }}
+        submitLabel="Confirm & Submit"
+        isSubmitting={submitMutation.isPending}
+        submitDisabled={!awardNotes.trim()}
+      >
+        <div className="space-y-2">
+          <Label htmlFor="award-notes">Award Notes</Label>
+          <Textarea
+            id="award-notes"
+            data-testid="textarea-award-notes"
+            placeholder="Enter award notes or justification..."
+            value={awardNotes}
+            onChange={(e) => setAwardNotes(e.target.value)}
+            className="min-h-[100px]"
+          />
+        </div>
+      </FormSheet>
 
-      <Dialog open={approveDialogOpen} onOpenChange={(open) => { if (!processApprovalMutation.isPending) setApproveDialogOpen(open); }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{approveAction === "Approved" ? "Approve" : "Reject"} Bid Award</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to {approveAction === "Approved" ? "approve" : "reject"} this award? Please provide your comments.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2 py-2">
-            <Label htmlFor="approve-comments">Comments</Label>
-            <Textarea
-              id="approve-comments"
-              data-testid="textarea-approve-comments"
-              placeholder="Enter your comments..."
-              value={approveComments}
-              onChange={(e) => setApproveComments(e.target.value)}
-              className="min-h-[100px]"
-            />
-          </div>
-          <DialogFooter className="gap-2">
-            <Button
-              variant="outline"
-              data-testid="button-cancel-approve"
-              disabled={processApprovalMutation.isPending}
-              onClick={() => setApproveDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              data-testid="button-confirm-approve"
-              variant={approveAction === "Rejected" ? "destructive" : "default"}
-              disabled={processApprovalMutation.isPending || !approveComments.trim()}
-              onClick={() => {
-                if (approveAwardId && approveComments.trim()) {
-                  processApprovalMutation.mutate({
-                    taskId: approveTaskId,
-                    result: approveAction,
-                    comments: approveComments.trim(),
-                    bidAwardId: approveAwardId,
-                  });
-                }
-              }}
-            >
-              {approveAction === "Approved" ? (
-                <CheckCircle2 className="h-4 w-4 mr-2" />
-              ) : (
-                <XCircle className="h-4 w-4 mr-2" />
-              )}
-              {processApprovalMutation.isPending
-                ? "Processing..."
-                : approveAction === "Approved" ? "Confirm Approval" : "Confirm Rejection"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <FormSheet
+        open={approveDialogOpen}
+        onOpenChange={(open) => { if (!processApprovalMutation.isPending) setApproveDialogOpen(open); }}
+        title={`${approveAction === "Approved" ? "Approve" : "Reject"} Bid Award`}
+        description={`Are you sure you want to ${approveAction === "Approved" ? "approve" : "reject"} this award? Please provide your comments.`}
+        onSubmit={() => {
+          if (approveAwardId && approveComments.trim()) {
+            processApprovalMutation.mutate({
+              taskId: approveTaskId,
+              result: approveAction,
+              comments: approveComments.trim(),
+              bidAwardId: approveAwardId,
+            });
+          }
+        }}
+        submitLabel={approveAction === "Approved" ? "Confirm Approval" : "Confirm Rejection"}
+        isSubmitting={processApprovalMutation.isPending}
+        submitDisabled={!approveComments.trim()}
+      >
+        <div className="space-y-2">
+          <Label htmlFor="approve-comments">Comments</Label>
+          <Textarea
+            id="approve-comments"
+            data-testid="textarea-approve-comments"
+            placeholder="Enter your comments..."
+            value={approveComments}
+            onChange={(e) => setApproveComments(e.target.value)}
+            className="min-h-[100px]"
+          />
+        </div>
+      </FormSheet>
 
       <ApprovalChecklistDialog
         open={checklistDialogOpen}
@@ -847,50 +804,29 @@ export default function BidAwardDetail({ id }: { id: string }) {
         }}
       />
 
-      <Dialog open={committeeDialogOpen} onOpenChange={(open) => {
-        if (!acceptMutation.isPending && !rejectAwardMutation.isPending) setCommitteeDialogOpen(open);
-      }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{committeeAction === "accept" ? "Accept" : "Reject"} Bid Award</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to {committeeAction} this bid award?
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setCommitteeDialogOpen(false)}
-              disabled={acceptMutation.isPending || rejectAwardMutation.isPending}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant={committeeAction === "reject" ? "destructive" : "default"}
-              data-testid="button-confirm-committee-action"
-              disabled={acceptMutation.isPending || rejectAwardMutation.isPending}
-              onClick={() => {
-                if (committeeAwardId === null) return;
-                if (committeeAction === "accept") {
-                  acceptMutation.mutate(committeeAwardId);
-                } else {
-                  rejectAwardMutation.mutate(committeeAwardId);
-                }
-                setCommitteeDialogOpen(false);
-              }}
-            >
-              {committeeAction === "accept" ? (
-                <CheckCircle2 className="h-4 w-4 mr-2" />
-              ) : (
-                <XCircle className="h-4 w-4 mr-2" />
-              )}
-              {acceptMutation.isPending || rejectAwardMutation.isPending
-                ? "Processing..."
-                : committeeAction === "accept" ? "Confirm Accept" : "Confirm Reject"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <FormSheet
+        open={committeeDialogOpen}
+        onOpenChange={(open) => {
+          if (!acceptMutation.isPending && !rejectAwardMutation.isPending) setCommitteeDialogOpen(open);
+        }}
+        title={`${committeeAction === "accept" ? "Accept" : "Reject"} Bid Award`}
+        description={`Are you sure you want to ${committeeAction} this bid award?`}
+        onSubmit={() => {
+          if (committeeAwardId === null) return;
+          if (committeeAction === "accept") {
+            acceptMutation.mutate(committeeAwardId);
+          } else {
+            rejectAwardMutation.mutate(committeeAwardId);
+          }
+          setCommitteeDialogOpen(false);
+        }}
+        submitLabel={committeeAction === "accept" ? "Confirm Accept" : "Confirm Reject"}
+        isSubmitting={acceptMutation.isPending || rejectAwardMutation.isPending}
+      >
+        <p className="text-sm text-muted-foreground">
+          Are you sure you want to {committeeAction} this bid award?
+        </p>
+      </FormSheet>
     </div>
   );
 }

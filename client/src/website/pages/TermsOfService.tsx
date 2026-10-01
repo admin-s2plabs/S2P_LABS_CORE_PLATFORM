@@ -1,3 +1,5 @@
+import { Link } from "wouter";
+
 export function TermsOfService() {
   return (
     <div className="min-h-screen bg-white">
@@ -9,14 +11,14 @@ export function TermsOfService() {
           <section className="mb-8">
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">1. Acceptance of Terms</h2>
             <p className="text-gray-600 mb-4">
-              By accessing and using Prokraya's AI-powered Source-to-Pay platform ("Service"), you agree to be bound by these Terms of Service ("Terms"). If you do not agree to these Terms, do not use the Service.
+              By accessing and using S2P Labs' Source-to-Pay platform ("Service"), you agree to be bound by these Terms of Service ("Terms"). If you do not agree to these Terms, do not use the Service.
             </p>
           </section>
 
           <section className="mb-8">
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">2. Description of Service</h2>
             <p className="text-gray-600 mb-4">
-              Prokraya provides an AI-powered procurement platform that includes:
+              S2P Labs provides a procurement platform that includes:
             </p>
             <ul className="list-disc pl-6 text-gray-600 mb-4">
               <li>Purchase requisition management</li>
@@ -25,7 +27,7 @@ export function TermsOfService() {
               <li>Contract lifecycle management</li>
               <li>E-invoicing and payment processing</li>
               <li>Spend analytics and reporting</li>
-              <li>AI-powered procurement agents</li>
+              <li>Intelligent procurement agents</li>
             </ul>
           </section>
 
@@ -80,7 +82,7 @@ export function TermsOfService() {
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">6. Intellectual Property</h2>
             <h3 className="text-xl font-semibold text-gray-900 mb-3">6.1 Our Rights</h3>
             <p className="text-gray-600 mb-4">
-              The Service, including all content, features, and functionality, is owned by Prokraya and protected by copyright, trademark, and other intellectual property laws.
+              The Service, including all content, features, and functionality, is owned by S2P Labs and protected by copyright, trademark, and other intellectual property laws.
             </p>
 
             <h3 className="text-xl font-semibold text-gray-900 mb-3">6.2 Your Rights</h3>
@@ -106,7 +108,7 @@ export function TermsOfService() {
           <section className="mb-8">
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">9. Limitation of Liability</h2>
             <p className="text-gray-600 mb-4">
-              To the maximum extent permitted by law, Prokraya shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of the Service.
+              To the maximum extent permitted by law, S2P Labs shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of the Service.
             </p>
           </section>
 
@@ -120,7 +122,7 @@ export function TermsOfService() {
           <section className="mb-8">
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">11. Indemnification</h2>
             <p className="text-gray-600 mb-4">
-              You agree to indemnify and hold Prokraya harmless from any claims, damages, or expenses arising from your use of the Service or violation of these Terms.
+              You agree to indemnify and hold S2P Labs harmless from any claims, damages, or expenses arising from your use of the Service or violation of these Terms.
             </p>
           </section>
 
@@ -148,12 +150,8 @@ export function TermsOfService() {
           <section className="mb-8">
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">15. Contact Information</h2>
             <p className="text-gray-600 mb-4">
-              For questions about these Terms, contact us:
+              For questions about these Terms, please reach out via our <Link href="/contact-us" className="text-violet-600 hover:underline">Contact Us</Link> page.
             </p>
-            <ul className="list-none text-gray-600 mb-4">
-              <li>Email: legal@prokraya.com</li>
-              <li>Address: Prokraya Inc., 123 Business Street, San Francisco, CA 94105</li>
-            </ul>
           </section>
         </div>
       </div>

@@ -10,6 +10,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
+import { FormSheet } from "@/components/form-sheet";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -24,12 +25,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
 import {
   Table,
   TableBody,
@@ -695,7 +690,7 @@ export default function CreateNonPoInvoice() {
             </Button>
           </Link>
           <div>
-            <h1 className="text-lg font-semibold" data-testid="text-page-title">
+            <h1 className="text-lg font-semibold text-primary" data-testid="text-page-title">
               Create NON-PO Invoice
             </h1>
             <p className="text-sm text-muted-foreground">
@@ -1268,12 +1263,25 @@ export default function CreateNonPoInvoice() {
         </CardContent>
       </Card>
 
-      <Sheet open={lineSheetOpen} onOpenChange={setLineSheetOpen}>
-        <SheetContent className="w-[50vw] sm:max-w-[50vw] overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle className="text-lg">{editingLine ? "Edit Invoice Line" : "Add Invoice Line"}</SheetTitle>
-          </SheetHeader>
-          <div className="space-y-4 mt-2">
+      <FormSheet
+        open={lineSheetOpen}
+        onOpenChange={setLineSheetOpen}
+        title={editingLine ? "Edit Invoice Line" : "Add Invoice Line"}
+        onSubmit={saveLine}
+        submitLabel={editingLine ? "Update Line" : "Add Line"}
+        submitDisabled={
+          !lineForm.order_unit ||
+          !lineForm.order_qty ||
+          parseFloat(lineForm.order_qty) <= 0 ||
+          (form.tax_included === "Yes"
+            ? !lineForm.inclusiveTaxAmt || parseFloat(lineForm.inclusiveTaxAmt) <= 0
+            : !lineForm.unit_cost || parseFloat(lineForm.unit_cost) <= 0)
+        }
+      >
+          <p className="text-xs text-muted-foreground mb-4">
+            <span className="text-destructive">*</span> Indicates mandatory fields
+          </p>
+          <div className="space-y-4">
             {(
               <div className="space-y-1.5">
                 <Label className="text-sm">Select Item <span className="text-destructive">*</span></Label>
@@ -1507,28 +1515,8 @@ export default function CreateNonPoInvoice() {
                 />
               </div>
             </div>
-            <div className="flex justify-end gap-2 pt-4 border-t">
-              <Button variant="outline" onClick={() => setLineSheetOpen(false)} data-testid="button-cancel-line">
-                Cancel
-              </Button>
-              <Button
-                onClick={saveLine}
-                disabled={
-                  !lineForm.order_unit ||
-                  !lineForm.order_qty ||
-                  parseFloat(lineForm.order_qty) <= 0 ||
-                  (form.tax_included === "Yes"
-                    ? !lineForm.inclusiveTaxAmt || parseFloat(lineForm.inclusiveTaxAmt) <= 0
-                    : !lineForm.unit_cost || parseFloat(lineForm.unit_cost) <= 0)
-                }
-                data-testid="button-save-line"
-              >
-                {editingLine ? "Update Line" : "Add Line"}
-              </Button>
-            </div>
           </div>
-        </SheetContent>
-      </Sheet>
+      </FormSheet>
 
       {budgetExceeded && (
         <p className="text-sm text-destructive font-medium" data-testid="budget-exceeded-error">

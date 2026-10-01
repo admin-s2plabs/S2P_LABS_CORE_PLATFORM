@@ -1,6 +1,5 @@
-import { ArrowRight, Eye, Lightbulb, Lock, Star, Target } from "lucide-react";
+import { Eye, Lightbulb, Lock, Star, Target } from "lucide-react";
 import { Helmet } from "react-helmet-async";
-import { Link } from "wouter";
 import { LogoBlack } from "../components/LogoImport";
 
 export function AboutUsPage() {
@@ -11,17 +10,17 @@ export function AboutUsPage() {
           async
           src="https://www.googletagmanager.com/gtag/js?id=G-KDV6R2SDN2"
         ></script>
-        <meta property="og:title" content="About Prokraya | AI-Powered Procurement Software Company" />
-        <meta property="og:description" content="We're building the future of procurement with AI agents, autonomous workflows, and enterprise-grade procurement automation." />
+        <meta property="og:title" content="About S2P Labs | Procurement Software Company" />
+        <meta property="og:description" content="We're building the future of procurement with autonomous workflows and enterprise-grade procurement automation." />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://prokraya.ai/about-us" />
-        <meta property="og:site_name" content="Prokraya" />
+        <meta property="og:site_name" content="S2P Labs" />
         <meta property="og:image" content={LogoBlack} />
         <meta name="twitter:card" content={LogoBlack} />
         <meta name="twitter:site" content="@prokraya" />
-        <title>About Prokraya | AI-Powered Procurement Software Company</title>
-        <meta name="description" content="Learn about Prokraya's mission to transform enterprise procurement through AI-powered automation, autonomous workflows, and intelligent procurement agents." />
-        <meta name="keywords" content="Prokraya, AI procurement company, procurement software company, source to pay platform, procurement automation, AI procurement agents, enterprise procurement technology" />
+        <title>About S2P Labs | Procurement Software Company</title>
+        <meta name="description" content="Learn about S2P Labs' mission to transform enterprise procurement through automation, autonomous workflows, and intelligent procurement tools." />
+        <meta name="keywords" content="S2P Labs, procurement software company, source to pay platform, procurement automation, enterprise procurement technology" />
       </Helmet>
       
       <div className="flex flex-col">
@@ -32,9 +31,9 @@ export function AboutUsPage() {
             <span className="inline-block px-3 py-1 text-xs font-semibold text-violet-700 bg-violet-50 rounded-full mb-5 uppercase tracking-wider">
               About Us
             </span>
-            <h1 className="text-4xl lg:text-5xl font-extrabold text-gray-900 leading-tight mb-5">About Prokraya</h1>
+            <h1 className="text-4xl lg:text-5xl font-extrabold text-gray-900 leading-tight mb-5">About S2P Labs</h1>
             <p className="text-lg text-gray-500 max-w-2xl mx-auto">
-              {"We are on a mission to revolutionize procurement through AI-powered intelligence and automation."}
+              {"We are on a mission to revolutionize procurement through intelligence and automation."}
             </p>
           </div>
         </section>
@@ -53,8 +52,8 @@ export function AboutUsPage() {
                 <p className="text-gray-600 mb-5 leading-relaxed">
                   <b>Eliminating Manual Effort</b><br />
                   Automate procurement workflows and repetitive tasks to reduce operational burden, improve accuracy, and free teams to focus on strategic decision-making.<br /><br />
-                  <b>Ensuring Secure AI Execution</b><br />
-                  Deliver enterprise-grade governance, compliance, and security controls that enable organizations to confidently deploy and scale AI-driven procurement operations.<br /><br />
+                  <b>Ensuring Secure Execution</b><br />
+                  Deliver enterprise-grade governance, compliance, and security controls that enable organizations to confidently deploy and scale automated procurement operations.<br /><br />
                   <b>Serving Enterprise-Scale Organizations</b><br />
                   Provide a robust, scalable platform designed to meet the complexity, volume, and requirements of large global enterprises.
                 </p>
@@ -92,16 +91,16 @@ export function AboutUsPage() {
                 <Eye className="w-12 h-12 text-white/70 mb-5" />
                 <h2 className="text-3xl font-bold mb-5 pb-5">Our Vision</h2>
                 <p className="text-white/85 leading-relaxed pb-5 mb-5">
-                  To transform enterprise procurement from a reactive, manual process into an autonomous AI-powered operating system that intelligently orchestrates sourcing, supplier management, and decision-making delivering speed, efficiency, compliance, and strategic value at scale.
+                  To transform enterprise procurement from a reactive, manual process into an autonomous operating system that intelligently orchestrates sourcing, supplier management, and decision-making delivering speed, efficiency, compliance, and strategic value at scale.
                 </p>
               </div>
               <div>
                 <h3 className="text-xl font-bold text-gray-900 mb-6">What We Stand For</h3>
                 <div className="space-y-5">
                   {[
-                    { icon: Lightbulb, title: "AI Agents That Execute, Not Just Assist", desc: "Beyond chatbots and copilots, Prokraya's AI agents take action executing procurement workflows, coordinating tasks, and driving outcomes autonomously.", color: "bg-violet-50 text-violet-600" },
+                    { icon: Lightbulb, title: "Automation That Executes, Not Just Assists", desc: "Beyond simple tools, S2P Labs takes action executing procurement workflows, coordinating tasks, and driving outcomes autonomously.", color: "bg-violet-50 text-violet-600" },
                     { icon: Star, title: "Single-Tenant, Security-First by Design", desc: "Built for enterprise trust with dedicated environments, data isolation, and rigorous security controls that protect sensitive procurement operations.", color: "bg-teal-50 text-teal-600" },
-                    { icon: Lock, title: "Policy-Driven, Fully Auditable AI", desc: "Every action is governed by business policies, approval frameworks, and complete audit trails delivering transparency, compliance, and control at every step.", color: "bg-teal-50 text-teal-600" },
+                    { icon: Lock, title: "Policy-Driven, Fully Auditable", desc: "Every action is governed by business policies, approval frameworks, and complete audit trails delivering transparency, compliance, and control at every step.", color: "bg-teal-50 text-teal-600" },
                   ].map((item, i) => (
                     <div key={i} className="flex gap-4 p-3 bg-white rounded-xl border border-gray-100">
                       <div className={`w-10 h-10 ${item.color} rounded-lg flex items-center justify-center flex-shrink-0`}>
@@ -128,7 +127,7 @@ export function AboutUsPage() {
               <span className="text-xs font-semibold text-violet-700 uppercase tracking-wider">Leadership Team</span>
             </div>
             <h2 className="text-3xl font-bold text-gray-900 mb-3">Meet the Team Driving Procurement Innovation</h2>
-            <p className="text-gray-500">Experienced leaders building the future of AI-powered procurement</p>
+            <p className="text-gray-500">Experienced leaders building the future of procurement</p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -149,14 +148,7 @@ export function AboutUsPage() {
         <section className="py-20 bg-gradient-to-br from-slate-900 via-violet-950 to-slate-900 text-white">
           <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h2 className="text-3xl font-bold mb-3">Join Us on This Journey</h2>
-            <p className="text-gray-400 mb-8">Let's transform procurement together</p>
-            <Link
-              to="/book-demo"
-              className="inline-flex items-center gap-2 px-7 py-3 bg-violet-600 text-white font-semibold rounded-lg hover:bg-violet-700 transition-colors"
-            >
-              Book a Demo
-              <ArrowRight className="w-4 h-4" />
-            </Link>
+            <p className="text-gray-400">Let's transform procurement together</p>
           </div>
         </section>
       </div>

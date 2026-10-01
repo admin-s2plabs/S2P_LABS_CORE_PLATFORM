@@ -2,13 +2,7 @@ import { ApprovalChecklistDialog } from "@/components/approval-checklist-dialog"
 import { ViewChecklistButton } from "@/components/view-checklist-button";
 import { resolveApprovalChecklistAvailability } from "@/hooks/use-approval-checklist";
 import { CollaborationPanel, CollaborationPanelRef } from "@/components/collaboration-panel";
-import { MarkdownContent } from "@/components/markdown-content";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
+import { FormSheet } from "@/components/form-sheet";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -65,12 +59,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -82,7 +70,6 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { useAISettings } from "@/hooks/use-ai-settings";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency, formatDate, handleDownloadDocument } from "@/lib/common-functions";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -90,9 +77,7 @@ import { cn } from "@/lib/utils";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   AlertCircle,
-  AlertTriangle,
   ArrowLeft,
-  Brain,
   Building2,
   Calendar,
   Check,
@@ -116,10 +101,7 @@ import {
   Pencil,
   Plus,
   Receipt,
-  ScanSearch,
   Send,
-  ShieldAlert,
-  ShieldCheck,
   ThumbsDown,
   ThumbsUp,
   Trash2,
@@ -127,7 +109,7 @@ import {
   User,
   Wallet,
   X,
-  XCircle
+  XCircle,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useParams } from "wouter";
@@ -326,79 +308,6 @@ function InfoRow({ label, value, icon: Icon }: { label: string; value: string | 
   );
 }
 
-/**
- * What OCR read from the uploaded document, tallied on its own. This is a document-level
- * count of extracted lines and never says anything about PO quantity reconciliation.
- */
-function docLineTally(result: any) {
-  const rows: any[] = result?.documentLineMatches ?? [];
-  const summary = result?.summary ?? {};
-  if (rows.length === 0) {
-    return {
-      extracted: summary.docLinesTotal ?? 0,
-      matched: summary.docLinesMatched ?? 0,
-      partial: summary.docLinesPartial ?? 0,
-      unmatched: summary.docLinesUnmatched ?? 0,
-      notInPo: summary.docLinesNotInPo ?? 0,
-    };
-  }
-  // A billed line the PO never ordered counts as unmatched however closely it resembles
-  // something else, so these totals always agree with the "Not in PO" label on the row.
-  const onPo = rows.filter((r) => r.poLineNumber != null);
-  const matched = onPo.filter((r) => r.matchStatus === "matched").length;
-  const partial = onPo.filter((r) => r.matchStatus === "partial").length;
-  return {
-    extracted: rows.length,
-    matched,
-    partial,
-    unmatched: rows.length - matched - partial,
-    notInPo: rows.length - onPo.length,
-  };
-}
-
-/** Lines on the invoice record that sit on no PO line — extra billing, not a PO shortfall. */
-function invoiceLinesNotInPo(result: any): number {
-  return (
-    result?.summary?.invoiceLinesNotInPo ??
-    (result?.lineMatches ?? []).filter((lm: any) => lm.poLineNumber == null).length
-  );
-}
-
-function formatTolerance(value: number | null | undefined): string | null {
-  if (value == null || !Number.isFinite(Number(value))) return null;
-  const percent = Number(value) * 100;
-  return `±${Number(percent.toFixed(2))}%`;
-}
-
-function MatchConfidenceDisplay({
-  confidence,
-  score,
-  reason,
-  testId,
-}: {
-  confidence: "high" | "medium" | "low" | null | undefined;
-  score: number | null | undefined;
-  reason?: string | null;
-  testId: string;
-}) {
-  const level = confidence ?? "low";
-  return (
-    <div className="min-w-[150px]" data-testid={testId}>
-      <Badge
-        className={cn(
-          "text-[10px]",
-          level === "high" && "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200",
-          level === "medium" && "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
-          level === "low" && "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
-        )}
-      >
-        {level.charAt(0).toUpperCase() + level.slice(1)} · {Math.round(Number(score) || 0)}/100
-      </Badge>
-      {reason && <div className="mt-1 text-[10px] leading-snug text-muted-foreground">{reason}</div>}
-    </div>
-  );
-}
-
 export default function InvoiceDetailPage() {
   const params = useParams<{ id: string }>();
   const invoiceId = params.id ? String(params.id) || "0" : "0";
@@ -488,7 +397,6 @@ export default function InvoiceDetailPage() {
     Boolean(editInvoiceForm.budget_name) &&
     Boolean(editInvoiceForm.payment_terms_name);
 
-  const { isAIEnabled } = useAISettings();
   const collaborationPanelRef = useRef<CollaborationPanelRef>(null);
   const [collaborationCount, setCollaborationCount] = useState(0);
 
@@ -684,6 +592,78 @@ export default function InvoiceDetailPage() {
   }[]>({
     queryKey: ['/api/invoices', invoiceId, 'documents'],
     enabled: !!invoiceId,
+  });
+
+  // Real attachment upload/view/delete for the "Upload Document" card — reuses
+  // the same /api/invoices/:invoiceId/documents endpoints the invoiceDocuments
+  // query above and the CollaborationPanel below already call for this same
+  // invoice. Declared above the isLoading early-return so these hooks always
+  // run (Rules of Hooks).
+  const invoiceDocumentsUrl = `/api/invoices/${invoiceId}/documents`;
+  const getAuthHeaders = (): Record<string, string> => {
+    try {
+      const parsed = JSON.parse(localStorage.getItem("prokraya-auth") || "{}");
+      return {
+        "x-user-email": parsed.userId || "",
+        "x-user-name": parsed.userName || "",
+      };
+    } catch {
+      return {};
+    }
+  };
+  const uploadDocInputRef = useRef<HTMLInputElement>(null);
+
+  const uploadInvoiceDocumentMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch(invoiceDocumentsUrl, {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: formData,
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error((err as any).error || "Failed to upload document");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/invoices', invoiceId, 'documents'] });
+      toast({ title: "Document added", description: "Document has been attached to this invoice." });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Failed to add document", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const handleViewInvoiceDocument = async (doc: { id: number; file_name: string }) => {
+    try {
+      const res = await fetch(`${invoiceDocumentsUrl}/${doc.id}/download`, {
+        headers: getAuthHeaders(),
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to fetch document");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const tab = window.open(url, "_blank");
+      if (!tab) toast({ title: "Allow pop-ups to view documents", variant: "destructive" });
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch {
+      toast({ title: "Failed to open document", variant: "destructive" });
+    }
+  };
+
+  const deleteInvoiceDocumentMutation = useMutation({
+    mutationFn: async (docId: number) => apiRequest("DELETE", `${invoiceDocumentsUrl}/${docId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/invoices', invoiceId, 'documents'] });
+      toast({ title: "Document deleted" });
+    },
+    onError: () => {
+      toast({ title: "Failed to delete document", variant: "destructive" });
+    },
   });
 
   const handleSaveNotes = async (notes: string) => {
@@ -1171,37 +1151,6 @@ export default function InvoiceDetailPage() {
     updateTaxMutation.mutate(value);
   };
 
-  const [aiMatchResult, setAiMatchResult] = useState<any>(null);
-  const [aiFraudResult, setAiFraudResult] = useState<any>(null);
-
-  const aiMatchMutation = useMutation({
-    mutationFn: async () => {
-      const res = await apiRequest("POST", `/api/invoices/${invoiceId}/ai-match`);
-      return res.json();
-    },
-    onSuccess: (data: any) => {
-      setAiMatchResult(data);
-      toast({ title: "AI Matching Complete", description: "Invoice line matching analysis finished." });
-    },
-    onError: (error: Error) => {
-      toast({ title: "AI Matching Failed", description: error.message, variant: "destructive" });
-    },
-  });
-
-  const aiFraudMutation = useMutation({
-    mutationFn: async () => {
-      const res = await apiRequest("POST", `/api/invoices/${invoiceId}/ai-fraud-check`);
-      return res.json();
-    },
-    onSuccess: (data: any) => {
-      setAiFraudResult(data);
-      toast({ title: "AI Fraud Analysis Complete", description: `Risk score: ${data.riskScore}/100 (${data.riskLevel})` });
-    },
-    onError: (error: Error) => {
-      toast({ title: "AI Fraud Check Failed", description: error.message, variant: "destructive" });
-    },
-  });
-
   const calculateInclusiveLineValues = (lineData: { order_qty: string | number | null; inclusiveTaxAmt: string | number | null; tax_rate: string | number | null }) => {
     const qty = parseFloat(String(lineData.order_qty)) || 1;
     const lineTotal = parseFloat(String(lineData.inclusiveTaxAmt)) || 0;
@@ -1366,6 +1315,58 @@ export default function InvoiceDetailPage() {
     ).values()
   );
 
+  // Shared submit-for-approval validation, used by both the header's Submit
+  // button and the Quick Actions sidebar card so the two stay in sync.
+  const handleSubmitInvoice = () => {
+    if (invoiceNumDuplicate?.duplicate) {
+      toast({ title: "Duplicate: Invoice number already exists", variant: "destructive" });
+      return;
+    }
+    if (invoice.invoice_source === "NON-PO" && isEditInvoiceFormInitialized && !isFormValid) {
+      toast({ title: "Please fill all required fields", variant: "destructive" });
+      return;
+    }
+    if (lines.length === 0) {
+      toast({ title: "At least one line item is required before submitting", variant: "destructive" });
+      return;
+    }
+    if (isMoreInfoRequired && lines.length === 0) {
+      toast({ title: "At least one line item is required before re-submitting", variant: "destructive" });
+      return;
+    }
+    if (invoiceDocuments.length === 0 && newFiles.length === 0) {
+      toast({ title: "At least one document is required before submitting", variant: "destructive" });
+      return;
+    }
+    submitMutation.mutate();
+  };
+
+  // Shared "open Edit Invoice sheet" setup, used by both the header's Edit
+  // button and the Quick Actions sidebar card.
+  const handleOpenEditInvoice = () => {
+    setIsEditInvoiceFormInitialized(true);
+    setEditInvoiceForm({
+      invoice_number: invoice.invoice_number || "",
+      invoice_date: invoice.invoice_date?.split("T")[0] || "",
+      description: invoice.description || "",
+      invoice_type: invoice.invoice_type?.toLowerCase() || "Standard",
+      invoice_curr_code: invoice.invoice_curr_code || "AED",
+      department_name: invoice.department_name || "",
+      payment_terms_name: invoice.payment_terms_name || "",
+      budget_name: invoice.budget_name || "",
+      invoice_reason: invoice.invoice_reason || "",
+      invoice_notes: invoice.invoice_notes || "",
+      orgId: String(invoice.org_id) || "",
+      budget_id: String(invoice.budget_segment) || "",
+      inv_due_date: invoice.inv_due_date?.split("T")[0] || "",
+      supplier_id: invoice.supplier_id?.toString() || "",
+      supplier_name: invoice.supplier_name || "",
+    });
+    setDeletedDocIds([]);
+    setNewFiles([]);
+    setEditInvoiceSheetOpen(true);
+  };
+
   return (
     <div className="flex">
       <div className={`flex-1 min-w-0 p-4 space-y-3 transition-all duration-300 ${collaborationPanelRef.current?.isPinned ? "pr-6" : ""}`}>
@@ -1419,33 +1420,7 @@ export default function InvoiceDetailPage() {
               <>
                 <Button
                   size="sm"
-                  onClick={() => {
-                    if (invoiceNumDuplicate?.duplicate) {
-                      toast({ title: "Duplicate: Invoice number already exists", variant: "destructive" });
-                      return;
-                    }
-                    if (invoice.invoice_source === "NON-PO" && isEditInvoiceFormInitialized && !isFormValid) {
-                      toast({ title: "Please fill all required fields", variant: "destructive" });
-                      return;
-                    }
-                    if (lines.length === 0) {
-                      toast({ title: "At least one line item is required before submitting", variant: "destructive" });
-                      return;
-                    }
-                    if (isMoreInfoRequired && lines.length === 0) {
-                      toast({ title: "At least one line item is required before re-submitting", variant: "destructive" });
-                      return;
-                    }
-                    if (isMoreInfoRequired && lines.length === 0) {
-                      toast({ title: "At least one line item is required before re-submitting", variant: "destructive" });
-                      return;
-                    }
-                    if (invoiceDocuments.length === 0 && newFiles.length === 0) {
-                      toast({ title: "At least one document is required before submitting", variant: "destructive" });
-                      return;
-                    }
-                    submitMutation.mutate();
-                  }}
+                  onClick={handleSubmitInvoice}
                   disabled={submitMutation.isPending}
                   data-testid="button-submit-invoice"
                 >
@@ -1455,29 +1430,7 @@ export default function InvoiceDetailPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => {
-                    setIsEditInvoiceFormInitialized(true);
-                    setEditInvoiceForm({
-                      invoice_number: invoice.invoice_number || "",
-                      invoice_date: invoice.invoice_date?.split("T")[0] || "",
-                      description: invoice.description || "",
-                      invoice_type: invoice.invoice_type?.toLowerCase() || "Standard",
-                      invoice_curr_code: invoice.invoice_curr_code || "AED",
-                      department_name: invoice.department_name || "",
-                      payment_terms_name: invoice.payment_terms_name || "",
-                      budget_name: invoice.budget_name || "",
-                      invoice_reason: invoice.invoice_reason || "",
-                      invoice_notes: invoice.invoice_notes || "",
-                      orgId: String(invoice.org_id) || "",
-                      budget_id: String(invoice.budget_segment) || "",
-                      inv_due_date: invoice.inv_due_date?.split("T")[0] || "",
-                      supplier_id: invoice.supplier_id?.toString() || "",
-                      supplier_name: invoice.supplier_name || "",
-                    });
-                    setDeletedDocIds([]);
-                    setNewFiles([]);
-                    setEditInvoiceSheetOpen(true);
-                  }}
+                  onClick={handleOpenEditInvoice}
                   data-testid="button-edit-invoice"
                 >
                   <Pencil className="h-4 w-4 mr-1" />
@@ -1553,40 +1506,6 @@ export default function InvoiceDetailPage() {
               </DropdownMenu>
             )}
 
-            {isAIEnabled('AI_INVOICE_MATCHING') && invoice.po_number && !isDraft && !isVendorUser && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => aiMatchMutation.mutate()}
-                disabled={aiMatchMutation.isPending}
-                data-testid="button-ai-match"
-              >
-                {aiMatchMutation.isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : (
-                  <Brain className="h-4 w-4 mr-2" />
-                )}
-                {aiMatchMutation.isPending ? "Matching..." : "AI Match"}
-              </Button>
-            )}
-
-            {isAIEnabled('AI_FRAUD_DETECTION') && !isDraft && !isVendorUser && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => aiFraudMutation.mutate()}
-                disabled={aiFraudMutation.isPending}
-                data-testid="button-ai-fraud"
-              >
-                {aiFraudMutation.isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : (
-                  <ShieldAlert className="h-4 w-4 mr-2" />
-                )}
-                {aiFraudMutation.isPending ? "Analyzing..." : "AI Fraud Check"}
-              </Button>
-            )}
-
             {paymentReady && <ViewChecklistButton moduleName="Invoice" refNumber={invoice?.invoice_number} />}
 
             <Button
@@ -1642,10 +1561,9 @@ export default function InvoiceDetailPage() {
                       <File className="h-3.5 w-3.5 text-muted-foreground/60 shrink-0" />
                     )}
                     <span className="text-xs truncate max-w-[120px]">{doc.file_name}</span>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-5 w-5 ml-0.5 shrink-0"
+                    <button
+                      type="button"
+                      className="h-5 w-5 ml-0.5 shrink-0 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover-elevate"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleDownloadDocument(doc, downloadUrl)
@@ -1654,11 +1572,10 @@ export default function InvoiceDetailPage() {
                       data-testid={`quick-download-${doc.id}`}
                     >
                       <Download className="h-3 w-3" />
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-5 w-5 shrink-0"
+                    </button>
+                    <button
+                      type="button"
+                      className="h-5 w-5 shrink-0 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover-elevate"
                       onClick={(e) => {
                         e.stopPropagation();
                         setPreviewDoc(doc);
@@ -1667,7 +1584,7 @@ export default function InvoiceDetailPage() {
                       data-testid={`quick-preview-${doc.id}`}
                     >
                       <Eye className="h-3 w-3" />
-                    </Button>
+                    </button>
                   </div>
                 );
               })}
@@ -1677,15 +1594,17 @@ export default function InvoiceDetailPage() {
 
         <div className="grid gap-4 lg:grid-cols-2">
           <Card>
-            <CardHeader className="py-3 px-4 flex flex-row items-center justify-between gap-2">
+            <CardHeader className="py-3 px-4 bg-primary/5 border-b border-primary/20 flex flex-row items-center justify-between gap-2">
               <CardTitle className="text-sm flex items-center gap-2">
-                <Receipt className="h-4 w-4" />
-                Invoice Information
+                <Receipt className="h-4 w-4 text-primary" />
+                Invoice details
               </CardTitle>
               <div className="text-right">
-                <p className="text-xs text-muted-foreground">Total Amount</p>
-                <p className="text-lg font-bold text-primary">
-                  {formatCurrency(Number(invoice.invoice_amount || 0) + Number(invoice.tax_amount || 0), invoice.invoice_curr_code)}
+                <p className="text-xs text-muted-foreground">
+                  Created on : {formatDate(invoice.creation_date)}
+                </p>
+                <p className="text-xs font-medium text-primary">
+                  Total Amount: {formatCurrency(Number(invoice.invoice_amount || 0) + Number(invoice.tax_amount || 0), invoice.invoice_curr_code)}
                 </p>
               </div>
             </CardHeader>
@@ -1739,9 +1658,9 @@ export default function InvoiceDetailPage() {
           </Card>
 
           <Card>
-            <CardHeader className="py-3 px-4">
+            <CardHeader className="py-3 px-4 bg-primary/5 border-b border-primary/20">
               <CardTitle className="text-sm flex items-center gap-2">
-                <Building2 className="h-4 w-4" />
+                <Building2 className="h-4 w-4 text-primary" />
                 Supplier & Financial Details
               </CardTitle>
             </CardHeader>
@@ -1812,6 +1731,241 @@ export default function InvoiceDetailPage() {
           </Card>
         </div>
 
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {/* Status stepper card */}
+          <Card className="h-full flex flex-col">
+            <CardHeader className="py-3 px-4 bg-primary/5 border-b border-primary/20">
+              <CardTitle className="text-sm">
+                Status - {invoice.invoice_status || "Draft"}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 py-4 flex-1">
+              {(() => {
+                // Real invoice lifecycle: Draft -> submitted for approval
+                // (Pending Approval / More Info Required) -> Approved -> Paid.
+                // Rejected is a terminal off-path outcome — shown at the
+                // "Submitted" stage with destructive styling since that is
+                // as far as the invoice got.
+                const stageLabels = ["Submitted", "Approved", "Paid"];
+                let currentStage = 0;
+                if (isPending || isMoreInfoRequired) currentStage = 1;
+                if (invoice.invoice_status === "Approved") currentStage = 2;
+                if (isPaid) currentStage = 3;
+                const isRejectedStatus = invoice.invoice_status === "Rejected";
+                if (isRejectedStatus) currentStage = 1;
+
+                return stageLabels.map((label, idx) => {
+                  const stageNum = idx + 1;
+                  const isDone = currentStage > stageNum;
+                  const isActive = currentStage === stageNum;
+                  const isNegativeActive = isRejectedStatus && isActive;
+                  return (
+                    <div key={label} className="flex items-start gap-3" data-testid={`status-stage-${stageNum}`}>
+                      <div className="flex flex-col items-center">
+                        <div
+                          className={cn(
+                            "h-9 w-9 rounded-full border-2 flex items-center justify-center shrink-0",
+                            isNegativeActive
+                              ? "border-destructive"
+                              : isDone || isActive
+                                ? "border-primary"
+                                : "border-muted-foreground/40",
+                          )}
+                        >
+                          <div
+                            className={cn(
+                              "h-4 w-4 rounded-full",
+                              isNegativeActive
+                                ? "bg-destructive"
+                                : isDone || isActive
+                                  ? "bg-primary"
+                                  : "bg-muted-foreground/60",
+                            )}
+                          />
+                        </div>
+                        {idx < stageLabels.length - 1 && (
+                          <div className="w-0 flex-1 min-h-[28px] border-l-2 border-dotted border-primary" />
+                        )}
+                      </div>
+                      <p
+                        className={cn(
+                          "text-sm pb-6 mt-2",
+                          isNegativeActive
+                            ? "text-destructive font-medium"
+                            : isActive
+                              ? "text-primary font-medium"
+                              : isDone
+                                ? "font-medium"
+                                : "text-muted-foreground",
+                        )}
+                      >
+                        {label}
+                        {isNegativeActive && <span className="ml-1.5 text-xs">(Rejected)</span>}
+                      </p>
+                    </div>
+                  );
+                });
+              })()}
+            </CardContent>
+          </Card>
+
+          {/* Upload Document card — real attachments, via the same
+              /api/invoices/:invoiceId/documents endpoints the
+              CollaborationPanel below already uses for this invoice. */}
+          <Card className="h-full flex flex-col">
+            <CardHeader className="py-3 px-4 bg-primary/5 border-b border-primary/20">
+              <CardTitle className="text-sm">Upload Document</CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 py-4 space-y-1 flex-1">
+              <input
+                ref={uploadDocInputRef}
+                type="file"
+                className="hidden"
+                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) uploadInvoiceDocumentMutation.mutate(file);
+                  e.target.value = "";
+                }}
+                data-testid="input-upload-document"
+              />
+              <button
+                type="button"
+                className="w-full rounded-md border-2 border-dashed border-muted-foreground/30 flex flex-col items-center justify-center py-3 gap-1.5 text-center hover-elevate disabled:opacity-60"
+                onClick={() => uploadDocInputRef.current?.click()}
+                disabled={uploadInvoiceDocumentMutation.isPending}
+                data-testid="button-upload-document"
+              >
+                <div className="h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
+                  {uploadInvoiceDocumentMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Plus className="h-4 w-4" />
+                  )}
+                </div>
+                <p className="text-xs font-medium text-primary">Upload Document</p>
+              </button>
+
+              <div className="pt-1">
+                {invoiceDocuments.length === 0 ? (
+                  <p className="text-xs text-muted-foreground text-center py-3">
+                    No documents attached
+                  </p>
+                ) : (
+                  invoiceDocuments.slice(0, 5).map((doc, i) => (
+                    <div
+                      key={doc.id}
+                      className={cn(
+                        "flex items-center justify-between gap-2 py-2 px-1 text-xs",
+                        i < Math.min(invoiceDocuments.length, 5) - 1 && "border-b",
+                      )}
+                      data-testid={`row-document-${doc.id}`}
+                    >
+                      <span className="truncate text-muted-foreground" title={doc.file_name}>
+                        {doc.file_name}
+                      </span>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => handleViewInvoiceDocument(doc)}
+                          className="h-6 w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover-elevate"
+                          data-testid={`button-view-document-${doc.id}`}
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => deleteInvoiceDocumentMutation.mutate(doc.id)}
+                          disabled={deleteInvoiceDocumentMutation.isPending}
+                          className="h-6 w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover-elevate disabled:opacity-60"
+                          data-testid={`button-delete-document-${doc.id}`}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+                {invoiceDocuments.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => collaborationPanelRef.current?.open()}
+                    className="w-full text-center text-xs font-medium text-primary hover:underline pt-2"
+                    data-testid="button-view-all-documents"
+                  >
+                    View all
+                  </button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Quick actions card — mirrors the header's Submit/Edit/Delete
+              buttons, same handlers as the header versions (handleSubmitInvoice,
+              handleOpenEditInvoice, deleteMutation). */}
+          {(canEditInvoice || ((isSuperadmin || isVendorUser) && invoice.invoice_status !== "Pending Approval" && invoice.invoice_status !== "Paid" && invoice.invoice_status !== "Approved")) && (
+            <Card className="h-full flex flex-col">
+              <CardContent className="p-4 flex-1 flex flex-col gap-3">
+                {canEditInvoice && (
+                  <>
+                    <Button
+                      className="font-semibold"
+                      onClick={handleSubmitInvoice}
+                      disabled={submitMutation.isPending}
+                      data-testid="button-submit-invoice-sidebar"
+                    >
+                      {submitMutation.isPending ? (
+                        <Loader2 className="h-4 w-4 shrink-0 animate-spin mr-2" />
+                      ) : ""}
+                      {isMoreInfoRequired ? "Re-submit" : "Submit for Approval"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={handleOpenEditInvoice}
+                      data-testid="button-edit-invoice-sidebar"
+                    >
+                      <Pencil className="h-4 w-4 mr-2" />
+                      Edit Invoice
+                    </Button>
+                  </>
+                )}
+                {(isSuperadmin || isVendorUser) && invoice.invoice_status !== "Pending Approval" && invoice.invoice_status !== "Paid" && invoice.invoice_status !== "Approved" && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="text-destructive hover:text-destructive border-destructive/40"
+                        data-testid="button-delete-invoice-sidebar"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Invoice</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to delete invoice {invoice.invoice_number}? This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel data-testid="button-delete-cancel-sidebar">Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => deleteMutation.mutate()}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          data-testid="button-delete-confirm-sidebar"
+                        >
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
         {invoice.invoice_notes && (
           <Card>
             <CardContent className="p-3">
@@ -1831,15 +1985,14 @@ export default function InvoiceDetailPage() {
         )}
 
         {!isDraft && !isVendorUser && (
-          <Accordion type="single" collapsible defaultValue="approval-history" className="mb-4">
-            <AccordionItem value="approval-history" className="border rounded-lg">
-              <AccordionTrigger className="px-4 py-2 hover:no-underline" data-testid="trigger-approval-history">
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-semibold">Approval History</span>
-                </div>
-              </AccordionTrigger>
-              <AccordionContent className="px-4 pb-0">
+          <Card className="mb-4" data-testid="card-approval-history">
+            <CardHeader className="py-3 px-4 bg-primary/5 border-b border-primary/20">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Clock className="h-4 w-4 text-primary" />
+                Approval history
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pt-4 pb-0">
                 <div className="overflow-x-auto w-full pb-4 custom-scrollbar">
                   <div className="flex items-start min-w-max">
                     {(() => {
@@ -1975,1068 +2128,6 @@ export default function InvoiceDetailPage() {
                     })()}
                   </div>
                 </div>
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
-        )}
-
-        {aiMatchResult && isAIEnabled('AI_INVOICE_MATCHING') && (
-          <Card data-testid="card-ai-match-results">
-            <CardHeader className="flex flex-row items-start justify-between gap-2 pb-2">
-              <div className="min-w-0 space-y-2">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <Brain className="h-5 w-5 text-primary" />
-                  <CardTitle className="text-base">AI Invoice Matching</CardTitle>
-                  {aiMatchResult.matchType && (
-                    <Badge variant="outline" className="text-xs font-medium" data-testid="badge-match-type">
-                      {aiMatchResult.matchType === "3-way" ? "3-Way Match (PO + GRN)" : "2-Way Match (PO only)"}
-                    </Badge>
-                  )}
-                </div>
-
-                <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-3">
-                  <div className="flex items-center gap-1.5 flex-wrap" data-testid="group-header-document">
-                    <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                      Document (OCR)
-                    </span>
-                    {aiMatchResult.document_verification_status && (
-                      <Badge
-                        className={cn(
-                          "text-xs",
-                          aiMatchResult.document_verification_status === "passed" && "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200",
-                          aiMatchResult.document_verification_status === "mismatched" && "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
-                          aiMatchResult.document_verification_status === "extraction_failed" && "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200",
-                          aiMatchResult.document_verification_status === "no_document" && "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200",
-                        )}
-                        data-testid="badge-header-doc-status"
-                      >
-                        {aiMatchResult.document_verification_status === "passed"
-                          ? "verified"
-                          : String(aiMatchResult.document_verification_status).replace(/_/g, " ")}
-                      </Badge>
-                    )}
-                    {(() => {
-                      const tally = docLineTally(aiMatchResult);
-                      if (tally.extracted === 0) return null;
-                      return (
-                        <>
-                          <Badge variant="outline" className="text-xs" data-testid="badge-doc-extracted-lines">
-                            {tally.extracted} extracted line{tally.extracted === 1 ? "" : "s"}
-                          </Badge>
-                          <span className="text-xs text-muted-foreground" aria-hidden="true">→</span>
-                          <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200 text-xs" data-testid="badge-doc-matched-count">
-                            {tally.matched} matched
-                          </Badge>
-                          {tally.partial > 0 && (
-                            <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200 text-xs" data-testid="badge-doc-partial-count">
-                              {tally.partial} partial
-                            </Badge>
-                          )}
-                          <Badge className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 text-xs" data-testid="badge-doc-unmatched-count">
-                            {tally.unmatched} unmatched
-                          </Badge>
-                        </>
-                      );
-                    })()}
-                  </div>
-
-                  <Separator orientation="vertical" className="hidden sm:block h-4" />
-
-                  <div className="flex items-center gap-1.5 flex-wrap" data-testid="group-header-po">
-                    <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                      PO reconciliation
-                    </span>
-                    {aiMatchResult.po_reconciliation_status && aiMatchResult.po_reconciliation_status !== "no_po" ? (
-                      <Badge
-                        className={cn(
-                          "text-xs",
-                          aiMatchResult.po_reconciliation_status === "fully_matched" && "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200",
-                          aiMatchResult.po_reconciliation_status === "partially_matched" && "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
-                          aiMatchResult.po_reconciliation_status === "pending" && "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
-                          aiMatchResult.po_reconciliation_status === "over_invoiced" && "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
-                          aiMatchResult.po_reconciliation_status === "over_received" && "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200",
-                        )}
-                        data-testid="badge-header-po-recon-status"
-                      >
-                        {String(aiMatchResult.po_reconciliation_status).replace(/_/g, " ")}
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" className="text-xs" data-testid="badge-header-po-recon-status">
-                        no PO
-                      </Badge>
-                    )}
-                    {aiMatchResult.po_reconciliation_status !== "no_po" && (
-                      <Badge variant="outline" className="text-xs" data-testid="badge-header-po-qty">
-                        PO {aiMatchResult.total_po_qty ?? 0} · GRN {aiMatchResult.total_grn_qty ?? 0} · Invoiced {aiMatchResult.total_invoice_qty ?? 0}
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <Button variant="ghost" size="icon" onClick={() => setAiMatchResult(null)} data-testid="button-close-ai-match">
-                <X className="h-4 w-4" />
-              </Button>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {aiMatchResult.summary?.narrative && (
-                <MarkdownContent
-                  content={aiMatchResult.summary.narrative}
-                  className="text-sm text-muted-foreground"
-                  data-testid="text-ai-narrative"
-                />
-              )}
-
-              {(aiMatchResult.line_level_status?.length > 0 || aiMatchResult.po_reconciliation_status) && (
-                <div className="space-y-3" data-testid="section-po-reconciliation">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm font-medium">PO-Level Reconciliation (quantities)</span>
-                    {aiMatchResult.po_reconciliation_status && aiMatchResult.po_reconciliation_status !== "no_po" && (
-                      <Badge
-                        className={cn(
-                          "text-xs",
-                          aiMatchResult.po_reconciliation_status === "fully_matched" && "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200",
-                          aiMatchResult.po_reconciliation_status === "partially_matched" && "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
-                          aiMatchResult.po_reconciliation_status === "pending" && "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
-                          aiMatchResult.po_reconciliation_status === "over_invoiced" && "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
-                          aiMatchResult.po_reconciliation_status === "over_received" && "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200",
-                        )}
-                        data-testid="badge-po-recon-status"
-                      >
-                        {String(aiMatchResult.po_reconciliation_status).replace(/_/g, " ")}
-                      </Badge>
-                    )}
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-[11px] text-muted-foreground" data-testid="text-recon-scope-note">
-                      Quantities only, across every GRN and invoice on this PO. It is fully matched when PO qty, GRN qty
-                      and the invoiced qty allocated against those receipts agree.
-                    </p>
-                    <p className="text-[11px] text-muted-foreground" data-testid="text-recon-exclusion-note">
-                      Billed lines that are not on this PO, and any document/OCR discrepancy, are reported separately
-                      below and never change this status.
-                      {invoiceLinesNotInPo(aiMatchResult) > 0 && (
-                        <span className="font-medium">
-                          {" "}
-                          {invoiceLinesNotInPo(aiMatchResult)} line(s) on this invoice are not in the PO and are excluded
-                          from the figures below.
-                        </span>
-                      )}
-                    </p>
-                    {formatTolerance(aiMatchResult.tolerances?.qtyTolerance) && (
-                      <p className="text-[11px] text-muted-foreground" data-testid="text-recon-tolerance-note">
-                        Tolerances applied: quantity {formatTolerance(aiMatchResult.tolerances?.qtyTolerance)}, price{" "}
-                        {formatTolerance(aiMatchResult.tolerances?.priceTolerance)}. Differences inside these bands count
-                        as matched.
-                      </p>
-                    )}
-                  </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2" data-testid="po-recon-totals">
-                    <div className="rounded-md border p-2">
-                      <div className="text-[10px] text-muted-foreground uppercase">PO Qty</div>
-                      <div className="text-sm font-medium" data-testid="text-total-po-qty">{aiMatchResult.total_po_qty ?? 0}</div>
-                    </div>
-                    <div className="rounded-md border p-2">
-                      <div className="text-[10px] text-muted-foreground uppercase">GRN Qty</div>
-                      <div className="text-sm font-medium" data-testid="text-total-grn-qty">{aiMatchResult.total_grn_qty ?? 0}</div>
-                    </div>
-                    <div className="rounded-md border p-2">
-                      <div className="text-[10px] text-muted-foreground uppercase">Invoice Qty (on PO lines)</div>
-                      <div className="text-sm font-medium" data-testid="text-total-invoice-qty">{aiMatchResult.total_invoice_qty ?? 0}</div>
-                      {aiMatchResult.matchType === "3-way" && (
-                        <div
-                          className={cn(
-                            "text-[10px]",
-                            (aiMatchResult.allocation_details?.unallocated_invoice_qty ?? 0) > 0
-                              ? "text-amber-700 dark:text-amber-300"
-                              : "text-muted-foreground",
-                          )}
-                          data-testid="text-total-allocated-qty"
-                        >
-                          Allocated to GRN:{" "}
-                          {(aiMatchResult.total_invoice_qty ?? 0) - (aiMatchResult.allocation_details?.unallocated_invoice_qty ?? 0)}
-                        </div>
-                      )}
-                    </div>
-                    <div className="rounded-md border p-2">
-                      <div className="text-[10px] text-muted-foreground uppercase">Balance Qty</div>
-                      <div className="text-sm font-medium" data-testid="text-balance-qty">{aiMatchResult.balance_qty ?? 0}</div>
-                    </div>
-                  </div>
-
-                  {aiMatchResult.line_level_status?.length > 0 && (
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm border-collapse" data-testid="table-po-line-status">
-                        <thead>
-                          <tr className="border-b text-left">
-                            <th className="py-2 px-2 font-medium text-muted-foreground">PO Line</th>
-                            <th className="py-2 px-2 font-medium text-muted-foreground">PO Qty</th>
-                            <th className="py-2 px-2 font-medium text-muted-foreground">GRN Qty</th>
-                            <th className="py-2 px-2 font-medium text-muted-foreground">Invoice Qty</th>
-                            <th className="py-2 px-2 font-medium text-muted-foreground">Balance</th>
-                            <th className="py-2 px-2 font-medium text-muted-foreground">Status</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {aiMatchResult.line_level_status.map((pl: any, idx: number) => (
-                            <tr key={idx} className="border-b last:border-0" data-testid={`row-po-line-status-${idx}`}>
-                              <td className="py-2 px-2">
-                                <div className="font-medium text-xs">{pl.item_name || `Line ${pl.po_line_number}`}</div>
-                                <div className="text-[10px] text-muted-foreground">#{pl.po_line_number}{pl.po_line_id != null ? ` · id ${pl.po_line_id}` : ""}</div>
-                              </td>
-                              <td className="py-2 px-2 text-xs">{pl.total_po_qty}</td>
-                              <td className="py-2 px-2 text-xs">{pl.total_grn_qty}</td>
-                              <td className="py-2 px-2 text-xs">{pl.total_invoice_qty}</td>
-                              <td className="py-2 px-2 text-xs">{pl.balance_qty}</td>
-                              <td className="py-2 px-2">
-                                <Badge
-                                  className={cn(
-                                    "text-[10px]",
-                                    pl.status === "fully_matched" && "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200",
-                                    pl.status === "partially_matched" && "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
-                                    pl.status === "pending" && "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
-                                    pl.status === "over_invoiced" && "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
-                                    pl.status === "over_received" && "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200",
-                                  )}
-                                >
-                                  {String(pl.status || "").replace(/_/g, " ")}
-                                </Badge>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-
-                  {aiMatchResult.allocation_details?.allocations?.length > 0 && (
-                    <div data-testid="section-allocation-details">
-                      <div className="text-xs font-medium text-muted-foreground mb-2">FIFO Allocation (Invoice → GRN)</div>
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-sm border-collapse">
-                          <thead>
-                            <tr className="border-b text-left">
-                              <th className="py-2 px-2 font-medium text-muted-foreground">Invoice Line</th>
-                              <th className="py-2 px-2 font-medium text-muted-foreground">GRN Line</th>
-                              <th className="py-2 px-2 font-medium text-muted-foreground">PO Line</th>
-                              <th className="py-2 px-2 font-medium text-muted-foreground">Allocated Qty</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {(aiMatchResult.allocation_details.current_invoice_lines?.length
-                              ? aiMatchResult.allocation_details.current_invoice_lines.flatMap((l: any) => l.allocations)
-                              : aiMatchResult.allocation_details.allocations
-                            ).map((a: any, idx: number) => (
-                              <tr key={idx} className="border-b last:border-0" data-testid={`row-allocation-${idx}`}>
-                                <td className="py-2 px-2 text-xs">
-                                  #{a.invoice_line_id}
-                                  {a.invoice_number ? ` · ${a.invoice_number}` : ""}
-                                </td>
-                                <td className="py-2 px-2 text-xs">
-                                  #{a.grn_line_id}
-                                  {a.receipt_num ? ` · receipt ${a.receipt_num}` : ""}
-                                </td>
-                                <td className="py-2 px-2 text-xs">{a.po_line_number}</td>
-                                <td className="py-2 px-2 text-xs font-medium">{a.allocated_qty}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                      {(aiMatchResult.allocation_details.unallocated_invoice_qty ?? 0) > 0 && (
-                        <p className="text-xs text-amber-700 dark:text-amber-300 mt-2" data-testid="text-unallocated-qty">
-                          Unallocated invoice qty across PO: {aiMatchResult.allocation_details.unallocated_invoice_qty}
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {aiMatchResult.documentExtraction && (
-                <div className="space-y-3" data-testid="section-doc-extraction">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <ScanSearch className="h-4 w-4 text-primary" />
-                    <span className="text-sm font-medium">Document Verification (OCR) — what the file says vs the system record</span>
-                    <Badge variant="outline" className="text-xs" data-testid="badge-doc-file">
-                      {aiMatchResult.documentExtraction.fileName}
-                    </Badge>
-                    <Badge
-                      className={cn(
-                        "text-xs",
-                        aiMatchResult.documentExtraction.confidence === "high" && "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200",
-                        aiMatchResult.documentExtraction.confidence === "medium" && "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
-                        aiMatchResult.documentExtraction.confidence === "low" && "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
-                      )}
-                      data-testid="badge-doc-confidence"
-                    >
-                      {aiMatchResult.documentExtraction.confidence} confidence
-                    </Badge>
-                  </div>
-
-                  {(() => {
-                    const tally = docLineTally(aiMatchResult);
-                    if (tally.extracted === 0) return null;
-                    return (
-                      <div className="rounded-md border p-3 space-y-1" data-testid="section-doc-line-summary">
-                        <div className="flex items-baseline gap-2 flex-wrap text-sm" data-testid="text-doc-line-summary">
-                          <span className="font-medium">
-                            {tally.extracted} extracted line{tally.extracted === 1 ? "" : "s"}
-                          </span>
-                          <span className="text-muted-foreground" aria-hidden="true">→</span>
-                          <span className="font-medium text-emerald-700 dark:text-emerald-300">{tally.matched} matched</span>
-                          {tally.partial > 0 && (
-                            <>
-                              <span className="text-muted-foreground">,</span>
-                              <span className="font-medium text-amber-700 dark:text-amber-300">{tally.partial} partial</span>
-                            </>
-                          )}
-                          <span className="text-muted-foreground">,</span>
-                          <span className="font-medium text-red-700 dark:text-red-300">{tally.unmatched} unmatched</span>
-                        </div>
-                        <p className="text-[11px] text-muted-foreground">
-                          Counted from the invoice OCR read out of the file, not from the PO.
-                          {tally.notInPo > 0 && (
-                            <span>
-                              {" "}
-                              {tally.notInPo} of them appear on no PO line and are labelled{" "}
-                              <span className="font-medium">Not in PO</span> — extra billed lines that leave the PO
-                              reconciliation above untouched.
-                            </span>
-                          )}
-                        </p>
-                      </div>
-                    );
-                  })()}
-
-                  {aiMatchResult.documentAnalysis && (
-                    <div className="rounded-md border bg-muted/40 p-3 space-y-2" data-testid="section-doc-composition">
-                      <div className="flex items-center gap-2 flex-wrap text-xs">
-                        <span className="font-medium text-muted-foreground">What was uploaded</span>
-                        <Badge variant="outline" className="text-[10px]" data-testid="badge-doc-page-count">
-                          {aiMatchResult.documentAnalysis.pageCount} page{aiMatchResult.documentAnalysis.pageCount === 1 ? "" : "s"}
-                        </Badge>
-                        <Badge variant="outline" className="text-[10px]" data-testid="badge-doc-invoice-count">
-                          {aiMatchResult.documentAnalysis.invoiceCount} invoice{aiMatchResult.documentAnalysis.invoiceCount === 1 ? "" : "s"}
-                        </Badge>
-                        <Badge variant="outline" className="text-[10px]" data-testid="badge-doc-line-count">
-                          {aiMatchResult.documentAnalysis.invoiceLineCount} invoice line{aiMatchResult.documentAnalysis.invoiceLineCount === 1 ? "" : "s"}
-                        </Badge>
-                        <Badge variant="outline" className="text-[10px]" data-testid="badge-doc-ocr-confidence">
-                          OCR confidence: {aiMatchResult.documentAnalysis.ocrConfidence}
-                        </Badge>
-                        {aiMatchResult.documentAnalysis.source && (
-                          <Badge variant="outline" className="text-[10px]" data-testid="badge-doc-source">
-                            {aiMatchResult.documentAnalysis.source === "original_file"
-                              ? "Read from original file"
-                              : aiMatchResult.documentAnalysis.source === "preview_image"
-                                ? "Read from stored preview only"
-                                : "Read from original files and stored previews"}
-                          </Badge>
-                        )}
-                      </div>
-
-                      {aiMatchResult.documentAnalysis.reliable === false && (
-                        <div
-                          className="rounded-md border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950 p-2 text-xs text-amber-800 dark:text-amber-300 flex items-start gap-1.5"
-                          data-testid="alert-doc-unreliable"
-                        >
-                          <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-                          <span>
-                            These values could not be verified against the document's own totals, so treat them as
-                            unconfirmed and check the document by hand before acting on them.
-                          </span>
-                        </div>
-                      )}
-
-                      {aiMatchResult.documentAnalysis.invoiceCount > 1 && (
-                        <div className="overflow-x-auto">
-                          <table className="w-full text-xs border-collapse" data-testid="table-doc-invoices">
-                            <thead>
-                              <tr className="border-b text-left">
-                                <th className="py-1 px-2 font-medium text-muted-foreground">Invoice in file</th>
-                                <th className="py-1 px-2 font-medium text-muted-foreground">Pages</th>
-                                <th className="py-1 px-2 font-medium text-muted-foreground">Lines</th>
-                                <th className="py-1 px-2 font-medium text-muted-foreground">Total</th>
-                                <th className="py-1 px-2 font-medium text-muted-foreground">Confidence</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {aiMatchResult.documentAnalysis.invoices.map((inv: any) => (
-                                <tr key={inv.invoiceIndex} className="border-b last:border-0" data-testid={`row-doc-invoice-${inv.invoiceIndex}`}>
-                                  <td className="py-1 px-2">
-                                    {inv.invoiceNumber ?? <span className="italic text-muted-foreground">Number not readable</span>}
-                                    {inv.isPrimary && (
-                                      <Badge className="ml-2 bg-primary/10 text-primary text-[10px]">verified here</Badge>
-                                    )}
-                                  </td>
-                                  <td className="py-1 px-2">{inv.pageNumbers.join(", ")}</td>
-                                  <td className="py-1 px-2">{inv.lineCount}</td>
-                                  <td className="py-1 px-2">{inv.total ?? <span className="italic text-muted-foreground">not readable</span>}</td>
-                                  <td className="py-1 px-2">{inv.confidence}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      )}
-
-                      {aiMatchResult.documentAnalysis.supportingDocuments?.length > 0 && (
-                        <div className="flex flex-wrap items-center gap-1.5" data-testid="section-supporting-docs">
-                          <span className="text-xs text-muted-foreground">
-                            Supporting documents (excluded from invoice lines):
-                          </span>
-                          {aiMatchResult.documentAnalysis.supportingDocuments.map((doc: any, docIdx: number) => (
-                            <Badge key={docIdx} variant="outline" className="text-[10px]" data-testid={`badge-supporting-doc-${docIdx}`}>
-                              {doc.documentType.toUpperCase()}
-                              {doc.documentNumber ? ` ${doc.documentNumber}` : ""} · page {doc.pageNumbers.join(", ")}
-                            </Badge>
-                          ))}
-                        </div>
-                      )}
-
-                      {aiMatchResult.documentAnalysis.advisories?.length > 0 && (
-                        <ul className="space-y-0.5" data-testid="list-doc-advisories">
-                          {aiMatchResult.documentAnalysis.advisories.map((advisory: any, advIdx: number) => (
-                            <li
-                              key={advIdx}
-                              className="text-[11px] text-muted-foreground flex items-start gap-1"
-                              data-testid={`text-doc-advisory-${advisory.code}`}
-                            >
-                              <Info className="h-3 w-3 mt-0.5 shrink-0" />
-                              <span>{advisory.message}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
-                  )}
-
-                  <div className="rounded-md border bg-muted/40 p-3 space-y-2" data-testid="section-doc-totals">
-                    <div className="flex items-center gap-2 flex-wrap text-xs">
-                      <span className="font-medium text-muted-foreground">Totals printed on the document</span>
-                      <Badge
-                        className={cn(
-                          "text-[10px]",
-                          aiMatchResult.documentExtraction.totalsVerified
-                            ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200"
-                            : "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
-                        )}
-                        data-testid="badge-doc-totals-verified"
-                      >
-                        {aiMatchResult.documentExtraction.totalsVerified ? "Total reconciles" : "Total unconfirmed"}
-                      </Badge>
-                    </div>
-                    <div className="flex flex-wrap gap-x-6 gap-y-1 text-xs">
-                      {[
-                        { label: "Subtotal", value: aiMatchResult.documentExtraction.extractedSubtotal, testId: "text-doc-subtotal" },
-                        { label: "Tax", value: aiMatchResult.documentExtraction.extractedTax, testId: "text-doc-tax" },
-                        { label: "Other charges", value: aiMatchResult.documentExtraction.extractedOtherCharges, testId: "text-doc-other-charges" },
-                        { label: "Total", value: aiMatchResult.documentExtraction.extractedTotal, testId: "text-doc-total" },
-                      ].map((entry) => (
-                        <span key={entry.label} className="flex items-center gap-1" data-testid={entry.testId}>
-                          <span className="text-muted-foreground">{entry.label}:</span>
-                          {entry.value == null ? (
-                            <span className="italic text-muted-foreground">
-                              {entry.label === "Other charges" ? "none printed" : "not readable"}
-                            </span>
-                          ) : (
-                            <span className="font-medium">
-                              {formatCurrency(entry.value, aiMatchResult.documentExtraction.extractedCurrency || invoice.invoice_curr_code)}
-                            </span>
-                          )}
-                        </span>
-                      ))}
-                    </div>
-                    {aiMatchResult.documentExtraction.extractedCharges?.length > 0 && (
-                      <div className="flex flex-wrap items-center gap-1.5" data-testid="section-doc-charges">
-                        <span className="text-[11px] text-muted-foreground">Charges in the totals block:</span>
-                        {aiMatchResult.documentExtraction.extractedCharges.map((charge: any, chargeIdx: number) => (
-                          <Badge key={chargeIdx} variant="outline" className="text-[10px]" data-testid={`badge-doc-charge-${chargeIdx}`}>
-                            {charge.label ?? "Charge"}: {formatCurrency(charge.amount, aiMatchResult.documentExtraction.extractedCurrency || invoice.invoice_curr_code)}
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
-                    {aiMatchResult.documentExtraction.headerTotalsAgree === false && (
-                      <div
-                        className="text-[11px] text-amber-800 dark:text-amber-300 flex items-start gap-1"
-                        data-testid="text-doc-header-totals-note"
-                      >
-                        <AlertTriangle className="h-3 w-3 mt-0.5 shrink-0" />
-                        <span>
-                          {aiMatchResult.documentExtraction.headerTotalsNote}. Every figure is shown exactly as read; none
-                          of them is confirmed.
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-                  {aiMatchResult.documentExtraction.unavailableFields?.length > 0 && (
-                    <div className="rounded-md border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950 p-2" data-testid="section-doc-unavailable-fields">
-                      <span className="text-xs text-amber-700 dark:text-amber-300 flex items-center gap-1">
-                        <AlertTriangle className="h-3 w-3" />
-                        OCR could not read: {aiMatchResult.documentExtraction.unavailableFields.join(", ")}. These fields were left unavailable rather than guessed, so they were not compared.
-                      </span>
-                    </div>
-                  )}
-
-                  {aiMatchResult.headerMismatches && aiMatchResult.headerMismatches.length > 0 && (
-                    <div className="rounded-md border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950 p-3" data-testid="section-header-mismatches">
-                      <div className="text-xs font-medium text-red-700 dark:text-red-300 mb-2">Document Header Discrepancies</div>
-                      <div className="flex flex-col gap-1.5">
-                        {aiMatchResult.headerMismatches.map((hm: any, hmIdx: number) => (
-                          <div key={hmIdx} className="flex items-center gap-1.5 flex-wrap" data-testid={`row-header-mismatch-${hmIdx}`}>
-                            <Badge
-                              variant="outline"
-                              className={cn(
-                                "text-[10px] font-medium",
-                                hm.severity === "high" && "border-red-300 text-red-700 dark:border-red-700 dark:text-red-300",
-                                hm.severity === "medium" && "border-amber-300 text-amber-700 dark:border-amber-700 dark:text-amber-300",
-                                hm.severity === "low" && "border-blue-300 text-blue-700 dark:border-blue-700 dark:text-blue-300",
-                              )}
-                            >
-                              {hm.severity}
-                            </Badge>
-                            <span className="text-xs">{hm.label}: Doc="{hm.documentValue}" vs System="{hm.systemValue}"</span>
-                            {hm.message && <span className="text-[10px] text-muted-foreground">({hm.message})</span>}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {aiMatchResult.headerMismatches && aiMatchResult.headerMismatches.length === 0 && (
-                    <div className="rounded-md border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950 p-2" data-testid="section-header-ok">
-                      <span className="text-xs text-emerald-700 dark:text-emerald-300 flex items-center gap-1">
-                        <ShieldCheck className="h-3 w-3" /> Document header fields match system records
-                      </span>
-                    </div>
-                  )}
-
-                  {aiMatchResult.documentLineMatches && aiMatchResult.documentLineMatches.length > 0 && (
-                    <div data-testid="section-doc-lines">
-                      <div className="flex items-center gap-2 mb-2 flex-wrap">
-                        <span className="text-xs font-medium text-muted-foreground">Extracted Line Items vs System/PO</span>
-                        {(() => {
-                          const tally = docLineTally(aiMatchResult);
-                          return (
-                            <>
-                              <Badge variant="outline" className="text-[10px]" data-testid="badge-doc-extracted">
-                                {tally.extracted} extracted
-                              </Badge>
-                              <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200 text-[10px]" data-testid="badge-doc-matched">
-                                {tally.matched} matched
-                              </Badge>
-                              {tally.partial > 0 && (
-                                <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200 text-[10px]" data-testid="badge-doc-partial">
-                                  {tally.partial} partial
-                                </Badge>
-                              )}
-                              <Badge className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 text-[10px]" data-testid="badge-doc-unmatched">
-                                {tally.unmatched} unmatched
-                              </Badge>
-                              {tally.notInPo > 0 && (
-                                <Badge variant="outline" className="text-[10px] border-red-300 text-red-700 dark:border-red-700 dark:text-red-300" data-testid="badge-doc-not-in-po">
-                                  {tally.notInPo} not in PO
-                                </Badge>
-                              )}
-                            </>
-                          );
-                        })()}
-                      </div>
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-sm border-collapse">
-                          <thead>
-                            <tr className="border-b text-left">
-                              <th className="py-2 px-2 font-medium text-muted-foreground">Document Line</th>
-                              <th className="py-2 px-2 font-medium text-muted-foreground">System Entry</th>
-                              <th className="py-2 px-2 font-medium text-muted-foreground">PO Line</th>
-                              <th className="py-2 px-2 font-medium text-muted-foreground">Status</th>
-                              <th className="py-2 px-2 font-medium text-muted-foreground">Match Confidence</th>
-                              <th className="py-2 px-2 font-medium text-muted-foreground">Discrepancies</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {aiMatchResult.documentLineMatches.map((dl: any, dlIdx: number) => (
-                              <tr key={dlIdx} className="border-b last:border-0" data-testid={`row-doc-match-${dlIdx}`}>
-                                <td className="py-2 px-2">
-                                  <div className="font-medium">
-                                    {dl.docItemName ?? <span className="italic text-muted-foreground">Item name not readable</span>}
-                                  </div>
-                                  <div className="text-xs text-muted-foreground">
-                                    Qty: {dl.docQty ?? "not readable"} | Unit:{" "}
-                                    {dl.docUnitPrice != null
-                                      ? Number(dl.docUnitPrice).toLocaleString("en-US", { style: "currency", currency: "USD" })
-                                      : "not readable"}
-                                  </div>
-                                  <div className="text-[10px] text-muted-foreground">
-                                    {dl.docSourcePage != null && <span>Page {dl.docSourcePage}</span>}
-                                    {dl.docLowConfidence && (
-                                      <span className="ml-1 text-amber-600 dark:text-amber-400" data-testid={`text-doc-low-confidence-${dlIdx}`}>
-                                        · low OCR confidence
-                                      </span>
-                                    )}
-                                  </div>
-                                  {dl.docColumnCheck && (
-                                    <div
-                                      className="text-[10px] text-amber-700 dark:text-amber-400"
-                                      data-testid={`text-doc-column-check-${dlIdx}`}
-                                    >
-                                      {dl.docColumnCheck} — values shown exactly as read
-                                    </div>
-                                  )}
-                                </td>
-                                <td className="py-2 px-2">
-                                  {dl.systemItemName ? (
-                                    <>
-                                      <div className="font-medium">{dl.systemItemName}</div>
-                                      <div className="text-xs text-muted-foreground">
-                                        Qty: {dl.systemQty ?? "—"} | Unit: {Number(dl.systemUnitCost || 0).toLocaleString("en-US", { style: "currency", currency: "USD" })}
-                                      </div>
-                                    </>
-                                  ) : (
-                                    <span className="text-muted-foreground italic text-xs">No system match</span>
-                                  )}
-                                </td>
-                                <td className="py-2 px-2">
-                                  {dl.poItemName ? (
-                                    <>
-                                      <div className="font-medium text-xs">{dl.poItemName}</div>
-                                      <div className="text-xs text-muted-foreground">
-                                        Qty: {dl.poQty ?? "—"} | Unit: {Number(dl.poUnitCost || 0).toLocaleString("en-US", { style: "currency", currency: "USD" })}
-                                      </div>
-                                      {dl.grnAcceptedQty != null && (
-                                        <div className="text-[10px] text-emerald-600 dark:text-emerald-400">GRN accepted: {dl.grnAcceptedQty}</div>
-                                      )}
-                                    </>
-                                  ) : (
-                                    <span className="text-red-700 dark:text-red-300 text-xs font-medium" data-testid={`text-doc-not-in-po-${dlIdx}`}>
-                                      Not in PO
-                                    </span>
-                                  )}
-                                </td>
-                                <td className="py-2 px-2">
-                                  {dl.poLineNumber == null ? (
-                                    <Badge className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 text-xs" data-testid={`badge-doc-status-${dlIdx}`}>
-                                      <ShieldAlert className="h-3 w-3 mr-1" /> Unmatched · Not in PO
-                                    </Badge>
-                                  ) : (
-                                    <>
-                                      {dl.matchStatus === "matched" && (
-                                        <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200 text-xs" data-testid={`badge-doc-status-${dlIdx}`}>
-                                          <ShieldCheck className="h-3 w-3 mr-1" /> OK
-                                        </Badge>
-                                      )}
-                                      {dl.matchStatus === "partial" && (
-                                        <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200 text-xs" data-testid={`badge-doc-status-${dlIdx}`}>
-                                          <AlertTriangle className="h-3 w-3 mr-1" /> Partial
-                                        </Badge>
-                                      )}
-                                      {dl.matchStatus === "unmatched" && (
-                                        <Badge className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 text-xs" data-testid={`badge-doc-status-${dlIdx}`}>
-                                          <ShieldAlert className="h-3 w-3 mr-1" /> Mismatch
-                                        </Badge>
-                                      )}
-                                    </>
-                                  )}
-                                </td>
-                                <td className="py-2 px-2">
-                                  <MatchConfidenceDisplay
-                                    confidence={dl.matchConfidence}
-                                    score={dl.matchConfidenceScore}
-                                    reason={dl.matchConfidenceReason}
-                                    testId={`match-confidence-doc-${dlIdx}`}
-                                  />
-                                </td>
-                                <td className="py-2 px-2">
-                                  {dl.poLineNumber == null ? (
-                                    <span className="text-xs text-muted-foreground" data-testid={`text-doc-extra-line-note-${dlIdx}`}>
-                                      Billed on the document but ordered on no PO line — outside the PO reconciliation.
-                                    </span>
-                                  ) : dl.mismatches && dl.mismatches.length > 0 ? (
-                                    <div className="flex flex-col gap-1">
-                                      {dl.mismatches.map((mm: any, mmIdx: number) => (
-                                        <div key={mmIdx} className="flex items-center gap-1.5 flex-wrap">
-                                          <Badge
-                                            variant="outline"
-                                            className={cn(
-                                              "text-[10px] font-medium",
-                                              mm.severity === "high" && "border-red-300 text-red-700 dark:border-red-700 dark:text-red-300",
-                                              mm.severity === "medium" && "border-amber-300 text-amber-700 dark:border-amber-700 dark:text-amber-300",
-                                              mm.severity === "low" && "border-blue-300 text-blue-700 dark:border-blue-700 dark:text-blue-300",
-                                            )}
-                                            data-testid={`badge-doc-mismatch-${dlIdx}-${mmIdx}`}
-                                          >
-                                            {mm.severity}
-                                          </Badge>
-                                          <span className="text-xs">{mm.label}: {mm.documentValue} vs {mm.systemValue}{mm.message ? ` — ${mm.message}` : ""}</span>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  ) : dl.matchStatus === "matched" ? (
-                                    <span className="text-xs text-emerald-600 dark:text-emerald-400">Document matches</span>
-                                  ) : (
-                                    <span className="text-xs text-muted-foreground">—</span>
-                                  )}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  )}
-
-                  {aiMatchResult.documentExtraction.extractionNotes && (
-                    <p className="text-xs text-muted-foreground italic" data-testid="text-extraction-notes">
-                      Extraction notes: {aiMatchResult.documentExtraction.extractionNotes}
-                    </p>
-                  )}
-                </div>
-              )}
-
-              {!aiMatchResult.documentExtraction && aiMatchResult.summary?.docExtractionStatus === "no_document" && (
-                <div className="rounded-md border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950 p-2" data-testid="section-no-doc">
-                  <span className="text-xs text-amber-700 dark:text-amber-300 flex items-center gap-1">
-                    <AlertTriangle className="h-3 w-3" /> No uploaded invoice document found. Document verification skipped — the PO reconciliation above is unaffected.
-                  </span>
-                </div>
-              )}
-
-              {!aiMatchResult.documentExtraction && aiMatchResult.summary?.docExtractionStatus === "extraction_failed" && (
-                <div className="rounded-md border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950 p-2 space-y-1" data-testid="section-doc-failed">
-                  <span className="text-xs text-red-700 dark:text-red-300 flex items-center gap-1">
-                    <AlertCircle className="h-3 w-3" /> No readable invoice was found in the uploaded document — it may be unreadable, or it may only contain supporting paperwork such as a GRN or delivery challan. OCR verification was skipped; the PO reconciliation above still applies and used system data only.
-                  </span>
-                  {aiMatchResult.documentAnalysis?.advisories?.length > 0 && (
-                    <ul className="space-y-0.5 pl-4" data-testid="list-doc-failed-advisories">
-                      {aiMatchResult.documentAnalysis.advisories.map((advisory: any, advIdx: number) => (
-                        <li
-                          key={advIdx}
-                          className="text-[11px] text-red-700 dark:text-red-300 flex items-start gap-1"
-                          data-testid={`text-doc-failed-advisory-${advisory.code}`}
-                        >
-                          <Info className="h-3 w-3 mt-0.5 shrink-0" />
-                          <span>{advisory.message}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              )}
-
-              {aiMatchResult.lineMatches && aiMatchResult.lineMatches.length > 0 && (
-                <div>
-                  <div className="flex items-center gap-2 mb-2 flex-wrap">
-                    <span className="text-xs font-medium text-muted-foreground">This Invoice vs PO/GRN (line detail)</span>
-                    <Badge variant="outline" className="text-[10px]" data-testid="badge-total-lines">
-                      {aiMatchResult.summary?.totalInvoiceLines ?? aiMatchResult.lineMatches.length} invoice lines
-                    </Badge>
-                    {aiMatchResult.summary?.matched > 0 && (
-                      <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200 text-[10px]" data-testid="badge-matched">
-                        {aiMatchResult.summary.matched} matched
-                      </Badge>
-                    )}
-                    {aiMatchResult.summary?.partial > 0 && (
-                      <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200 text-[10px]" data-testid="badge-partial">
-                        {aiMatchResult.summary.partial} partial
-                      </Badge>
-                    )}
-                    {aiMatchResult.summary?.pending > 0 && (
-                      <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-[10px]" data-testid="badge-pending">
-                        {aiMatchResult.summary.pending} pending
-                      </Badge>
-                    )}
-                    {aiMatchResult.summary?.unmatched > 0 && (
-                      <Badge className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 text-[10px]" data-testid="badge-unmatched">
-                        {aiMatchResult.summary.unmatched} unmatched
-                      </Badge>
-                    )}
-                    {invoiceLinesNotInPo(aiMatchResult) > 0 && (
-                      <Badge variant="outline" className="text-[10px] border-red-300 text-red-700 dark:border-red-700 dark:text-red-300" data-testid="badge-lines-not-in-po">
-                        {invoiceLinesNotInPo(aiMatchResult)} not in PO
-                      </Badge>
-                    )}
-                  </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm border-collapse">
-                      <thead>
-                        <tr className="border-b text-left">
-                          <th className="py-2 px-2 font-medium text-muted-foreground">Invoice Line</th>
-                          <th className="py-2 px-2 font-medium text-muted-foreground">PO Line</th>
-                          {aiMatchResult.matchType === "3-way" && (
-                            <th className="py-2 px-2 font-medium text-muted-foreground">GRN</th>
-                          )}
-                          <th className="py-2 px-2 font-medium text-muted-foreground">Status</th>
-                          <th className="py-2 px-2 font-medium text-muted-foreground">Match Confidence</th>
-                          <th className="py-2 px-2 font-medium text-muted-foreground">Mismatches</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {aiMatchResult.lineMatches?.map((lr: any, idx: number) => (
-                          <tr key={idx} className="border-b last:border-0" data-testid={`row-match-${idx}`}>
-                            <td className="py-2 px-2">
-                              <div className="font-medium">{lr.invoiceItemName || "—"}</div>
-                              <div className="text-xs text-muted-foreground">
-                                Qty: {lr.invoiceQty ?? "—"} | Unit: {Number(lr.invoiceUnitCost || 0).toLocaleString("en-US", { style: "currency", currency: "USD" })}
-                              </div>
-                            </td>
-                            <td className="py-2 px-2">
-                              {lr.poItemName || lr.poDescription ? (
-                                <>
-                                  <div className="font-medium">{lr.poItemName || lr.poDescription}</div>
-                                  <div className="text-xs text-muted-foreground">
-                                    Qty: {lr.poQty ?? "—"} | Unit: {Number(lr.poUnitCost || 0).toLocaleString("en-US", { style: "currency", currency: "USD" })}
-                                  </div>
-                                  {lr.priorInvoicedQty > 0 && (
-                                    <div className="text-[10px] text-amber-600 dark:text-amber-400 mt-0.5">
-                                      Other invoices on this PO line: {lr.priorInvoicedQty} of {lr.poQty}
-                                    </div>
-                                  )}
-                                </>
-                              ) : (
-                                <span className="text-red-700 dark:text-red-300 font-medium text-xs" data-testid={`text-line-not-in-po-${idx}`}>
-                                  Not in PO
-                                </span>
-                              )}
-                            </td>
-                            {aiMatchResult.matchType === "3-way" && (
-                              <td className="py-2 px-2" data-testid={`cell-grn-${idx}`}>
-                                {lr.grnReceivedQty != null ? (
-                                  <div>
-                                    <div className="text-xs" data-testid={`text-grn-received-${idx}`}>
-                                      Received: <span className="font-medium">{lr.grnReceivedQty}</span>
-                                    </div>
-                                    <div className="text-xs" data-testid={`text-grn-accepted-${idx}`}>
-                                      Accepted: <span className="font-medium text-emerald-600 dark:text-emerald-400">{lr.grnAcceptedQty}</span>
-                                    </div>
-                                    {(lr.remainingGrnBeforeThisInvoice ?? lr.remainingGrnQty) != null && (
-                                      <div className="text-xs text-blue-600 dark:text-blue-400" data-testid={`text-grn-remaining-${idx}`}>
-                                        Open before this invoice: {lr.remainingGrnBeforeThisInvoice ?? lr.remainingGrnQty}
-                                      </div>
-                                    )}
-                                    {lr.allocatedQty != null && (
-                                      <div className="text-xs text-muted-foreground" data-testid={`text-allocated-${idx}`}>
-                                        Allocated to this invoice: {lr.allocatedQty}
-                                        {lr.unallocatedQty ? ` (unallocated ${lr.unallocatedQty})` : ""}
-                                      </div>
-                                    )}
-                                    {lr.poLineBalanceQty != null && (
-                                      <div className="text-xs font-medium" data-testid={`text-po-line-balance-${idx}`}>
-                                        PO line balance after all invoices: {lr.poLineBalanceQty}
-                                      </div>
-                                    )}
-                                    {lr.grnRejectedQty > 0 && (
-                                      <div className="text-xs text-red-600 dark:text-red-400" data-testid={`text-grn-rejected-${idx}`}>
-                                        Rejected: {lr.grnRejectedQty}
-                                      </div>
-                                    )}
-                                  </div>
-                                ) : (
-                                  <span className="text-xs text-muted-foreground italic" data-testid={`text-no-grn-${idx}`}>No GRN</span>
-                                )}
-                              </td>
-                            )}
-                            <td className="py-2 px-2">
-                              {lr.matchStatus === "matched" && (
-                                <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200 text-xs">
-                                  <ShieldCheck className="h-3 w-3 mr-1" /> Matched
-                                </Badge>
-                              )}
-                              {lr.matchStatus === "pending" && (
-                                <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-xs">
-                                  Pending
-                                </Badge>
-                              )}
-                              {lr.matchStatus === "partial" && (
-                                <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200 text-xs">
-                                  <AlertTriangle className="h-3 w-3 mr-1" /> Partial
-                                </Badge>
-                              )}
-                              {lr.matchStatus === "unmatched" && (
-                                <Badge className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 text-xs" data-testid={`badge-line-status-${idx}`}>
-                                  <ShieldAlert className="h-3 w-3 mr-1" />
-                                  {lr.poLineNumber == null ? "Unmatched · Not in PO" : "Unmatched"}
-                                </Badge>
-                              )}
-                              {lr.reconcileStatus && (
-                                <div className="text-[10px] text-muted-foreground mt-1">
-                                  PO: {String(lr.reconcileStatus).replace(/_/g, " ")}
-                                </div>
-                              )}
-                            </td>
-                            <td className="py-2 px-2">
-                              <MatchConfidenceDisplay
-                                confidence={lr.matchConfidence}
-                                score={lr.matchConfidenceScore}
-                                reason={lr.matchConfidenceReason}
-                                testId={`match-confidence-line-${idx}`}
-                              />
-                            </td>
-                            <td className="py-2 px-2">
-                              {lr.poLineNumber == null ? (
-                                <span className="text-xs text-muted-foreground" data-testid={`text-line-extra-note-${idx}`}>
-                                  Extra line — nothing on this PO to match it against, so it is excluded from the PO
-                                  reconciliation.
-                                </span>
-                              ) : lr.mismatches && lr.mismatches.length > 0 ? (
-                                <div className="flex flex-col gap-1">
-                                  {lr.mismatches.map((mm: any, mmIdx: number) => (
-                                    <div key={mmIdx} className="flex items-center gap-1.5 flex-wrap">
-                                      <Badge
-                                        variant="outline"
-                                        className={cn(
-                                          "text-[10px] font-medium",
-                                          mm.severity === "high" && "border-red-300 text-red-700 dark:border-red-700 dark:text-red-300",
-                                          mm.severity === "medium" && "border-amber-300 text-amber-700 dark:border-amber-700 dark:text-amber-300",
-                                          mm.severity === "low" && "border-blue-300 text-blue-700 dark:border-blue-700 dark:text-blue-300",
-                                        )}
-                                        data-testid={`badge-mismatch-${idx}-${mmIdx}`}
-                                      >
-                                        {mm.severity}
-                                      </Badge>
-                                      <span className="text-xs">{mm.label}: {mm.invoiceValue} vs {mm.poValue}{mm.message ? ` — ${mm.message}` : ""}</span>
-                                    </div>
-                                  ))}
-                                </div>
-                              ) : lr.matchStatus === "matched" ? (
-                                <span className="text-xs text-emerald-600 dark:text-emerald-400">All values match</span>
-                              ) : (
-                                <span className="text-xs text-muted-foreground">—</span>
-                              )}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {aiFraudResult && isAIEnabled('AI_FRAUD_DETECTION') && (
-          <Card data-testid="card-ai-fraud-results">
-            <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
-              <div className="flex items-center gap-2 flex-wrap">
-                <ShieldAlert className="h-5 w-5 text-primary" />
-                <CardTitle className="text-base">AI Fraud Detection</CardTitle>
-                <Badge
-                  className={cn(
-                    "text-xs font-medium",
-                    aiFraudResult.riskLevel === "high" && "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
-                    aiFraudResult.riskLevel === "medium" && "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
-                    aiFraudResult.riskLevel === "low" && "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200",
-                  )}
-                  data-testid="badge-risk-level"
-                >
-                  {aiFraudResult.riskLevel === "high" ? "High Risk" : aiFraudResult.riskLevel === "medium" ? "Medium Risk" : "Low Risk"}
-                </Badge>
-                <Badge variant="outline" className="text-xs" data-testid="badge-risk-score">
-                  Score: {aiFraudResult.riskScore}/100
-                </Badge>
-                {aiFraudResult.flags?.length > 0 && (
-                  <Badge variant="outline" className="text-xs" data-testid="badge-flag-count">
-                    {aiFraudResult.flags.length} indicator{aiFraudResult.flags.length !== 1 ? "s" : ""}
-                  </Badge>
-                )}
-              </div>
-              <Button variant="ghost" size="icon" onClick={() => setAiFraudResult(null)} data-testid="button-close-fraud">
-                <X className="h-4 w-4" />
-              </Button>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {aiFraudResult.narrative && (
-                <MarkdownContent
-                  content={aiFraudResult.narrative}
-                  className="text-sm text-muted-foreground"
-                  data-testid="text-fraud-narrative"
-                />
-              )}
-
-              {aiFraudResult.flags?.length === 0 && (
-                <div className="rounded-md border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950 p-3" data-testid="section-no-flags">
-                  <span className="text-sm text-emerald-700 dark:text-emerald-300 flex items-center gap-2">
-                    <ShieldCheck className="h-4 w-4" /> No fraud indicators detected. This invoice appears clean.
-                  </span>
-                </div>
-              )}
-
-              {aiFraudResult.flags?.length > 0 && (
-                <div className="space-y-2" data-testid="section-fraud-flags">
-                  {aiFraudResult.flags.map((flag: any, idx: number) => (
-                    <div
-                      key={idx}
-                      className={cn(
-                        "rounded-md border p-3",
-                        flag.severity === "high" && "border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950",
-                        flag.severity === "medium" && "border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950",
-                        flag.severity === "low" && "border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950",
-                      )}
-                      data-testid={`card-fraud-flag-${idx}`}
-                    >
-                      <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <Badge
-                          variant="outline"
-                          className={cn(
-                            "text-[10px] font-medium",
-                            flag.severity === "high" && "border-red-300 text-red-700 dark:border-red-700 dark:text-red-300",
-                            flag.severity === "medium" && "border-amber-300 text-amber-700 dark:border-amber-700 dark:text-amber-300",
-                            flag.severity === "low" && "border-blue-300 text-blue-700 dark:border-blue-700 dark:text-blue-300",
-                          )}
-                        >
-                          {flag.severity}
-                        </Badge>
-                        {flag.confidence != null && (
-                          <Badge variant="outline" className="text-[10px] font-medium" data-testid={`badge-fraud-confidence-${idx}`}>
-                            {flag.confidence}% confidence
-                          </Badge>
-                        )}
-                        <span className={cn(
-                          "text-sm font-medium",
-                          flag.severity === "high" && "text-red-700 dark:text-red-300",
-                          flag.severity === "medium" && "text-amber-700 dark:text-amber-300",
-                          flag.severity === "low" && "text-blue-700 dark:text-blue-300",
-                        )}>
-                          {flag.label}
-                        </span>
-                      </div>
-                      <p className={cn(
-                        "text-xs",
-                        flag.severity === "high" && "text-red-600 dark:text-red-400",
-                        flag.severity === "medium" && "text-amber-600 dark:text-amber-400",
-                        flag.severity === "low" && "text-blue-600 dark:text-blue-400",
-                      )}>
-                        {flag.description}
-                      </p>
-                      {flag.details && flag.type === "duplicate_invoice_same_vendor" && flag.details.duplicates && (
-                        <div className="mt-2 text-[10px] text-muted-foreground">
-                          {flag.details.duplicates.map((dup: any, dIdx: number) => (
-                            <span key={dIdx} className="mr-3">
-                              Invoice #{dup.id}: {Number(dup.amount || 0).toLocaleString("en-US", { style: "currency", currency: "USD" })} ({dup.status})
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                      {flag.details && flag.type === "amount_anomaly" && (
-                        <div className="mt-2 text-[10px] text-muted-foreground">
-                          Supplier avg: {Number(flag.details.vendorAvg || 0).toLocaleString("en-US", { style: "currency", currency: "USD" })} | Max: {Number(flag.details.vendorMax || 0).toLocaleString("en-US", { style: "currency", currency: "USD" })} | Based on {flag.details.historicalCount} invoices
-                        </div>
-                      )}
-                      {flag.details && flag.type === "threshold_gaming" && (
-                        <div className="mt-2 text-[10px] text-muted-foreground">
-                          {flag.details.vendorNearThresholdCount} other invoices from this supplier near the {Number(flag.details.threshold || 0).toLocaleString()} threshold
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              <div className="text-[10px] text-muted-foreground text-right" data-testid="text-fraud-timestamp">
-                Analyzed at: {new Date(aiFraudResult.analyzedAt).toLocaleString()}
-              </div>
             </CardContent>
           </Card>
         )}
@@ -3055,8 +2146,11 @@ export default function InvoiceDetailPage() {
 
           <TabsContent value="lines" className="mt-3">
             <Card>
-              <div className="p-3 border-b flex items-center justify-between gap-2 flex-wrap">
-                <h3 className="text-sm font-medium">Line Items</h3>
+              <div className="p-3 bg-primary/5 border-b border-primary/20 flex items-center justify-between gap-2 flex-wrap">
+                <h3 className="text-sm font-medium flex items-center gap-2">
+                  <Receipt className="h-4 w-4 text-primary" />
+                  Line Items
+                </h3>
                 <div className="flex items-center gap-4 flex-wrap">
                   {canEditInvoice && !invoice?.po_number && (
                     <div className="flex items-center gap-2">
@@ -3151,10 +2245,9 @@ export default function InvoiceDetailPage() {
                               <TableCell className="py-2">
                                 <div className="flex items-center gap-1">
                                   {canEditInvoice && !invoice?.po_number && (
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-7 w-7"
+                                    <button
+                                      type="button"
+                                      className="h-6 w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover-elevate"
                                       onClick={() => {
                                         setEditingLine({
                                           ...line,
@@ -3170,14 +2263,18 @@ export default function InvoiceDetailPage() {
                                       data-testid={`button-edit-line-${line.id}`}
                                     >
                                       <Pencil className="h-3 w-3" />
-                                    </Button>
+                                    </button>
                                   )}
                                   {(canEditInvoice && !invoice?.po_number) && (invoice.invoice_status !== "Pending Approval" && invoice.invoice_status !== "Paid" && invoice.invoice_status !== "Approved") && (
                                     <AlertDialog>
                                       <AlertDialogTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" data-testid={`button-delete-line-${line.id}`}>
+                                        <button
+                                          type="button"
+                                          className="h-6 w-6 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center hover-elevate"
+                                          data-testid={`button-delete-line-${line.id}`}
+                                        >
                                           <Trash2 className="h-3 w-3" />
-                                        </Button>
+                                        </button>
                                       </AlertDialogTrigger>
                                       <AlertDialogContent>
                                         <AlertDialogHeader>
@@ -3674,12 +2771,18 @@ export default function InvoiceDetailPage() {
           )}
         </Tabs>
 
-        <Sheet open={addLineOpen} onOpenChange={setAddLineOpen}>
-          <SheetContent className="w-[50vw] sm:max-w-[50vw] overflow-y-auto">
-            <SheetHeader>
-              <SheetTitle>Add Line Item</SheetTitle>
-            </SheetHeader>
-            <div className="mt-2 space-y-4">
+        <FormSheet
+          open={addLineOpen}
+          onOpenChange={setAddLineOpen}
+          title="Add Line Item"
+          description="Add a new line item to this invoice."
+          onSubmit={handleAddLine}
+          submitLabel="Add Line"
+          isSubmitting={addLineMutation.isPending}
+          submitDisabled={!newLine.item_name || !newLine.order_qty || (invoice?.tax_included === "Yes" ? !newLine.inclusiveTaxAmt : !newLine.order_unit_cost)}
+          widthClassName="w-full sm:max-w-[700px]"
+        >
+            <div className="space-y-4 pb-6">
               {/* Item dropdown */}
               <div className="space-y-2">
                 <Label>Select Item <span className="text-destructive">*</span></Label>
@@ -4053,27 +3156,21 @@ export default function InvoiceDetailPage() {
                   </>
                 )}
               </div>
-
-              <div className="flex justify-end gap-2 pt-4">
-                <Button variant="outline" onClick={() => setAddLineOpen(false)}>Cancel</Button>
-                <Button
-                  onClick={handleAddLine}
-                  disabled={addLineMutation.isPending || !newLine.item_name || !newLine.order_qty || (invoice?.tax_included === "Yes" ? !newLine.inclusiveTaxAmt : !newLine.order_unit_cost)}
-                  data-testid="button-save-line"
-                >
-                  {addLineMutation.isPending && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
-                  Add Line
-                </Button>
-              </div>
             </div>
-          </SheetContent>
-        </Sheet>
+        </FormSheet>
 
-        <Sheet open={editLineOpen} onOpenChange={setEditLineOpen}>
-          <SheetContent className="w-[50vw] sm:max-w-[50vw] overflow-y-auto">
-            <SheetHeader>
-              <SheetTitle>Edit Line Item</SheetTitle>
-            </SheetHeader>
+        <FormSheet
+          open={editLineOpen}
+          onOpenChange={setEditLineOpen}
+          title="Edit Line Item"
+          description="Update line item details."
+          onSubmit={handleEditLine}
+          submitLabel="Update Line"
+          isSubmitting={updateLineMutation.isPending}
+          submitDisabled={!editingLine?.item_name || !editingLine?.order_qty || (invoice?.tax_included === "Yes" ? !editingLine?.inclusiveTaxAmt : !editingLine?.order_unit_cost)}
+          widthClassName="w-full sm:max-w-[700px]"
+        >
+            <div className="space-y-4 pb-6">
             {editingLine && (
               <div className="mt-2 space-y-4">
                 {/* Item dropdown */}
@@ -4413,22 +3510,10 @@ export default function InvoiceDetailPage() {
                     </>
                   )}
                 </div>
-
-                <div className="flex justify-end gap-2 pt-4">
-                  <Button variant="outline" onClick={() => setEditLineOpen(false)}>Cancel</Button>
-                  <Button
-                    onClick={handleEditLine}
-                    disabled={updateLineMutation.isPending || !editingLine.item_name || !editingLine.order_qty || (invoice?.tax_included === "Yes" ? !editingLine.inclusiveTaxAmt : !editingLine.order_unit_cost)}
-                    data-testid="button-update-line"
-                  >
-                    {updateLineMutation.isPending && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
-                    Update
-                  </Button>
-                </div>
               </div>
             )}
-          </SheetContent>
-        </Sheet>
+            </div>
+        </FormSheet>
 
         <Dialog open={approvalDialogOpen} onOpenChange={(open) => {
           setApprovalDialogOpen(open);
@@ -4665,7 +3750,7 @@ export default function InvoiceDetailPage() {
         </DialogContent>
       </Dialog>
 
-      <Sheet
+      <FormSheet
         open={editInvoiceSheetOpen}
         onOpenChange={(open) => {
           setEditInvoiceSheetOpen(open);
@@ -4673,12 +3758,80 @@ export default function InvoiceDetailPage() {
             setIsEditInvoiceFormInitialized(false);
           }
         }}
+        title="Edit Invoice Header"
+        description="Update this invoice's header details."
+        onSubmit={() => {
+          const currentDocsCount = (invoiceDocuments || []).filter(d => !deletedDocIds.includes(d.id)).length;
+          const totalDocs = currentDocsCount + newFiles.length;
+          if (!isFormValid && invoice.invoice_source === "NON-PO") {
+            toast({
+              title: "Validation Error",
+              description: "Please fill all required fields before saving changes.",
+              variant: "destructive"
+            });
+            return;
+          }
+
+          if (invoice.invoice_source !== "NON-PO" && (!editInvoiceForm.invoice_number || !editInvoiceForm.invoice_date || !editInvoiceForm.description || !editInvoiceForm.inv_due_date)) {
+            toast({
+              title: "Validation Error",
+              description: "Please fill all required fields before saving changes.",
+              variant: "destructive"
+            });
+            return;
+          }
+
+          if (totalDocs === 0) {
+            toast({
+              title: "Validation Error",
+              description: "At least one document is required before saving changes.",
+              variant: "destructive"
+            });
+            return;
+          }
+
+          if (!editInvoiceForm.department_name || editInvoiceForm.department_name === "" || editInvoiceForm.department_name === null || editInvoiceForm.department_name === undefined) {
+            toast({
+              title: "Validation Error",
+              description: "Select Department to Continue!",
+              variant: "destructive"
+            });
+            return;
+          }
+
+          if (!editInvoiceForm.budget_id || editInvoiceForm.budget_id === "" || editInvoiceForm.budget_id === null || editInvoiceForm.budget_id === undefined || !editInvoiceForm.budget_name || editInvoiceForm.budget_name === "" || editInvoiceForm.budget_name === null || editInvoiceForm.budget_name === undefined) {
+            toast({
+              title: "Validation Error",
+              description: "Select Budget to Continue!",
+              variant: "destructive"
+            });
+            return;
+          }
+
+          const formData = new FormData();
+          const dataToSend = {
+            ...editInvoiceForm,
+            deletedDocIds: deletedDocIds
+          };
+          formData.append("invoiceData", JSON.stringify(dataToSend));
+
+          newFiles.forEach((nf) => {
+            formData.append("invDocFiles", nf.file);
+          });
+
+          formData.append("docPreviews", JSON.stringify(newFiles.map(nf => nf.previewUrl)));
+
+          updateInvoiceMutation.mutate(formData);
+        }}
+        submitLabel="Save Changes"
+        isSubmitting={updateInvoiceMutation.isPending}
+        submitDisabled={!canSaveDraft || isSubmitPending || isDraftPending}
+        widthClassName="w-full sm:max-w-2xl"
       >
-        <SheetContent className="sm:max-w-2xl overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle>Edit Invoice Header</SheetTitle>
-          </SheetHeader>
-          <div className="space-y-6 py-6 pb-10">
+          <div className="space-y-6 pb-6">
+            <p className="text-xs text-muted-foreground">
+              <span className="text-destructive">*</span> Indicates mandatory fields
+            </p>
             {/* Form Fields Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -5129,94 +4282,8 @@ export default function InvoiceDetailPage() {
                 </div>
               </div>
             </div>
-
-            <div className="flex justify-end gap-3 pt-4 bg-white border-t mt-auto">
-              <Button
-                variant="outline"
-                className="px-4 h-5 text-sm"
-                onClick={() => {
-                  setEditInvoiceSheetOpen(false);
-                  setIsEditInvoiceFormInitialized(false);
-                  setDeletedDocIds([]);
-                  setNewFiles([]);
-                }}
-              >
-                Cancel
-              </Button>
-              <Button
-                className="px-4 h-5 text-sm"
-                onClick={() => {
-                  const currentDocsCount = (invoiceDocuments || []).filter(d => !deletedDocIds.includes(d.id)).length;
-                  const totalDocs = currentDocsCount + newFiles.length;
-                  if (!isFormValid && invoice.invoice_source === "NON-PO") {
-                    toast({
-                      title: "Validation Error",
-                      description: "Please fill all required fields before saving changes.",
-                      variant: "destructive"
-                    });
-                    return;
-                  }
-
-                  if (invoice.invoice_source !== "NON-PO" && (!editInvoiceForm.invoice_number || !editInvoiceForm.invoice_date || !editInvoiceForm.description || !editInvoiceForm.inv_due_date)) {
-                    toast({
-                      title: "Validation Error",
-                      description: "Please fill all required fields before saving changes.",
-                      variant: "destructive"
-                    });
-                    return;
-                  }
-
-                  if (totalDocs === 0) {
-                    toast({
-                      title: "Validation Error",
-                      description: "At least one document is required before saving changes.",
-                      variant: "destructive"
-                    });
-                    return;
-                  }
-
-                  if (!editInvoiceForm.department_name || editInvoiceForm.department_name === "" || editInvoiceForm.department_name === null || editInvoiceForm.department_name === undefined) {
-                    toast({
-                      title: "Validation Error",
-                      description: "Select Department to Continue!",
-                      variant: "destructive"
-                    });
-                    return;
-                  }
-
-                  if (!editInvoiceForm.budget_id || editInvoiceForm.budget_id === "" || editInvoiceForm.budget_id === null || editInvoiceForm.budget_id === undefined || !editInvoiceForm.budget_name || editInvoiceForm.budget_name === "" || editInvoiceForm.budget_name === null || editInvoiceForm.budget_name === undefined) {
-                    toast({
-                      title: "Validation Error",
-                      description: "Select Budget to Continue!",
-                      variant: "destructive"
-                    });
-                    return;
-                  }
-
-                  const formData = new FormData();
-                  const dataToSend = {
-                    ...editInvoiceForm,
-                    deletedDocIds: deletedDocIds
-                  };
-                  formData.append("invoiceData", JSON.stringify(dataToSend));
-
-                  newFiles.forEach((nf) => {
-                    formData.append("invDocFiles", nf.file);
-                  });
-
-                  formData.append("docPreviews", JSON.stringify(newFiles.map(nf => nf.previewUrl)));
-
-                  updateInvoiceMutation.mutate(formData);
-                }}
-                disabled={!canSaveDraft || isSubmitPending || isDraftPending}
-              >
-                {updateInvoiceMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                Save Changes
-              </Button>
-            </div>
           </div>
-        </SheetContent>
-      </Sheet>
+      </FormSheet>
 
       <CollaborationPanel
         ref={collaborationPanelRef}

@@ -5,7 +5,7 @@ export function DocumentationPage() {
   const sections = [
     { icon: Book, title: "Getting Started", description: "Quick setup guides, onboarding steps, and first-run walkthroughs.", color: "bg-violet-50 text-violet-600", links: ["Platform Overview", "User Onboarding", "Admin Setup"] },
     { icon: Code2, title: "API Reference", description: "Full REST API documentation with request/response examples.", color: "bg-teal-50 text-teal-600", links: ["Authentication", "Endpoints", "Webhooks"] },
-    { icon: Zap, title: "AI Agents", description: "Configure, monitor, and extend Prokraya AI agents for your workflows.", color: "bg-teal-50 text-teal-600", links: ["Agent Configuration", "Triggers & Events", "Custom Workflows"] },
+    { icon: Zap, title: "Agents", description: "Configure, monitor, and extend S2P Labs agents for your workflows.", color: "bg-teal-50 text-teal-600", links: ["Agent Configuration", "Triggers & Events", "Custom Workflows"] },
   ];
 
   return (
@@ -17,7 +17,7 @@ export function DocumentationPage() {
           <span className="inline-block px-3 py-1 text-xs font-semibold text-violet-700 bg-violet-50 rounded-full mb-5 uppercase tracking-wider">Documentation</span>
           <h1 className="text-4xl lg:text-5xl font-extrabold text-gray-900 leading-tight mb-5">Developer & User Docs</h1>
           <p className="text-lg text-gray-500 max-w-2xl mx-auto">
-            Complete guides, API references, and integration documentation for Prokraya.
+            Complete guides, API references, and integration documentation for S2P Labs.
           </p>
         </div>
       </section>
@@ -53,7 +53,7 @@ export function DocumentationPage() {
       <section className="py-20 bg-gradient-to-br from-slate-900 via-violet-950 to-slate-900 text-white">
         <div className="max-w-2xl mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold mb-3">Need Help?</h2>
-          <p className="text-gray-400 mb-8">Our support team is available 24/7 to help you get the most out of Prokraya.</p>
+          <p className="text-gray-400 mb-8">Our support team is available 24/7 to help you get the most out of S2P Labs.</p>
           <Link href="/help-center" className="inline-flex items-center gap-2 px-7 py-3 bg-violet-600 text-white font-semibold rounded-lg hover:bg-violet-700 transition-colors">
             Visit Help Center <ArrowRight className="w-4 h-4" />
           </Link>

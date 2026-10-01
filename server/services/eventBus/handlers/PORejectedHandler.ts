@@ -27,7 +27,7 @@ class PoRejectedHandler extends BaseEmailHandler<PORejectedEvent> {
       poNumber: event.poNumber,
       poDescription: event.poTitle,
       linkUrl: appUrl,
-      orgName: event.orgName || "Prokraya",
+      orgName: event.orgName || "S2P Labs",
       rejectComments: event.rejectComments,
       orgLogoPath: event.orgLogoPath || '',
     };

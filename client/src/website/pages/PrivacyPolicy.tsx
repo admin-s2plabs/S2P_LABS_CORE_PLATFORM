@@ -1,3 +1,5 @@
+import { Link } from "wouter";
+
 export function PrivacyPolicy() {
   return (
     <div className="min-h-screen bg-white">
@@ -9,7 +11,7 @@ export function PrivacyPolicy() {
           <section className="mb-8">
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">1. Introduction</h2>
             <p className="text-gray-600 mb-4">
-              Prokraya ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our AI-powered Source-to-Pay platform and related services.
+              S2P Labs ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our Source-to-Pay platform and related services.
             </p>
           </section>
 
@@ -106,7 +108,7 @@ export function PrivacyPolicy() {
               <li>Withdraw consent</li>
             </ul>
             <p className="text-gray-600 mb-4">
-              To exercise these rights, contact us at privacy@prokraya.com
+              To exercise these rights, please reach out via our <Link href="/contact-us" className="text-violet-600 hover:underline">Contact Us</Link> page.
             </p>
           </section>
 
@@ -141,12 +143,8 @@ export function PrivacyPolicy() {
           <section className="mb-8">
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">12. Contact Us</h2>
             <p className="text-gray-600 mb-4">
-              If you have questions about this Privacy Policy, please contact us:
+              If you have questions about this Privacy Policy, please reach out via our <Link href="/contact-us" className="text-violet-600 hover:underline">Contact Us</Link> page.
             </p>
-            <ul className="list-none text-gray-600 mb-4">
-              <li>Email: privacy@prokraya.com</li>
-              <li>Address: Prokraya Inc., 123 Business Street, San Francisco, CA 94105</li>
-            </ul>
           </section>
         </div>
       </div>

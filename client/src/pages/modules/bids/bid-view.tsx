@@ -32,16 +32,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Switch } from "@/components/ui/switch";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -50,7 +41,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Tooltip, TooltipContent, TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useAISettings } from "@/hooks/use-ai-settings";
+import { FormSheet } from "@/components/form-sheet";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency, formatDate } from "@/lib/common-functions";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -60,7 +51,6 @@ import {
   AlertCircle,
   ArrowLeft,
   BookOpen,
-  Brain,
   Building2,
   Calendar,
   Check,
@@ -77,7 +67,6 @@ import {
   FolderTree,
   Gavel,
   History,
-  Lightbulb,
   Loader2,
   Lock,
   Mail, MapPin,
@@ -90,7 +79,6 @@ import {
   Scale, ScrollText,
   Search,
   Shield,
-  Sparkles,
   Timer,
   Trash2,
   User,
@@ -492,9 +480,6 @@ export default function BidView() {
   const [selectedSupplierIds, setSelectedSupplierIds] = useState<number[]>([]);
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState("");
   const [vendorCategoryOpen, setVendorCategoryOpen] = useState(false);
-  const [showAIVendorPanel, setShowAIVendorPanel] = useState(false);
-  const [aiVendorRecs, setAiVendorRecs] = useState<any[]>([]);
-  const [aiVendorLoading, setAiVendorLoading] = useState(false);
 
   const [showProxySheet, setShowProxySheet] = useState(false);
   const [proxySupplier, setProxySupplier] = useState<any>(null);
@@ -507,8 +492,6 @@ export default function BidView() {
   const [proxyAttachList, setProxyAttachList] = useState<{ file: File; desc: string }[]>([]);
   const [proxyAttachDesc, setProxyAttachDesc] = useState("");
   const proxyFileRef = useRef<HTMLInputElement>(null);
-
-  const { isAIEnabled } = useAISettings();
 
   const reopenMutation = useMutation({
     mutationFn: async () => {
@@ -570,33 +553,6 @@ export default function BidView() {
       toast({
         title: "Error",
         description: error.message || "Failed to close bid.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const fmpVisibilityMutation = useMutation({
-    mutationFn: async (enabled: boolean) => {
-      const res = await apiRequest("PUT", `/api/dbo/bids/${bidId}/fmp-visibility`, { enabled });
-      return await res.json();
-    },
-    onSuccess: (data: any) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/dbo/bids", bidId] });
-      const enabled = !!data?.showFmpToSupplier;
-      const pending = Number(data?.pendingBenchmarks) || 0;
-      toast({
-        title: enabled ? "FMPI shared with suppliers" : "FMPI hidden from suppliers",
-        description: enabled
-          ? pending > 0
-            ? `Suppliers can now see the fair market price on each line. Benchmarking ${pending} line item${pending === 1 ? "" : "s"} in the background.`
-            : "Suppliers can now see the fair market price on each line."
-          : "Suppliers can no longer see the fair market price on this bid.",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update FMPI visibility.",
         variant: "destructive",
       });
     },
@@ -803,26 +759,6 @@ export default function BidView() {
     enabled: showAddSupplierDialog,
   });
 
-  const fetchAIVendorRecs = async () => {
-    setAiVendorLoading(true);
-    try {
-      const res = await apiRequest(
-        "POST",
-        `/api/dbo/bids/${bidId}/ai/vendor-recommendations`,
-        {},
-      );
-      const data = await res.json();
-      setAiVendorRecs(Array.isArray(data) ? data : []);
-      setSelectedSupplierIds([]);
-      setShowAIVendorPanel(true);
-    } catch (e) {
-      setAiVendorRecs([]);
-      setShowAIVendorPanel(true);
-    } finally {
-      setAiVendorLoading(false);
-    }
-  };
-
   const inviteSelectedSuppliers = async () => {
     const approvedSuppliers = approvedSuppliersData?.data || [];
     const selected = approvedSuppliers.filter((s: any) =>
@@ -844,29 +780,6 @@ export default function BidView() {
     });
     setSelectedSupplierIds([]);
     setShowAddSupplierDialog(false);
-  };
-
-  const inviteAIVendors = async () => {
-    const recsToInvite = aiVendorRecs.filter((v: any) =>
-      selectedSupplierIds.includes(v.supplierId),
-    );
-    for (const v of recsToInvite) {
-      await addSupplierMutation.mutateAsync({
-        supplier_id: v.supplierId,
-        supplier_name: v.supplierName,
-        supplier_site: v.supplierSite || `${v.supplierName}`,
-        supplier_contact: v.contactName || "",
-        supplier_contact_email: v.contactEmail || "",
-        supplier_contact_no: "",
-      });
-    }
-    toast({
-      title: "Suppliers Invited",
-      description: `${recsToInvite.length} AI-recommended supplier(s) invited.`,
-    });
-    setSelectedSupplierIds([]);
-    setShowAIVendorPanel(false);
-    setAiVendorRecs([]);
   };
 
   const handleSubmitProxy = () => {
@@ -1364,36 +1277,6 @@ export default function BidView() {
         <CardHeader className="py-3 px-4">
           <div className="flex items-center justify-between gap-4">
             <SectionHeader icon={Package} title="Scope of Work" count={lines?.length || 0} />
-            {isBidBuyer && isAIEnabled("AI_FMP_INTELLIGENCE") && (
-              <div className="flex items-center gap-2 mb-3">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Label
-                      htmlFor="switch-show-fmp-to-supplier"
-                      className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground cursor-pointer whitespace-nowrap"
-                    >
-                      <Sparkles className="h-3.5 w-3.5 text-primary" />
-                      Show FMPI to Suppliers
-                    </Label>
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-[260px]">
-                    When enabled, invited suppliers see the AI fair market price and its range on
-                    every line item while quoting. Lines that have not been benchmarked yet are
-                    computed in the background.
-                  </TooltipContent>
-                </Tooltip>
-                {fmpVisibilityMutation.isPending && (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
-                )}
-                <Switch
-                  id="switch-show-fmp-to-supplier"
-                  checked={!!bid.show_fmp_to_supplier}
-                  disabled={fmpVisibilityMutation.isPending}
-                  onCheckedChange={(checked: boolean) => fmpVisibilityMutation.mutate(checked)}
-                  data-testid="switch-show-fmp-to-supplier"
-                />
-              </div>
-            )}
           </div>
         </CardHeader>
         <CardContent className="px-4 pb-4 pt-0 text-sm">
@@ -1475,23 +1358,6 @@ export default function BidView() {
             <SectionHeader icon={Users} title="Invited Suppliers" count={suppliers?.length || 0} />
             {isBidBuyer && !isPrCancelled && (bid.status === "Published" || bid.status === "Draft") && (
               <div className="flex items-center gap-2">
-                {isAIEnabled("AI_VENDOR_RECOMMENDATIONS") && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8 gap-1 text-xs border-primary/20 hover:bg-primary/5"
-                    onClick={fetchAIVendorRecs}
-                    disabled={aiVendorLoading}
-                    data-testid="button-ai-suggest-suppliers"
-                  >
-                    {aiVendorLoading ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Brain className="h-3.5 w-3.5 text-primary" />
-                    )}
-                    AI Smart Suggest
-                  </Button>
-                )}
                 <Button
                   size="sm"
                   className="h-8 gap-1 text-xs"
@@ -2072,7 +1938,7 @@ export default function BidView() {
       </Dialog>
 
       {/* ADD SUPPLIER SHEET */}
-      <Sheet
+      <FormSheet
         open={showAddSupplierDialog}
         onOpenChange={(open: boolean) => {
           setShowAddSupplierDialog(open);
@@ -2082,18 +1948,15 @@ export default function BidView() {
             setSelectedCategoryFilter("");
           }
         }}
+        title="Invite Suppliers"
+        description="Search and select suppliers to invite to this bid."
+        onSubmit={inviteSelectedSuppliers}
+        submitLabel={`Invite (${selectedSupplierIds.length})`}
+        isSubmitting={addSupplierMutation.isPending}
+        submitDisabled={selectedSupplierIds.length === 0}
+        widthClassName="w-full sm:max-w-3xl"
       >
-        <SheetContent
-          className="w-[800px] sm:max-w-[800px] flex flex-col p-0"
-          side="right"
-        >
-          <SheetHeader className="px-6 py-4 border-b">
-            <SheetTitle>Invite Suppliers</SheetTitle>
-            <SheetDescription>
-              Search and select suppliers to invite to this bid.
-            </SheetDescription>
-          </SheetHeader>
-          <div className="px-6 py-4 border-b bg-muted/30 space-y-4">
+          <div className="-mx-6 -mt-6 px-6 py-4 border-b bg-muted/30 space-y-4">
             <Popover open={vendorCategoryOpen} onOpenChange={setVendorCategoryOpen}>
               <PopoverTrigger asChild>
                 <Button
@@ -2165,7 +2028,7 @@ export default function BidView() {
               />
             </div>
           </div>
-          <div className="flex-1 overflow-y-auto px-6">
+          <div className="mt-4">
             <Table className="[&_td]:py-2 [&_td]:px-3 [&_th]:py-2 [&_th]:px-3">
               <TableHeader>
                 <TableRow>
@@ -2234,7 +2097,7 @@ export default function BidView() {
             </Table>
           </div>
           {(approvedSuppliersData?.totalPages || 1) > 1 && (
-            <div className="flex items-center justify-between px-6 py-2 border-t">
+            <div className="flex items-center justify-between py-2 border-t mt-2">
               <span className="text-xs text-muted-foreground">
                 Page {supplierPage} of {approvedSuppliersData?.totalPages || 1}{" "}
                 ({approvedSuppliersData?.total || 0} suppliers)
@@ -2263,48 +2126,20 @@ export default function BidView() {
               </div>
             </div>
           )}
-          <SheetFooter className="px-6 py-4 border-t">
-            <div className="flex items-center justify-between w-full">
-              <span className="text-sm text-muted-foreground">
-                {selectedSupplierIds.length} supplier(s) selected
-              </span>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowAddSupplierDialog(false)}
-                  data-testid="button-cancel-invite"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={inviteSelectedSuppliers}
-                  disabled={
-                    selectedSupplierIds.length === 0 ||
-                    addSupplierMutation.isPending
-                  }
-                  data-testid="button-invite-suppliers"
-                >
-                  {addSupplierMutation.isPending && (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  )}
-                  Invite ({selectedSupplierIds.length})
-                </Button>
-              </div>
-            </div>
-          </SheetFooter>
-        </SheetContent>
-      </Sheet>
+      </FormSheet>
 
       {/* PLACE PROXY SHEET */}
-      <Sheet open={showProxySheet} onOpenChange={setShowProxySheet}>
-        <SheetContent className="w-[1100px] sm:max-w-[1100px] flex flex-col p-0" side="right">
-          <SheetHeader className="px-6 py-4 border-b">
-            <SheetTitle>Place Proxy Response</SheetTitle>
-            <SheetDescription>
-              Submit a bid response on behalf of an invited supplier.
-            </SheetDescription>
-          </SheetHeader>
-          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+      <FormSheet
+        open={showProxySheet}
+        onOpenChange={(open: boolean) => setShowProxySheet(open)}
+        title="Place Proxy Response"
+        description="Submit a bid response on behalf of an invited supplier."
+        onSubmit={handleSubmitProxy}
+        submitLabel={placeProxyMutation.isPending ? "Submitting..." : "Submit Response"}
+        isSubmitting={placeProxyMutation.isPending}
+        widthClassName="w-full sm:max-w-[1100px]"
+      >
+          <div className="space-y-4">
             <div className="space-y-2">
               <Label>Supplier <span className="text-red-500">*</span></Label>
               <Select
@@ -2762,114 +2597,7 @@ export default function BidView() {
               <p className="text-xs text-muted-foreground">Files will be uploaded after the response is submitted. Max 5MB per file.</p>
             </div>
           </div>
-          <SheetFooter className="px-6 py-4 border-t">
-            <div className="flex items-center justify-end gap-2 w-full">
-              <Button variant="outline" onClick={() => setShowProxySheet(false)} data-testid="button-proxy-cancel">
-                Cancel
-              </Button>
-              <Button onClick={handleSubmitProxy} disabled={placeProxyMutation.isPending} data-testid="button-proxy-submit">
-                {placeProxyMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                Submit Response
-              </Button>
-            </div>
-          </SheetFooter>
-        </SheetContent>
-      </Sheet>
-
-      {/* AI SUGGEST PANEL */}
-      <Sheet open={showAIVendorPanel} onOpenChange={(open: boolean) => setShowAIVendorPanel(open)}>
-        <SheetContent className="w-[800px] sm:max-w-[800px] flex flex-col p-0" side="right">
-          <SheetHeader className="px-6 py-4 border-b">
-            <SheetTitle className="flex items-center gap-2">
-              <Brain className="h-5 w-5 text-primary" />
-              AI Supplier Recommendations
-            </SheetTitle>
-            <SheetDescription>
-              AI has analyzed your bid requirements and suggested these top-matching suppliers from our database.
-            </SheetDescription>
-          </SheetHeader>
-          <div className="flex-1 overflow-y-auto px-6 py-4">
-            {aiVendorRecs.length === 0 ? (
-              <div className="text-center py-12">
-                <Lightbulb className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
-                <p className="text-muted-foreground font-medium">No smart recommendations found</p>
-                <p className="text-sm text-muted-foreground mt-1">Try adding more specific line items or requirements to improve AI accuracy.</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {aiVendorRecs.map((rec: any) => {
-                  const alreadyInvited = invitedSupplierIds.includes(rec.supplierId);
-                  const isSelected = selectedSupplierIds.includes(rec.supplierId);
-
-                  return (
-                    <div
-                      key={rec.supplierId}
-                      className={cn(
-                        "p-4 border rounded-lg transition-colors",
-                        alreadyInvited ? "bg-muted/50 opacity-80" : "hover:border-primary/50 cursor-pointer",
-                        isSelected && "border-primary bg-primary/5"
-                      )}
-                      onClick={() => {
-                        if (alreadyInvited) return;
-                        setSelectedSupplierIds(prev =>
-                          prev.includes(rec.supplierId) ? prev.filter(id => id !== rec.supplierId) : [...prev, rec.supplierId]
-                        );
-                      }}
-                    >
-                      <div className="flex justify-between items-start gap-4">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h4 className="font-semibold text-base truncate">{rec.supplierName}</h4>
-                            <Badge variant="secondary" className="bg-primary/10 text-primary border-none text-[10px] uppercase font-bold px-1.5 py-0">
-                              {Math.round(rec.score || 0)}% Match
-                            </Badge>
-                          </div>
-                          {rec.contactEmail && (
-                            <p className="text-xs text-muted-foreground truncate">{rec.contactEmail}</p>
-                          )}
-                          <div className="mt-2 flex flex-wrap gap-1">
-                            {(rec.reasons || []).slice(0, 3).map((reason: string, i: number) => (
-                              <Badge key={i} variant="secondary" className="text-xs font-normal">
-                                {reason}
-                              </Badge>
-                            ))}
-                          </div>
-                          <div className="mt-2 flex gap-4 text-xs text-muted-foreground">
-                            <span>{rec.pastBidsParticipated ?? 0} bids participated</span>
-                            <span>{rec.pastBidsWon ?? 0} bids won</span>
-                          </div>
-                        </div>
-                        {alreadyInvited ? (
-                          <Badge variant="outline" className="shrink-0 bg-green-50 text-green-700 border-green-200">Already Invited</Badge>
-                        ) : (
-                          <Checkbox checked={isSelected} onCheckedChange={() => { }} />
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-          <SheetFooter className="px-6 py-4 border-t">
-            <div className="flex items-center justify-between w-full">
-              <span className="text-sm text-muted-foreground">
-                {selectedSupplierIds.length} recommended supplier(s) selected
-              </span>
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setShowAIVendorPanel(false)}>Cancel</Button>
-                <Button
-                  onClick={inviteAIVendors}
-                  disabled={selectedSupplierIds.length === 0 || addSupplierMutation.isPending}
-                >
-                  {addSupplierMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                  Invite Selected ({selectedSupplierIds.length})
-                </Button>
-              </div>
-            </div>
-          </SheetFooter>
-        </SheetContent>
-      </Sheet>
+      </FormSheet>
     </div>
   );
 }

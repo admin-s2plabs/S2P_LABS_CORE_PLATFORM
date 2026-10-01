@@ -666,7 +666,7 @@ export class CommonService
       loginUserName: user.user_name || user.email_id,
       loginUrl: `${appUrl}/login`,
       resetLinkUrl,
-      orgName: 'Prokraya',
+      orgName: 'S2P Labs',
       orgLogoPath: orgData.org_logo_path,
     };
 
@@ -773,6 +773,7 @@ export class CommonService
         url: row.function_url,
         category: row.category,
         iconName: row.icon_name,
+        parentId: row.parent_function_id ?? null,
       });
     }
 
@@ -973,7 +974,7 @@ export class CommonService
       message: message,
       contactReason: contactUs,
       user: user,
-      loginUserName: "Prokraya Team",
+      loginUserName: "S2P Labs Team",
     };
     eventBus.publish(eventData);
   }
@@ -990,7 +991,7 @@ export class CommonService
     mobileNumber: params.mobile,
     message: params.message,
     userName: "prokrayateam@gmail.com",
-    loginUserName: "Prokraya Team",
+    loginUserName: "S2P Labs Team",
     user: params.user,
     };
     eventBus.publish(eventData);  
@@ -1005,7 +1006,7 @@ export class CommonService
     mobileNumber: params.mobile,
     message: params.message,
     userName: "prokrayateam@gmail.com",
-    loginUserName: "Prokraya Team",
+    loginUserName: "S2P Labs Team",
     user: params.user,
     };
     eventBus.publish(choiceEvent);
@@ -1021,7 +1022,7 @@ export class CommonService
     emailId: career.email,
     mobileNumber: career.mobile,
     message: career.message,
-    user: career.user ?? "Prokraya Team",
+    user: career.user ?? "S2P Labs Team",
     position: career.position,
   };
     eventBus.publish(carrerEvent);
@@ -1034,7 +1035,7 @@ export class CommonService
     emailId: career.email,
     mobileNumber: career.mobile,
     message: career.message,
-    user: career.user ?? "Prokraya Team",
+    user: career.user ?? "S2P Labs Team",
     position: career.position,
   };
     eventBus.publish(carrerEvent1);

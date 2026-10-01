@@ -29,7 +29,7 @@ class SuppApprInitiatorHandler extends BaseEmailHandler<SupplierApprInitiatorEve
       user: event.userName,
       companyName: event.companyName,
       linkUrl: appUrl,
-      orgName: event.orgName || "Prokraya",
+      orgName: event.orgName || "S2P Labs",
       orgLogoPath: event.orgLogoPath || '',
       emailApprovalLink:event.emailApprovalLink || '',
       attachments: event.attachments || [],

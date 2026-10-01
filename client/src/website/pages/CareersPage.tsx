@@ -103,7 +103,7 @@ export function CareersPage() {
 
   const reasons = [
     { icon: Rocket, title: "High-Impact Work", description: "Your work directly shapes how thousands of procurement teams operate globally.", color: "bg-violet-50 text-violet-600" },
-    { icon: TrendingUp, title: "Rapid Growth", description: "Join a fast-growing AI startup with real ownership and room to advance.", color: "bg-teal-50 text-teal-600" },
+    { icon: TrendingUp, title: "Rapid Growth", description: "Join a fast-growing startup with real ownership and room to advance.", color: "bg-teal-50 text-teal-600" },
     { icon: Heart, title: "Great Culture", description: "Flexible work, strong team bonds, and a culture that respects your life outside work.", color: "bg-pink-50 text-pink-600" },
   ];
 
@@ -119,12 +119,12 @@ export function CareersPage() {
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-teal-500">Procurement</span>
           </h1>
           <p className="text-lg text-gray-500 max-w-2xl mx-auto">
-            Join a passionate team transforming how enterprises buy, source, and manage spend with AI.
+            Join a passionate team transforming how enterprises buy, source, and manage spend.
           </p>
         </div>
       </section>
 
-      {/* Why Prokraya */}
+      {/* Why S2P Labs */}
       <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-3 gap-5">

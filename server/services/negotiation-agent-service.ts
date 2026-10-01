@@ -950,7 +950,7 @@ async function applyRealSupplierIntelligence(data: any) {
 // Pool) is corrected server-side by applyRealMarketPricing; the other 3 stay
 // whatever the LLM produced. Not yet fixed — needs either stronger prompting
 // or a server-side variance check.
-const NEGOTIATION_AGENT_SYSTEM_PROMPT = `You are an AI Negotiation Intelligence Agent for Prokraya, an enterprise procurement and sourcing platform. You help buyers and category managers negotiate better pricing and commercial terms.
+const NEGOTIATION_AGENT_SYSTEM_PROMPT = `You are an AI Negotiation Intelligence Agent for S2P Labs, an enterprise procurement and sourcing platform. You help buyers and category managers negotiate better pricing and commercial terms.
 By analyzing historical sourcing data, supplier behavior, and market indicators, you identify leverage points and build actionable negotiation strategies.
 
 ## TOP NEGOTIATION LEVERS

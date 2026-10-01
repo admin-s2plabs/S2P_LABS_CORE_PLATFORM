@@ -1342,34 +1342,46 @@ export async function submitRequisition(prNumber: string, reqUser: any) {
   });
 
   await repo.updatePrLinesStatus(prNumber, "Pending Approval");
-  const approverEmail = await getPool().query(`select current_assignee from dbo.wf_step_instance where task_id=$1`,[taskId]);
-  const appUrl = await getPool().query(`select prop_value from dbo.am_property_mst where prop_code='APP_URL'`);
-  const apiKey = await getPool().query(`select prop_value from dbo.am_property_mst where prop_code='API_KEY'`);
 
-  const approvalLink = appUrl.rows[0].prop_value+`/approval-action?apikey=${encodeURIComponent(apiKey.rows[0].prop_value)}&&module=${encodeURIComponent('PR')}&&taskId=${encodeURIComponent(taskId)}&&email=${encodeURIComponent(approverEmail.rows[0].current_assignee)}&&refnumber=${encodeURIComponent(prNumber)}`;
+  // Best-effort task-assignment notification. The PR status/workflow above has
+  // already committed, so a missing property row or lookup failure here must
+  // not turn an already-successful submission into a reported failure.
+  try {
+    const approverEmail = await getPool().query(`select current_assignee from dbo.wf_step_instance where task_id=$1`,[taskId]);
+    const appUrl = await getPool().query(`select prop_value from dbo.am_property_mst where prop_code='APP_URL'`);
+    const apiKey = await getPool().query(`select prop_value from dbo.am_property_mst where prop_code='API_KEY'`);
 
-  const { publishTaskAssignmentEvent } = await import("../../services/eventBus/publishTaskAssignment");
-  const prDesc = pr.pr_description ? String(pr.pr_description).slice(0, 200) : "";
-  const orgData = await adminRepo.getOrgDetails();
-  publishTaskAssignmentEvent({
-    taskId,
-    templateEventId: EventTypes.TASK_ASSIGNMENT.PR_APPROVAL,
-    taskSub: `Purchase Request ${pr.pr_number}${prDesc ? ` — ${prDesc}` : ""}`.slice(0, 500),
-    submittedBy: pr.requestor_name || username,
-    department: pr.department_name || "",
-    entityId: pr.org_id != null ? String(pr.org_id) : undefined,
-    srmsRefNo: pr.pr_number,
-    domain: (reqUser as any)?.domain,
-    variables :{ 
-      prNumber: pr.pr_number,
-      prDescription: pr.pr_description || "",
-      prDepartment: pr.department_name,
-      requestorName: pr.requestor_name || "",
-      orgLogoPath: orgData.org_logo_path,
-      emailApprovalLink:approvalLink,
-    },
-    emailApprovalLink:approvalLink,
-  });
+    if (approverEmail.rows[0]?.current_assignee && appUrl.rows[0]?.prop_value && apiKey.rows[0]?.prop_value) {
+      const approvalLink = appUrl.rows[0].prop_value+`/approval-action?apikey=${encodeURIComponent(apiKey.rows[0].prop_value)}&&module=${encodeURIComponent('PR')}&&taskId=${encodeURIComponent(taskId)}&&email=${encodeURIComponent(approverEmail.rows[0].current_assignee)}&&refnumber=${encodeURIComponent(prNumber)}`;
+
+      const { publishTaskAssignmentEvent } = await import("../../services/eventBus/publishTaskAssignment");
+      const prDesc = pr.pr_description ? String(pr.pr_description).slice(0, 200) : "";
+      const orgData = await adminRepo.getOrgDetails();
+      publishTaskAssignmentEvent({
+        taskId,
+        templateEventId: EventTypes.TASK_ASSIGNMENT.PR_APPROVAL,
+        taskSub: `Purchase Request ${pr.pr_number}${prDesc ? ` — ${prDesc}` : ""}`.slice(0, 500),
+        submittedBy: pr.requestor_name || username,
+        department: pr.department_name || "",
+        entityId: pr.org_id != null ? String(pr.org_id) : undefined,
+        srmsRefNo: pr.pr_number,
+        domain: (reqUser as any)?.domain,
+        variables :{
+          prNumber: pr.pr_number,
+          prDescription: pr.pr_description || "",
+          prDepartment: pr.department_name,
+          requestorName: pr.requestor_name || "",
+          orgLogoPath: orgData.org_logo_path,
+          emailApprovalLink:approvalLink,
+        },
+        emailApprovalLink:approvalLink,
+      });
+    } else {
+      console.warn(`submitRequisition: skipping task-assignment notification for ${prNumber} — missing approver email or APP_URL/API_KEY property`);
+    }
+  } catch (notifyErr) {
+    console.error(`submitRequisition: task-assignment notification failed for ${prNumber}`, notifyErr);
+  }
 
   return {
     success: true,
@@ -1514,31 +1526,39 @@ export async function processRequisitionApproval(prNumber: string, body: any, re
   }
 
   if((ntaskId && ntaskId !== "") && (result.toLowerCase() === "approved" || result.toLowerCase() === "approve")) {
-    const approverEmail = await getPool().query(`select current_assignee from dbo.wf_step_instance where task_id=$1`,[ntaskId]);
-    const appUrl = await getPool().query(`select prop_value from dbo.am_property_mst where prop_code='APP_URL'`);
-    const apiKey = await getPool().query(`select prop_value from dbo.am_property_mst where prop_code='API_KEY'`);
+    try {
+      const approverEmail = await getPool().query(`select current_assignee from dbo.wf_step_instance where task_id=$1`,[ntaskId]);
+      const appUrl = await getPool().query(`select prop_value from dbo.am_property_mst where prop_code='APP_URL'`);
+      const apiKey = await getPool().query(`select prop_value from dbo.am_property_mst where prop_code='API_KEY'`);
 
-    const approvalLink = appUrl.rows[0].prop_value+`/approval-action?apikey=${encodeURIComponent(apiKey.rows[0].prop_value)}&&module=${encodeURIComponent('PR')}&&taskId=${encodeURIComponent(ntaskId)}&&email=${encodeURIComponent(approverEmail.rows[0].current_assignee)}&&refnumber=${encodeURIComponent(prNumber)}`;
+      if (approverEmail.rows[0]?.current_assignee && appUrl.rows[0]?.prop_value && apiKey.rows[0]?.prop_value) {
+        const approvalLink = appUrl.rows[0].prop_value+`/approval-action?apikey=${encodeURIComponent(apiKey.rows[0].prop_value)}&&module=${encodeURIComponent('PR')}&&taskId=${encodeURIComponent(ntaskId)}&&email=${encodeURIComponent(approverEmail.rows[0].current_assignee)}&&refnumber=${encodeURIComponent(prNumber)}`;
 
-    const templateEventId = EventTypes.TASK_ASSIGNMENT.PR_APPROVAL;
-    publishTaskAssignmentEvent({
-      taskId: ntaskId,
-      templateEventId,
-      submittedBy: user.name || username,
-      department: pr.dept_name || pr.department_name || "",
-      entityId: pr.org_id != null ? String(pr.org_id) : undefined,
-      srmsRefNo: pr.pr_number,
-      variables: 
-      {
-        prNumber: pr.pr_number,
-        prDescription: pr.pr_description || "",
-        prDepartment: pr.department_name,
-        requestorName: pr.requestor_name || "",
-        orgLogoPath: orgData.org_logo_path,
-        emailApprovalLink:approvalLink,
-      },
-      emailApprovalLink:approvalLink,
-    });
+        const templateEventId = EventTypes.TASK_ASSIGNMENT.PR_APPROVAL;
+        publishTaskAssignmentEvent({
+          taskId: ntaskId,
+          templateEventId,
+          submittedBy: user.name || username,
+          department: pr.dept_name || pr.department_name || "",
+          entityId: pr.org_id != null ? String(pr.org_id) : undefined,
+          srmsRefNo: pr.pr_number,
+          variables:
+          {
+            prNumber: pr.pr_number,
+            prDescription: pr.pr_description || "",
+            prDepartment: pr.department_name,
+            requestorName: pr.requestor_name || "",
+            orgLogoPath: orgData.org_logo_path,
+            emailApprovalLink:approvalLink,
+          },
+          emailApprovalLink:approvalLink,
+        });
+      } else {
+        console.warn(`processRequisitionApproval: skipping task-assignment notification for ${prNumber} — missing approver email or APP_URL/API_KEY property`);
+      }
+    } catch (notifyErr) {
+      console.error(`processRequisitionApproval: task-assignment notification failed for ${prNumber}`, notifyErr);
+    }
   }
 
   if (result.toLowerCase() === "rejected" || result.toLowerCase() === "reject") {
@@ -1681,29 +1701,37 @@ export async function processRequisitionApproval(prNumber: string, body: any, re
     await repo.updatePrStatus(prNumber, "Pending Approval","");
     await repo.updatePrLinesStatus(prNumber, "Pending Approval");
 
-    const approverEmail = await getPool().query(`select current_assignee from dbo.wf_step_instance where task_id=$1`,[ntaskId]);
-    const appUrl = await getPool().query(`select prop_value from dbo.am_property_mst where prop_code='APP_URL'`);
-    const apiKey = await getPool().query(`select prop_value from dbo.am_property_mst where prop_code='API_KEY'`);
+    try {
+      const approverEmail = await getPool().query(`select current_assignee from dbo.wf_step_instance where task_id=$1`,[ntaskId]);
+      const appUrl = await getPool().query(`select prop_value from dbo.am_property_mst where prop_code='APP_URL'`);
+      const apiKey = await getPool().query(`select prop_value from dbo.am_property_mst where prop_code='API_KEY'`);
 
-    const approvalLink = appUrl.rows[0].prop_value+`/approval-action?apikey=${encodeURIComponent(apiKey.rows[0].prop_value)}&&module=${encodeURIComponent('PR')}&&taskId=${encodeURIComponent(ntaskId)}&&email=${encodeURIComponent(approverEmail.rows[0].current_assignee)}&&refnumber=${encodeURIComponent(prNumber)}`;
+      if (approverEmail.rows[0]?.current_assignee && appUrl.rows[0]?.prop_value && apiKey.rows[0]?.prop_value) {
+        const approvalLink = appUrl.rows[0].prop_value+`/approval-action?apikey=${encodeURIComponent(apiKey.rows[0].prop_value)}&&module=${encodeURIComponent('PR')}&&taskId=${encodeURIComponent(ntaskId)}&&email=${encodeURIComponent(approverEmail.rows[0].current_assignee)}&&refnumber=${encodeURIComponent(prNumber)}`;
 
-    publishTaskAssignmentEvent({
-      taskId: ntaskId,
-      templateEventId,
-      submittedBy: user.name || username,
-      department: pr.dept_name || pr.department_name || "",
-      entityId: pr.org_id != null ? String(pr.org_id) : undefined,
-      srmsRefNo: pr.pr_number,
-      variables: {
-        prNumber: pr.pr_number,
-        prDescription: pr.pr_description || "",
-        prDepartment: pr.department_name,
-        requestorName: pr.requestor_name || "",
-        orgLogoPath: orgData.org_logo_path,
-        emailApprovalLink:approvalLink,
-      },
-      emailApprovalLink:approvalLink,
-    });
+        publishTaskAssignmentEvent({
+          taskId: ntaskId,
+          templateEventId,
+          submittedBy: user.name || username,
+          department: pr.dept_name || pr.department_name || "",
+          entityId: pr.org_id != null ? String(pr.org_id) : undefined,
+          srmsRefNo: pr.pr_number,
+          variables: {
+            prNumber: pr.pr_number,
+            prDescription: pr.pr_description || "",
+            prDepartment: pr.department_name,
+            requestorName: pr.requestor_name || "",
+            orgLogoPath: orgData.org_logo_path,
+            emailApprovalLink:approvalLink,
+          },
+          emailApprovalLink:approvalLink,
+        });
+      } else {
+        console.warn(`processRequisitionApproval: skipping resubmit notification for ${prNumber} — missing approver email or APP_URL/API_KEY property`);
+      }
+    } catch (notifyErr) {
+      console.error(`processRequisitionApproval: resubmit notification failed for ${prNumber}`, notifyErr);
+    }
   }
 
   await repo.updatePrLastModified(prNumber, username);
@@ -2922,31 +2950,39 @@ export async function processPoApproval(poNumber: string, body: any, reqUser: an
       templateEventId = EventTypes.TASK_ASSIGNMENT.PO_APPROVAL;
     }
 
-    const approverEmail = await getPool().query(`select current_assignee from dbo.wf_step_instance where task_id=$1`,[ntaskId]);
-    const appUrl = await getPool().query(`select prop_value from dbo.am_property_mst where prop_code='APP_URL'`);
-    const apiKey = await getPool().query(`select prop_value from dbo.am_property_mst where prop_code='API_KEY'`);
+    try {
+      const approverEmail = await getPool().query(`select current_assignee from dbo.wf_step_instance where task_id=$1`,[ntaskId]);
+      const appUrl = await getPool().query(`select prop_value from dbo.am_property_mst where prop_code='APP_URL'`);
+      const apiKey = await getPool().query(`select prop_value from dbo.am_property_mst where prop_code='API_KEY'`);
 
-    const approvalLink = appUrl.rows[0].prop_value+`/approval-action?apikey=${encodeURIComponent(apiKey.rows[0].prop_value)}&&module=${encodeURIComponent('PO')}&&taskId=${encodeURIComponent(ntaskId)}&&email=${encodeURIComponent(approverEmail.rows[0].current_assignee)}&&refnumber=${encodeURIComponent(poNumber)}`;
+      if (approverEmail.rows[0]?.current_assignee && appUrl.rows[0]?.prop_value && apiKey.rows[0]?.prop_value) {
+        const approvalLink = appUrl.rows[0].prop_value+`/approval-action?apikey=${encodeURIComponent(apiKey.rows[0].prop_value)}&&module=${encodeURIComponent('PO')}&&taskId=${encodeURIComponent(ntaskId)}&&email=${encodeURIComponent(approverEmail.rows[0].current_assignee)}&&refnumber=${encodeURIComponent(poNumber)}`;
 
-    publishTaskAssignmentEvent({
-      taskId: ntaskId,
-      taskSub: `Purchase Order ${po.po_number}${po.po_description ? ` — ${String(po.po_description).slice(0, 200)}` : ""}`.slice(0, 500),
-      templateEventId,
-      submittedBy: user.name || username,
-      department: po.dept_name || po.department_name || "",
-      entityId: po.org_id != null ? String(po.org_id) : undefined,
-      srmsRefNo: po.po_number,
-      domain: (reqUser as any)?.domain,
-      variables: {
-        poNumber: po.po_number,
-        poDescription: po.po_description || "",
-        poDepartment: po.department_name || "",
-        requestorName: po.buyer_name || "",
-        orgLogoPath: orgData.org_logo_path,
-        emailApprovalLink:approvalLink,
-      },
-      emailApprovalLink:approvalLink,
-    });
+        publishTaskAssignmentEvent({
+          taskId: ntaskId,
+          taskSub: `Purchase Order ${po.po_number}${po.po_description ? ` — ${String(po.po_description).slice(0, 200)}` : ""}`.slice(0, 500),
+          templateEventId,
+          submittedBy: user.name || username,
+          department: po.dept_name || po.department_name || "",
+          entityId: po.org_id != null ? String(po.org_id) : undefined,
+          srmsRefNo: po.po_number,
+          domain: (reqUser as any)?.domain,
+          variables: {
+            poNumber: po.po_number,
+            poDescription: po.po_description || "",
+            poDepartment: po.department_name || "",
+            requestorName: po.buyer_name || "",
+            orgLogoPath: orgData.org_logo_path,
+            emailApprovalLink:approvalLink,
+          },
+          emailApprovalLink:approvalLink,
+        });
+      } else {
+        console.warn(`processPoApproval: skipping task-assignment notification for ${poNumber} — missing approver email or APP_URL/API_KEY property`);
+      }
+    } catch (notifyErr) {
+      console.error(`processPoApproval: task-assignment notification failed for ${poNumber}`, notifyErr);
+    }
   }
 
   if ((!ntaskId || ntaskId === "") && (resultLower === "approved" || resultLower === "approve")) {

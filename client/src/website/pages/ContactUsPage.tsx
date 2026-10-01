@@ -4,9 +4,6 @@ import {
   ArrowRight,
   CheckCircle,
   Clock,
-  Mail,
-  MapPin,
-  Phone,
 } from "lucide-react";
 import { useState } from "react";
 import { Helmet } from "react-helmet-async";
@@ -524,17 +521,16 @@ export function ContactUsPage() {
           async
           src="https://www.googletagmanager.com/gtag/js?id=G-KDV6R2SDN2"
         ></script>
-        <meta property="og:title" content="Contact Prokraya" />
-        <meta property="og:description" content="Connect with procurement automation experts and discover how Prokraya can transform your Source-to-Pay processes." />
+        <meta property="og:title" content="Contact S2P Labs" />
+        <meta property="og:description" content="Connect with procurement automation experts and discover how S2P Labs can transform your Source-to-Pay processes." />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://prokraya.ai/contact" />
-        <meta property="og:site_name" content="Prokraya" />
+        <meta property="og:site_name" content="S2P Labs" />
         <meta property="og:image" content={LogoBlack} />
         <meta name="twitter:card" content={LogoBlack} />
-        <meta name="twitter:site" content="@prokraya" />
-        <title>Contact Prokraya | Talk to Procurement Automation Experts</title>
-        <meta name="description" content="Contact Prokraya to learn how AI-powered procurement software can streamline sourcing, supplier management, invoicing, contracts, and spend analytics. Book a demo or speak with our team." />
-        <meta name="keywords" content="contact procurement software company, procurement software demo, procurement automation consultation, source to pay software contact, procurement technology experts, AI procurement platform" />
+        <title>Contact S2P Labs | Talk to Procurement Automation Experts</title>
+        <meta name="description" content="Contact S2P Labs to learn how procurement software can streamline sourcing, supplier management, invoicing, contracts, and spend analytics. Speak with our team." />
+        <meta name="keywords" content="contact procurement software company, procurement software demo, procurement automation consultation, source to pay software contact, procurement technology experts, procurement platform" />
       </Helmet>
 
       <div className="flex flex-col">
@@ -553,9 +549,6 @@ export function ContactUsPage() {
               <span className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-100 rounded-full text-sm text-gray-600">
                 <Clock className="w-4 h-4 text-violet-500" /> 24-hour response time
               </span>
-              <span className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-100 rounded-full text-sm text-gray-600">
-                <Phone className="w-4 h-4 text-violet-500" /> Global support
-              </span>
             </div>
           </div>
         </section>
@@ -567,13 +560,10 @@ export function ContactUsPage() {
               {/* Info */}
               <div>
                 <h2 className="text-xl font-bold text-gray-900 mb-3">Contact Information</h2>
-                <p className="text-gray-500 text-sm mb-7">Connect with us through any of these channels.</p>
+                <p className="text-gray-500 text-sm mb-7">Use the form to reach our team during business hours.</p>
 
                 <div className="space-y-5">
                   {[
-                    { icon: Mail, color: "bg-violet-50 text-violet-600", title: "Email", lines: ["prokrayateam@prokraya.com"] },
-                    { icon: Phone, color: "bg-violet-50 text-violet-600", title: "Phone", lines: ["+91 9965 874 874"] },
-                    { icon: MapPin, color: "bg-violet-50 text-violet-600", title: "Office", lines: ["Plot No. 5, Ground Floor, North Block, JVP Building, Software Units Layout, Madhapur, Hyderabad – 500081"] },
                     { icon: Clock, color: "bg-violet-50 text-violet-600", title: "Business Hours", lines: ["Monday – Friday: 9:00 AM – 6:00 PM IST"] },
                   ].map((item, i) => (
                     <div key={i} className="flex items-start gap-4">
@@ -631,8 +621,8 @@ export function ContactUsPage() {
             </div>
             <div className="space-y-3">
               {[
-                { q: "How quickly can I expect a response?", a: "Our team typically responds within 24 hours during business days. For urgent inquiries, please call us directly." },
-                { q: "Do you offer product demonstrations?", a: "Yes! We offer personalized product demos tailored to your organization's needs. Visit our Book Demo page to schedule one." },
+                { q: "How quickly can I expect a response?", a: "Our team typically responds within 24 hours during business days." },
+                { q: "Do you offer product demonstrations?", a: "Yes! We offer personalized product demos tailored to your organization's needs. Reach out using the form above to request one." },
                 { q: "What is your implementation timeline?", a: "Implementation timelines vary based on your requirements, but most organizations go live within 4-8 weeks." },
                 { q: "Do you provide training and support?", a: "Absolutely. We provide comprehensive onboarding, training, and ongoing support to ensure your success." },
               ].map((faq, index) => (

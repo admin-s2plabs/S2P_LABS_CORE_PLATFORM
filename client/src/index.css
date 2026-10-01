@@ -15,18 +15,18 @@
   --card: 0 0% 100%;
   --card-foreground: 0 0% 9%;
   --card-border: 0 0% 92%;
-  --sidebar: 262 60% 22%;
-  --sidebar-foreground: 0 0% 100%;
-  --sidebar-border: 262 50% 28%;
-  --sidebar-primary: 262 70% 35%;
-  --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 262 50% 30%;
-  --sidebar-accent-foreground: 0 0% 100%;
-  --sidebar-ring: 262 70% 50%;
+  --sidebar: 0 0% 100%;
+  --sidebar-foreground: 0 0% 9%;
+  --sidebar-border: 0 0% 91%;
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: var(--accent-foreground);
+  --sidebar-ring: var(--ring);
   --popover: 0 0% 94%;
   --popover-foreground: 0 0% 9%;
   --popover-border: 0 0% 90%;
-  --primary: 262 60% 30%;
+  --primary: 206 67% 48%;
   --primary-foreground: 0 0% 100%;
   --secondary: 0 0% 90%;
   --secondary-foreground: 0 0% 9%;
@@ -37,8 +37,8 @@
   --destructive: 0 84% 40%;
   --destructive-foreground: 0 0% 98%;
   --input: 0 0% 75%;
-  --ring: 217 91% 35%;
-  --chart-1: 217 91% 35%;
+  --ring: 206 67% 48%;
+  --chart-1: 206 67% 48%;
   --chart-2: 188 78% 32%;
   --chart-3: 280 65% 35%;
   --chart-4: 25 90% 38%;
@@ -87,6 +87,77 @@
   --destructive-border: hsl(from hsl(var(--destructive)) h s calc(l + var(--opaque-button-border-intensity)) / alpha);
 }
 
+/* ACCENT COLORS (profile menu color picker) */
+/* Default (non-accent) gradient fallback: flat, so anything using
+   background-image: var(--primary-gradient) degrades to a solid fill. */
+:root, .dark {
+  --primary-gradient: linear-gradient(90deg, hsl(var(--primary)), hsl(var(--primary)));
+}
+
+/* Multi-segment surfaces (donut legend, per-card icon accents) that show
+   several "swatches" side by side. For solid accents these fade one hue via
+   opacity; for "linear" that produces a muddy, unintentional-looking result
+   (a warm magenta loses saturation across a dark card and reads as a
+   different, muddier hue at low opacity — not a deliberate palette) — so
+   "linear" instead spells out 5 real stops taken from its own gradient. */
+:root, .dark {
+  --swatch-1: hsl(var(--primary) / 1);
+  --swatch-2: hsl(var(--primary) / 0.8);
+  --swatch-3: hsl(var(--primary) / 0.6);
+  --swatch-4: hsl(var(--primary) / 0.4);
+  --swatch-5: hsl(var(--primary) / 0.25);
+}
+[data-accent="linear"] {
+  --swatch-1: #9E5CF7;
+  --swatch-2: #E354D4;
+  --swatch-3: #FF5D9F;
+  --swatch-4: #FF8E6F;
+  --swatch-5: #FFB199;
+}
+
+[data-accent="blue"] {
+  --primary: 206 67% 48%; /* #2986CE */
+  --ring: 206 67% 43%;
+}
+[data-accent="green"] {
+  --primary: 168 74% 40%; /* #1BB394 */
+  --ring: 168 74% 35%;
+}
+[data-accent="yellow"] {
+  --primary: 38 91% 50%; /* #F39F0C */
+  --ring: 38 91% 45%;
+}
+[data-accent="red"] {
+  --primary: 347 84% 55%; /* #ED2A56 */
+  --ring: 347 84% 50%;
+}
+[data-accent="linear"] {
+  --primary: 306 72% 61%; /* representative solid fallback for text/border/ring */
+  --ring: 306 72% 55%;
+  --primary-gradient: linear-gradient(90deg, #9E5CF7 0%, #E354D4 33%, #FF5D9F 66%, #FF8E6F 100%);
+}
+[data-accent="blue"].dark {
+  --primary: 206 70% 58%;
+  --ring: 206 70% 53%;
+}
+[data-accent="green"].dark {
+  --primary: 168 65% 48%;
+  --ring: 168 65% 43%;
+}
+[data-accent="yellow"].dark {
+  --primary: 38 88% 58%;
+  --ring: 38 88% 52%;
+}
+[data-accent="red"].dark {
+  --primary: 347 78% 62%;
+  --ring: 347 78% 56%;
+}
+[data-accent="linear"].dark {
+  --primary: 306 65% 68%;
+  --ring: 306 65% 62%;
+  --primary-gradient: linear-gradient(90deg, #9E5CF7 0%, #E354D4 33%, #FF5D9F 66%, #FF8E6F 100%);
+}
+
 .dark {
   --button-outline: rgba(255,255,255, .10);
   --badge-outline: rgba(255,255,255, .05);
@@ -99,18 +170,18 @@
   --card: 0 0% 11%;
   --card-foreground: 0 0% 98%;
   --card-border: 0 0% 14%;
-  --sidebar: 262 60% 22%;
-  --sidebar-foreground: 0 0% 100%;
-  --sidebar-border: 262 50% 28%;
-  --sidebar-primary: 262 70% 35%;
-  --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 262 50% 30%;
-  --sidebar-accent-foreground: 0 0% 100%;
-  --sidebar-ring: 262 70% 50%;
+  --sidebar: 0 0% 11%;
+  --sidebar-foreground: 0 0% 98%;
+  --sidebar-border: 0 0% 18%;
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: var(--accent-foreground);
+  --sidebar-ring: var(--ring);
   --popover: 0 0% 15%;
   --popover-foreground: 0 0% 98%;
   --popover-border: 0 0% 19%;
-  --primary: 262 60% 45%;
+  --primary: 206 70% 58%;
   --primary-foreground: 0 0% 100%;
   --secondary: 0 0% 20%;
   --secondary-foreground: 0 0% 98%;
@@ -121,8 +192,8 @@
   --destructive: 0 84% 35%;
   --destructive-foreground: 0 0% 98%;
   --input: 0 0% 35%;
-  --ring: 217 91% 45%;
-  --chart-1: 217 91% 65%;
+  --ring: 206 70% 58%;
+  --chart-1: 206 70% 58%;
   --chart-2: 188 78% 62%;
   --chart-3: 280 65% 68%;
   --chart-4: 25 90% 65%;

@@ -744,7 +744,7 @@ router.post("/api/saasmgmt/contactsUs",async (req, res) => {
         const makeRightChoice = req.body;
         const params = 
         {
-            user: "Prokraya Team",
+            user: "S2P Labs Team",
             companyName: makeRightChoice.companyName,
             contactName: makeRightChoice.contactName,
             email: makeRightChoice.email,

@@ -35,7 +35,7 @@ interface PayablesAgentResponse {
   chart?: AgentChartSpec;
 }
 
-const PAYABLES_AGENT_SYSTEM_PROMPT = `You are an AI Payables Agent for Prokraya, an enterprise procurement platform. You help finance and procurement teams with ALL invoice and payment-related tasks — from querying invoices, performing 3-way matching, detecting fraud, to creating invoices, adding line items, processing payments, and submitting for approval.
+const PAYABLES_AGENT_SYSTEM_PROMPT = `You are an AI Payables Agent for S2P Labs, an enterprise procurement platform. You help finance and procurement teams with ALL invoice and payment-related tasks — from querying invoices, performing 3-way matching, detecting fraud, to creating invoices, adding line items, processing payments, and submitting for approval.
 
 ## TODAY'S DATE: ${new Date().toISOString().split("T")[0]}
 Use this for any "today", "this month", "this week" references. Current month = ${new Date().toLocaleString("en-US", { month: "long", year: "numeric" })}.
@@ -80,7 +80,7 @@ You can:
 
 ## CRITICAL: INVOICE IDENTIFICATION
 - There are two different references, and they are easy to mix up:
-  - \`invoiceId\` — Prokraya's internal record key. Always prefixed text: \`INV_00042\`, \`NPI_00007\`. Never a plain number.
+  - \`invoiceId\` — S2P Labs' internal record key. Always prefixed text: \`INV_00042\`, \`NPI_00007\`. Never a plain number.
   - \`invoiceNumber\` — the supplier's own invoice number. Free text that is very often ALL DIGITS, e.g. \`298302\`, and sometimes \`INV-2025-001\`.
 - A number like "298302" or "12345" is an invoice NUMBER, not an ID. Pass it as \`invoiceNumber\`.
 - Only use \`invoiceId\` for values shaped like \`INV_00042\` / \`NPI_00007\`, or for an "Invoice ID" given to you in a mention block.
@@ -157,7 +157,7 @@ Status: Draft
 const INVOICE_ID_PARAM = {
   type: "string",
   description:
-    "Prokraya's internal invoice record key, e.g. INV_00042 or NPI_00007. Not the supplier's invoice number.",
+    "S2P Labs' internal invoice record key, e.g. INV_00042 or NPI_00007. Not the supplier's invoice number.",
 };
 
 const INVOICE_NUMBER_PARAM = {

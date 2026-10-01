@@ -73,7 +73,7 @@ export function SuccessStoriesPage() {
       url: "/ss-procurement-digital-transformation",
       text: (
         <>
-          How Prokraya <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-violet-400 font-bold">enabled</span> scalable,
+          How S2P Labs <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-violet-400 font-bold">enabled</span> scalable,
           compliant, and <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-500 to-teal-400 font-bold">efficient</span> procurement
           through integrated{" "}
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-teal-500 font-bold">digital transformation</span>
@@ -158,27 +158,27 @@ export function SuccessStoriesPage() {
   const getFileName = (downloadedCS?: string) => {
     if (downloadedCS === "Hassad") {
       return {
-        name: "Prokraya_Food_Industry_Case_Study",
+        name: "S2P_Labs_Food_Industry_Case_Study",
         file: Prokraya_Food_Industry_Case_Study
       };
     } else if (downloadedCS === "Dafza") {
       return {
-        name: "Prokraya_Infrastructure_Management_Case_Study",
+        name: "S2P_Labs_Infrastructure_Management_Case_Study",
         file: Prokraya_Infrastructure_Management_Case_Study
       };
     } else if (downloadedCS === "UCB") {
       return {
-        name: "Prokraya_Apparel_Industry_Case_Study",
+        name: "S2P_Labs_Apparel_Industry_Case_Study",
         file: Prokraya_Apparel_Industry_Case_Study
       };
     } else if (downloadedCS === "EagleHills") {
       return {
-        name: "Prokraya_Real_Estate_Infrastructure_Case_Study",
+        name: "S2P_Labs_Real_Estate_Infrastructure_Case_Study",
         file: Prokraya_Real_Estate_Infrastructure_Case_Study
       };
     } else if (downloadedCS === "intellismart") {
       return {
-        name: "Prokraya_Procurement_Invoice_Case_Study",
+        name: "S2P_Labs_Procurement_Invoice_Case_Study",
         file: Prokraya_Procurement_Invoice_Case_Study
       };
     }
@@ -262,7 +262,7 @@ export function SuccessStoriesPage() {
       const file =
         currentSuccessStory === "brochure"
           ? {
-            name: "Prokraya_Brochure.pdf",
+            name: "S2P_Labs_Brochure.pdf",
             file: Prokraya_Brochure,
           }
           : getFileName(currentSuccessStory?.downloadedCS);
@@ -294,16 +294,16 @@ export function SuccessStoriesPage() {
           async
           src="https://www.googletagmanager.com/gtag/js?id=G-KDV6R2SDN2"
         ></script>
-        <meta property="og:title" content="Procurement Success Stories | Prokraya" />
-        <meta property="og:description" content="See how organizations improve procurement efficiency, reduce costs, and achieve measurable results with Prokraya." />
+        <meta property="og:title" content="Procurement Success Stories | S2P Labs" />
+        <meta property="og:description" content="See how organizations improve procurement efficiency, reduce costs, and achieve measurable results with S2P Labs." />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://prokraya.ai/success-stories" />
-        <meta property="og:site_name" content="Prokraya" />
+        <meta property="og:site_name" content="S2P Labs" />
         <meta property="og:image" content={LogoBlack} />
         <meta name="twitter:card" content={LogoBlack} />
         <meta name="twitter:site" content="@prokraya" />
-        <title>Procurement Success Stories & Case Studies | Prokraya</title>
-        <meta name="description" content="Explore procurement success stories and customer case studies. Learn how organizations reduce costs, improve efficiency, automate workflows, and transform procurement with Prokraya." />
+        <title>Procurement Success Stories & Case Studies | S2P Labs</title>
+        <meta name="description" content="Explore procurement success stories and customer case studies. Learn how organizations reduce costs, improve efficiency, automate workflows, and transform procurement with S2P Labs." />
         <meta name="keywords" content="procurement case studies, procurement success stories, procurement transformation, procurement automation ROI, digital procurement transformation, source to pay case study, procurement savings" />
       </Helmet>
 
@@ -318,7 +318,7 @@ export function SuccessStoriesPage() {
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-teal-500">Success Stories</span>
             </h1>
             <p className="text-lg text-gray-500 max-w-2xl mx-auto">
-              See how leading organizations are transforming procurement with Prokraya's AI-powered platform
+              See how leading organizations are transforming procurement with S2P Labs' platform
             </p>
           </div>
         </section>
@@ -398,8 +398,8 @@ export function SuccessStoriesPage() {
                 </h2>
 
                 <p className="mt-6 mb-8 text-base leading-7 text-gray-600">
-                  At Prokraya, we help businesses source smarter and grow faster. Learn
-                  how Prokraya delivers smart, efficient procurement solutions that
+                  At S2P Labs, we help businesses source smarter and grow faster. Learn
+                  how S2P Labs delivers smart, efficient procurement solutions that
                   drive results. Get the full story in our brochure.
                 </p>
 
@@ -485,7 +485,7 @@ export function SuccessStoriesPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-10">
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Trusted Across Industries</h2>
-            <p className="text-gray-500">Organizations of all sizes rely on Prokraya</p>
+            <p className="text-gray-500">Organizations of all sizes rely on S2P Labs</p>
           </div>
           <div className="grid md:grid-cols-3 lg:grid-cols-6 gap-4">
             {[
@@ -511,9 +511,6 @@ export function SuccessStoriesPage() {
             <h2 className="text-3xl font-bold mb-3">Ready to Write Your Success Story?</h2>
             <p className="text-gray-400 mb-8">Join hundreds of organizations transforming their procurement</p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Link href="/book-demo" className="inline-flex items-center justify-center gap-2 px-7 py-3 bg-violet-600 text-white font-semibold rounded-lg hover:bg-violet-700 transition-colors">
-                Book a Demo <ArrowRight className="w-4 h-4" />
-              </Link>
               <Link href="/contact-us" className="inline-flex items-center justify-center px-7 py-3 border border-white/20 text-white font-semibold rounded-lg hover:bg-white/10 transition-colors">
                 Contact Sales
               </Link>
@@ -535,7 +532,7 @@ export function SuccessStoriesPage() {
               </SheetTitle>
               <SheetDescription>
                 {currentSuccessStory === "brochure"
-                  ? "At Prokraya, we help businesses source smarter & grow with procurement solutions. Discover more in our brochure."
+                  ? "At S2P Labs, we help businesses source smarter & grow with procurement solutions. Discover more in our brochure."
                   : currentSuccessStory?.text}
               </SheetDescription>
             </SheetHeader>

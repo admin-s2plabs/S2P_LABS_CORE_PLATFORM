@@ -1,4 +1,4 @@
-import prokrayaLogoDark from "@/assets/images/prokraya-logo-dark.png";
+import s2pLabsLogo from "@/assets/images/s2plabs_logo.jpeg";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -120,7 +120,7 @@ export default function TakeWCCAction() {
     <div className="min-h-screen flex items-center justify-center bg-muted/30 p-6">
       <div className="w-full max-w-lg">
         <div className="flex justify-center mb-6">
-          <img src={prokrayaLogoDark} alt="Prokraya" className="h-9 object-contain" />
+          <img src={s2pLabsLogo} alt="S2P Labs" className="h-9 object-contain" />
         </div>
 
         <div className="rounded-xl border bg-background shadow-sm">
@@ -222,7 +222,7 @@ export default function TakeWCCAction() {
         </div>
 
         <p className="text-center text-xs text-muted-foreground mt-6">
-          Powered by Prokraya
+          Powered by S2P Labs
         </p>
       </div>
     </div>

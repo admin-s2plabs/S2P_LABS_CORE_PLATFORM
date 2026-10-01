@@ -24,13 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { FormSheet } from "@/components/form-sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -40,9 +34,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { useAISettings } from "@/hooks/use-ai-settings";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency, formatDate } from "@/lib/common-functions";
 import { generateTablePdf } from "@/lib/generate-table-pdf";
@@ -64,7 +56,6 @@ import {
   Loader2,
   Plus,
   Search,
-  Sparkles,
   TrendingUp,
   Upload,
   User,
@@ -315,7 +306,6 @@ function UtilizationBar({
 
 export default function BudgetsPage() {
   const [location, setLocation] = useLocation();
-  const { isAIEnabled } = useAISettings();
   const { toast } = useToast();
   const currentYear = new Date().getFullYear();
   function getSearchParams(): URLSearchParams {
@@ -339,16 +329,11 @@ export default function BudgetsPage() {
   const [page, setPage] = useState(initialPage);
   const [limit, setLimit] = useState(initialLimit);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [isAIDialogOpen, setIsAIDialogOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [importFile, setImportFile] = useState<File | null>(null);
   const excelFileRef = useRef<HTMLInputElement>(null);
   const [importPreview, setImportPreview] = useState<BulkImportPreview | null>(null);
   const [importResults, setImportResults] = useState<BulkImportResponse | null>(null);
-  const [aiPrompt, setAiPrompt] = useState("");
-  const [aiEntityOptions, setAiEntityOptions] = useState<Array<{ id: string; name: string }>>([]);
-  const [aiSelectedEntityId, setAiSelectedEntityId] = useState("");
-  const [aiClarificationMessage, setAiClarificationMessage] = useState("");
   const [formData, setFormData] = useState<CreateBudgetForm>(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -455,107 +440,6 @@ export default function BudgetsPage() {
     onError: (error: Error) => {
       toast({
         title: "Failed to create budget",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  // AI Budget Creation mutation
-  const createBudgetWithAIMutation = useMutation({
-    mutationFn: async (payload: { prompt: string; businessEntityId?: string }) => {
-      const response = await apiRequest("POST", "/api/budgets/create-with-ai", {
-        prompt: payload.prompt,
-        businessEntityId: payload.businessEntityId || undefined,
-      });
-      return response.json();
-    },
-    onSuccess: (data: {
-      needsClarification?: boolean;
-      clarification?: {
-        type: string;
-        message: string;
-        options: Array<{ id: string; name: string }>;
-      };
-      id?: number;
-      budgetName?: string;
-      linesCount?: number;
-      totalAmount?: number;
-      rationale?: string;
-      learnedFromHistory?: string;
-      amountEstimateBasis?: string;
-      warnings?: string[];
-      approvalWorkflow?: { processName: string; approvers: string[]; message: string };
-    }) => {
-      if (data.needsClarification && data.clarification?.type === "business_entity") {
-        setAiEntityOptions(data.clarification.options || []);
-        setAiClarificationMessage(
-          data.clarification.message || "Please select a business entity to continue."
-        );
-        setAiSelectedEntityId("");
-        toast({
-          title: "Clarification needed",
-          description: data.clarification.message,
-        });
-        return;
-      }
-
-      if (!data.id || !data.budgetName) {
-        toast({
-          title: "Failed to create budget with AI",
-          description: "Unexpected response from AI budget creation.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      toast({
-        title: "Budget created with AI",
-        description: `Created "${data.budgetName}" with ${data.linesCount} line items (${new Intl.NumberFormat("en-AE", { style: "currency", currency: "AED" }).format(data.totalAmount || 0)})`,
-      });
-
-      if (data.rationale || data.learnedFromHistory) {
-        setTimeout(() => {
-          toast({
-            title: "AI Analysis",
-            description: [data.rationale, data.learnedFromHistory].filter(Boolean).join(" "),
-          });
-        }, 500);
-      }
-
-      if (data.approvalWorkflow?.message) {
-        setTimeout(() => {
-          toast({
-            title: "Suggested approval workflow",
-            description: data.approvalWorkflow?.message,
-          });
-        }, 800);
-      }
-
-      if (data.warnings && data.warnings.length > 0) {
-        setTimeout(() => {
-          data.warnings?.forEach((warning) => {
-            toast({
-              title: "Note",
-              description: warning,
-              variant: "destructive",
-            });
-          });
-        }, 1000);
-      }
-
-      queryClient.invalidateQueries({ queryKey: ["/api/budgets"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/budgets/stats"] });
-      setIsAIDialogOpen(false);
-      setAiPrompt("");
-      setAiEntityOptions([]);
-      setAiSelectedEntityId("");
-      setAiClarificationMessage("");
-      setLocation(`/app/budgets/${data.id}`);
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Failed to create budget with AI",
         description: error.message,
         variant: "destructive",
       });
@@ -1008,17 +892,6 @@ export default function BudgetsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {isAIEnabled("AI_BUDGET_CREATION") && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setIsAIDialogOpen(true)}
-              data-testid="button-create-with-ai"
-            >
-              <Sparkles className="h-4 w-4 mr-1" />
-              Create with AI
-            </Button>
-          )}
           <Button
             size="sm"
             variant="outline"
@@ -1460,35 +1333,42 @@ export default function BudgetsPage() {
         )}
       </Card>
 
-      <Sheet open={isCreateOpen} onOpenChange={() => {
-        setIsCreateOpen(false);
-        setFormData(() => {
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
-          const endDate = new Date(today);
-          endDate.setFullYear(endDate.getFullYear() + 1);
-          endDate.setDate(endDate.getDate() - 1);
-          return {
-            budget_name: "",
-            business_entity: "",
-            business_entity_name: "",
-            budget_owner_id: "",
-            budget_owner_name: "",
-            period_mst_id: "",
-            start_date: today,
-            end_date: endDate,
-          };
-        })
-      }}>
-        <SheetContent className="sm:max-w-md overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle>Create Budget</SheetTitle>
-            <SheetDescription>
-              <span className="text-destructive">*</span> Indicates mandatory
-              fields
-            </SheetDescription>
-          </SheetHeader>
-          <div className="space-y-4 mt-2">
+      <FormSheet
+        open={isCreateOpen}
+        onOpenChange={() => {
+          setIsCreateOpen(false);
+          setFormData(() => {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const endDate = new Date(today);
+            endDate.setFullYear(endDate.getFullYear() + 1);
+            endDate.setDate(endDate.getDate() - 1);
+            return {
+              budget_name: "",
+              business_entity: "",
+              business_entity_name: "",
+              budget_owner_id: "",
+              budget_owner_name: "",
+              period_mst_id: "",
+              start_date: today,
+              end_date: endDate,
+            };
+          })
+        }}
+        title="Create Budget"
+        widthClassName="sm:max-w-md"
+        onCancel={() => {
+          setIsCreateOpen(false);
+          resetForm();
+        }}
+        onSubmit={handleCreateSubmit}
+        submitLabel={createBudgetMutation.isPending ? "Creating..." : "Create"}
+        isSubmitting={createBudgetMutation.isPending}
+      >
+          <p className="text-xs text-muted-foreground mb-4">
+            <span className="text-destructive">*</span> Indicates mandatory fields
+          </p>
+          <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="budget_name">
                 Budget Name <span className="text-destructive">*</span>
@@ -1692,31 +1572,7 @@ export default function BudgetsPage() {
                 </p> : <></>}
             </div>
           </div>
-
-          <div className="flex justify-end gap-2 mt-6 pt-4">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setIsCreateOpen(false);
-                resetForm();
-              }}
-              data-testid="button-cancel"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleCreateSubmit}
-              disabled={createBudgetMutation.isPending}
-              data-testid="button-create-submit"
-            >
-              {createBudgetMutation.isPending && (
-                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-              )}
-              Create
-            </Button>
-          </div>
-        </SheetContent>
-      </Sheet>
+      </FormSheet>
 
 
 
@@ -1916,120 +1772,6 @@ export default function BudgetsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {isAIEnabled("AI_BUDGET_CREATION") && (
-        <Dialog
-          open={isAIDialogOpen}
-          onOpenChange={(open) => {
-            setIsAIDialogOpen(open);
-            if (!open) {
-              setAiPrompt("");
-              setAiEntityOptions([]);
-              setAiSelectedEntityId("");
-              setAiClarificationMessage("");
-            }
-          }}
-        >
-          <DialogContent className="sm:max-w-lg">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-primary" />
-                Create Budget with AI
-              </DialogTitle>
-              <DialogDescription>
-                Describe your budget in natural language and AI will create an
-                editable draft with line items, reasons, and a suggested approval
-                workflow.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <Textarea
-                placeholder="Examples:
-• Create HR annual budget FY2027
-• IT budget for 500K AED
-• Marketing budget 2025
-• Finance department annual budget"
-                value={aiPrompt}
-                onChange={(e) => {
-                  setAiPrompt(e.target.value);
-                  if (aiEntityOptions.length > 0) {
-                    setAiEntityOptions([]);
-                    setAiSelectedEntityId("");
-                    setAiClarificationMessage("");
-                  }
-                }}
-                rows={5}
-                className="resize-none"
-                data-testid="textarea-ai-prompt"
-              />
-              {aiEntityOptions.length > 0 && (
-                <div className="space-y-2 rounded-md border p-3 bg-muted/30">
-                  <Label className="text-sm font-medium">Business Entity</Label>
-                  <p className="text-xs text-muted-foreground">
-                    {aiClarificationMessage ||
-                      "Multiple business entities could apply. Please choose one."}
-                  </p>
-                  <Select
-                    value={aiSelectedEntityId}
-                    onValueChange={setAiSelectedEntityId}
-                  >
-                    <SelectTrigger data-testid="select-ai-entity">
-                      <SelectValue placeholder="Select business entity" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {aiEntityOptions.map((entity) => (
-                        <SelectItem key={entity.id} value={String(entity.id)}>
-                          {entity.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-              <p className="text-xs text-muted-foreground">
-                Mention the department and purpose. AI uses approved historical
-                budgets, master data, and budget rules to estimate amounts and
-                allocate cost centers.
-              </p>
-            </div>
-            <DialogFooter className="gap-2 sm:gap-0">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setIsAIDialogOpen(false);
-                  setAiPrompt("");
-                  setAiEntityOptions([]);
-                  setAiSelectedEntityId("");
-                  setAiClarificationMessage("");
-                }}
-                data-testid="button-ai-cancel"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={() =>
-                  createBudgetWithAIMutation.mutate({
-                    prompt: aiPrompt,
-                    businessEntityId: aiSelectedEntityId || undefined,
-                  })
-                }
-                disabled={
-                  createBudgetWithAIMutation.isPending
-                  || !aiPrompt.trim()
-                  || (aiEntityOptions.length > 0 && !aiSelectedEntityId)
-                }
-                data-testid="button-ai-create"
-              >
-                {createBudgetWithAIMutation.isPending && (
-                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                )}
-                <Sparkles className="h-4 w-4 mr-1" />
-                {aiEntityOptions.length > 0 ? "Continue" : "Generate Budget"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
     </div>
   );
 }

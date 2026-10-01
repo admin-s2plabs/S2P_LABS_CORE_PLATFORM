@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { FormSheet } from "@/components/form-sheet";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -449,7 +450,7 @@ export default function Evaluation() {
         <div className="p-4 space-y-3">
             <div className="flex items-center justify-between flex-wrap gap-2">
                 <div>
-                    <h1 className="text-xl font-bold" data-testid="text-page-title">
+                    <h1 className="text-xl font-bold text-primary" data-testid="text-page-title">
                         Evaluation &nbsp; 
                          <Switch
                       checked={moduleStatus?.moduleIsActive === "Yes" ? true : false}
@@ -909,19 +910,24 @@ export default function Evaluation() {
                 )}
             </Card>
 
-            <Sheet open={isCreateOpen} onOpenChange={() => {
-                setIsCreateOpen(false);
-                setFormData({ survey_title: "", copied_template: "", copied_template_name: "" });
-            }}>
-                <SheetContent className="sm:max-w-md overflow-y-auto">
-                    <SheetHeader>
-                        <SheetTitle>Create Evaluation</SheetTitle>
-                        <SheetDescription className="border-b">
-                            <p className="mb-2">Set up a new supplier evaluation form</p>
-                        </SheetDescription>
-                        <p className="text-sm text-right"><span className="text-destructive">*</span> Indicates mandatory fields</p>
-                    </SheetHeader>
-                    <div className="space-y-4 mt-2">
+            <FormSheet
+                open={isCreateOpen}
+                onOpenChange={() => {
+                    setIsCreateOpen(false);
+                    setFormData({ survey_title: "", copied_template: "", copied_template_name: "" });
+                }}
+                title="Create Evaluation"
+                description="Set up a new supplier evaluation form"
+                onSubmit={handleCreateSubmit}
+                submitLabel="Create"
+                isSubmitting={createEvaluation.isPending}
+                submitDisabled={createEvaluation.isPending}
+                widthClassName="sm:max-w-md"
+            >
+                    <p className="text-xs text-muted-foreground mb-4">
+                        <span className="text-destructive">*</span> Indicates mandatory fields
+                    </p>
+                    <div className="space-y-4">
                         <div className="space-y-2">
                             <Label htmlFor="survey_title">
                                 Survey Form Title <span className="text-destructive">*</span>
@@ -975,32 +981,7 @@ export default function Evaluation() {
                             <p className="rounded-md p-4 text-xs bg-blue-100 text-blue-700">After creating the form, you can add questions with types: <span className="font-bold">Rating 1-5, Yes / No</span>, and <span className="font-bold">Single Choice</span>. Assign weightage to each question totalling 100%.</p>
                         </div>
                     </div>
-
-                    <div className="flex justify-end gap-2 mt-6 pt-4">
-                        <Button
-                            variant="outline"
-                            onClick={() => {
-                                setIsCreateOpen(false);
-                                setFormData({ survey_title: "", copied_template: "", copied_template_name: "" });
-                            }}
-                            disabled={createEvaluation.isPending}
-                            data-testid="button-cancel"
-                        >
-                            Cancel
-                        </Button>
-                        <Button
-                            onClick={handleCreateSubmit}
-                            disabled={createEvaluation.isPending}
-                            data-testid="button-create-submit"
-                        >
-                            {createEvaluation.isPending && (
-                                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                            )}
-                            Create
-                        </Button>
-                    </div>
-                </SheetContent>
-            </Sheet>
+            </FormSheet>
 
             <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>
                 <DialogContent className="max-w-xl rounded-2xl p-6 bg-white shadow-xl">

@@ -67,14 +67,14 @@ freeTrialController.post("/api/free-trial/register", async (req: Request, res: R
       sql`SELECT COUNT(*) as cnt FROM dbo.am_tenant_mst WHERE domain_name = ${domainName}`
     );
     if (parseInt(existing.rows[0]?.cnt as string || "0") > 0) {
-      return res.status(400).json({ message: "Hey, seems like you already have a Prokraya free trial for the given domain name. We have sent you an email with a link to log into your account. Please kindly check your email!" });
+      return res.status(400).json({ message: "Hey, seems like you already have a S2P Labs free trial for the given domain name. We have sent you an email with a link to log into your account. Please kindly check your email!" });
     }
 
     const emailExists = await db.execute(
       sql`SELECT COUNT(*) as cnt FROM dbo.am_tenant_mst WHERE email = ${email}`
     );
     if (parseInt(emailExists.rows[0]?.cnt as string || "0") > 0) {
-      return res.status(400).json({ message: "Hey, seems like you already have a Prokraya free trial for the given email. We have sent you an email with a link to log into your account. Please kindly check your email!" });
+      return res.status(400).json({ message: "Hey, seems like you already have a S2P Labs free trial for the given email. We have sent you an email with a link to log into your account. Please kindly check your email!" });
     }
 
     const nameParts = contactName.trim().split(" ");

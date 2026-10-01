@@ -21,16 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import {
-  Sheet,
-  SheetClose,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import { FormSheet } from "@/components/form-sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { formatDate } from "@/lib/common-functions";
@@ -270,7 +261,7 @@ export default function Profile() {
   return (
     <div className="p-4 space-y-4">
       <div>
-        <h1 className="text-xl font-bold" data-testid="text-page-title">My Profile</h1>
+        <h1 className="text-xl font-bold text-primary" data-testid="text-page-title">My Profile</h1>
         <p className="text-sm text-muted-foreground">
           View and manage your personal information, photo, and password.
         </p>
@@ -347,84 +338,77 @@ export default function Profile() {
               </div>
             </div>
 
-            <Sheet open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen}>
-              <SheetTrigger asChild>
-                <Button variant="outline" className="w-full mt-4" data-testid="button-change-password">
-                  <Lock className="h-4 w-4 mr-2" />
-                  Change Password
-                </Button>
-              </SheetTrigger>
-              <SheetContent className="w-[400px] sm:w-[450px] overflow-y-auto">
-                <SheetHeader>
-                  <SheetTitle>Change Password</SheetTitle>
-                  <SheetDescription>
-                    Enter your current password and a new password to update your credentials.
-                  </SheetDescription>
-                </SheetHeader>
-                <Form {...passwordForm}>
-                  <form onSubmit={passwordForm.handleSubmit((data) => changePasswordMutation.mutate(data))} className="space-y-3 mt-4">
-                    <FormField
-                      control={passwordForm.control}
-                      name="currentPassword"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Current Password</FormLabel>
-                          <FormControl>
-                            <Input type="password" placeholder="Enter current password" {...field} data-testid="input-current-password" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={passwordForm.control}
-                      name="newPassword"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>New Password</FormLabel>
-                          <FormControl>
-                            <Input type="password" placeholder="Enter new password" {...field} data-testid="input-new-password" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+            <Button variant="outline" className="w-full mt-4" onClick={() => setPasswordDialogOpen(true)} data-testid="button-change-password">
+              <Lock className="h-4 w-4 mr-2" />
+              Change Password
+            </Button>
+            <FormSheet
+              open={passwordDialogOpen}
+              onOpenChange={setPasswordDialogOpen}
+              title="Change Password"
+              description="Enter your current password and a new password to update your credentials."
+              onSubmit={passwordForm.handleSubmit((data) => changePasswordMutation.mutate(data))}
+              submitLabel={changePasswordMutation.isPending ? "Changing..." : "Change Password"}
+              isSubmitting={changePasswordMutation.isPending}
+            >
+              <p className="text-xs text-muted-foreground mb-4">
+                <span className="text-destructive">*</span> Indicates mandatory fields
+              </p>
+              <Form {...passwordForm}>
+                <div className="space-y-3">
+                  <FormField
+                    control={passwordForm.control}
+                    name="currentPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Current Password</FormLabel>
+                        <FormControl>
+                          <Input type="password" placeholder="Enter current password" {...field} data-testid="input-current-password" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={passwordForm.control}
+                    name="newPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>New Password</FormLabel>
+                        <FormControl>
+                          <Input type="password" placeholder="Enter new password" {...field} data-testid="input-new-password" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                    <div className="rounded-md bg-muted p-2 text-xs">
-                      <p className="font-medium text-foreground mb-1">Password Policy:</p>
-                      <ul className="list-disc list-inside space-y-0.5 text-muted-foreground">
-                        <li>Minimum 8 characters</li>
-                        <li>At least one uppercase letter (A-Z)</li>
-                        <li>At least one lowercase letter (a-z)</li>
-                        <li>At least one number (0-9)</li>
-                        <li>At least one special character (!@#$%^&*)</li>
-                      </ul>
-                    </div>
-                    <FormField
-                      control={passwordForm.control}
-                      name="confirmPassword"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Confirm New Password</FormLabel>
-                          <FormControl>
-                            <Input type="password" placeholder="Confirm new password" {...field} data-testid="input-confirm-password" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <SheetFooter className="mt-4 flex gap-2">
-                      <SheetClose asChild>
-                        <Button type="button" variant="outline">Cancel</Button>
-                      </SheetClose>
-                      <Button type="submit" disabled={changePasswordMutation.isPending} data-testid="button-submit-password">
-                        {changePasswordMutation.isPending ? "Changing..." : "Change Password"}
-                      </Button>
-                    </SheetFooter>
-                  </form>
-                </Form>
-              </SheetContent>
-            </Sheet>
+                  <div className="rounded-md bg-muted p-2 text-xs">
+                    <p className="font-medium text-foreground mb-1">Password Policy:</p>
+                    <ul className="list-disc list-inside space-y-0.5 text-muted-foreground">
+                      <li>Minimum 8 characters</li>
+                      <li>At least one uppercase letter (A-Z)</li>
+                      <li>At least one lowercase letter (a-z)</li>
+                      <li>At least one number (0-9)</li>
+                      <li>At least one special character (!@#$%^&*)</li>
+                    </ul>
+                  </div>
+                  <FormField
+                    control={passwordForm.control}
+                    name="confirmPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Confirm New Password</FormLabel>
+                        <FormControl>
+                          <Input type="password" placeholder="Confirm new password" {...field} data-testid="input-confirm-password" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </Form>
+            </FormSheet>
           </CardContent>
         </Card>
 

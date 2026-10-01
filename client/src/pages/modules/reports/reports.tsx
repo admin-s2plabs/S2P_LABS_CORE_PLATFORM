@@ -2,13 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { FormSheet } from "@/components/form-sheet";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
@@ -1150,35 +1144,32 @@ function ReportDetail({ reportId, onBack }: { reportId: string; onBack: () => vo
         )}
       </div>
 
-      <Dialog open={showSaveDialog} onOpenChange={(open) => { setShowSaveDialog(open); if (!open) { setEditingTemplateId(null); setTemplateName(""); } }}>
-        <DialogContent className="sm:max-w-[400px]">
-          <DialogHeader>
-            <DialogTitle>{editingTemplateId ? "Update Template" : "Save Filter Template"}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3 py-2">
-            <Input
-              placeholder="Template name"
-              value={templateName}
-              onChange={(e) => setTemplateName(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") handleSaveTemplate(); }}
-              className="h-9"
-              data-testid="input-template-name"
-            />
-            <p className="text-xs text-muted-foreground">
-              {activeFilterCount > 0
-                ? `This will save your current ${activeFilterCount} filter${activeFilterCount > 1 ? "s" : ""}.`
-                : "No filters are currently set. The template will save an empty configuration."}
-            </p>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" size="sm" onClick={() => setShowSaveDialog(false)}>Cancel</Button>
-            <Button size="sm" onClick={handleSaveTemplate} disabled={!templateName.trim() || saveTemplateMutation.isPending} data-testid="button-confirm-save-template">
-              {saveTemplateMutation.isPending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Save className="h-4 w-4 mr-1" />}
-              {editingTemplateId ? "Update" : "Save"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <FormSheet
+        open={showSaveDialog}
+        onOpenChange={(open) => { setShowSaveDialog(open); if (!open) { setEditingTemplateId(null); setTemplateName(""); } }}
+        title={editingTemplateId ? "Update Template" : "Save Filter Template"}
+        onSubmit={handleSaveTemplate}
+        submitLabel={editingTemplateId ? "Update" : "Save"}
+        isSubmitting={saveTemplateMutation.isPending}
+        submitDisabled={!templateName.trim()}
+        widthClassName="sm:max-w-[400px]"
+      >
+        <div className="space-y-3">
+          <Input
+            placeholder="Template name"
+            value={templateName}
+            onChange={(e) => setTemplateName(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") handleSaveTemplate(); }}
+            className="h-9"
+            data-testid="input-template-name"
+          />
+          <p className="text-xs text-muted-foreground">
+            {activeFilterCount > 0
+              ? `This will save your current ${activeFilterCount} filter${activeFilterCount > 1 ? "s" : ""}.`
+              : "No filters are currently set. The template will save an empty configuration."}
+          </p>
+        </div>
+      </FormSheet>
 
       <Card>
         <div className="p-3 border-b">

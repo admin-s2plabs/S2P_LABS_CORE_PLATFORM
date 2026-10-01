@@ -7,12 +7,6 @@ import {
 } from "@/components/collaboration-panel";
 import Rating from "@/components/rating";
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -88,7 +82,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { FmpBenchmarkCard, type FmpSnapshot } from "@/components/fmpi/fmp-benchmark-card";
+import { FormSheet } from "@/components/form-sheet";
 import { useAISettings } from "@/hooks/use-ai-settings";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency, formatDate } from "@/lib/common-functions";
@@ -97,12 +91,9 @@ import { apiRequest, parseJsonResponse } from "@/lib/queryClient";
 import { cn } from "@/lib/utils";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  Activity,
   AlertCircle,
-  AlertTriangle,
   ArrowLeft,
   Ban,
-  Brain,
   Building2,
   Check,
   CheckCircle2,
@@ -128,24 +119,18 @@ import {
   Phone,
   Plus,
   Receipt,
-  RefreshCw,
   Search,
   Send,
-  ShieldAlert,
   ShieldCheck,
-  Sparkles,
   ThumbsDown,
   ThumbsUp,
   Trash2,
-  TrendingDown,
-  TrendingUp,
-  TriangleAlert,
   Truck,
   Upload,
   User,
   Wallet,
   X,
-  XCircle
+  XCircle,
 } from "lucide-react";
 import { ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useParams } from "wouter";
@@ -492,24 +477,6 @@ function StatusBadge({ status }: { status: string | null }) {
   );
 }
 
-function SubStatusBadge({ label, value, icon: Icon }: { label: string; value: string | null; icon: typeof Truck }) {
-  if (!value) return null;
-  const lower = value.toLowerCase();
-  const isPartial = lower.startsWith("partially");
-  const isDone = lower === "received" || lower === "invoiced" || lower === "paid";
-  const className = isDone
-    ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-200"
-    : isPartial
-      ? "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 border-orange-200"
-      : "bg-muted text-muted-foreground border-border";
-  return (
-    <Badge variant="outline" className={`gap-1 text-xs ${className}`}>
-      <Icon className="h-3 w-3" />
-      {value}
-    </Badge>
-  );
-}
-
 function DeliveryNoteLines({ deliveryId }: { deliveryId: number }) {
   const { data: lines = [], isLoading } = useQuery<
     Array<{
@@ -809,12 +776,6 @@ export default function PurchaseOrderDetail() {
     taxId: "",
     inclusiveTaxAmt: ""
   });
-
-  // Item the Fair Market Price benchmark was explicitly requested for. Null =
-  // trigger armed; an itemId = the analysis is running/shown for that item.
-  const [fmpRequestedItemKey, setFmpRequestedItemKey] = useState<string | null>(
-    null,
-  );
 
   // Approval workflow state
   const [approvalDialogOpen, setApprovalDialogOpen] = useState(false);
@@ -1892,7 +1853,6 @@ export default function PurchaseOrderDetail() {
     });
   };
 
-  const [aiAnalysisResult, setAiAnalysisResult] = useState<any>(null);
   const [budgetValidation, setBudgetValidation] = useState<{
     isWithinBudget: boolean;
     totalAmount: number;
@@ -1900,41 +1860,6 @@ export default function PurchaseOrderDetail() {
     warnings: string[];
     severity: "low" | "medium" | "high";
   } | null>(null);
-
-  const aiAnalyzeMutation = useMutation({
-    mutationFn: async () => {
-      const anomalyData = await apiRequest(
-        "POST",
-        `/api/purchase-orders/${poNumber}/ai-analyze`,
-      ).then((r) => r.json());
-      let deliveryRiskData = null;
-      if (po?.supplier_id) {
-        try {
-          const res = await apiRequest("GET",
-            `/api/purchase-orders/${poNumber}/delivery-risk`,
-          );
-          if (res.ok) deliveryRiskData = await res.json();
-        } catch (error) {
-          console.error('Failed to fetch delivery risk:', error);
-        }
-      }
-      return { anomaly: anomalyData, deliveryRisk: deliveryRiskData };
-    },
-    onSuccess: (data: any) => {
-      setAiAnalysisResult(data);
-      toast({
-        title: "AI Analysis Complete",
-        description: data.anomaly?.summary?.narrative || "Analysis finished.",
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "AI Analysis Failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
 
   const budgetCheckMutation = useMutation({
     mutationFn: async () => {
@@ -2531,7 +2456,6 @@ export default function PurchaseOrderDetail() {
       });
       setBudgetValidation(null);
       setAddLineSheetOpen(false);
-      setFmpRequestedItemKey(null);
       setItemEntryMode("master");
       setNewLineItem({
         description: "",
@@ -2606,7 +2530,6 @@ export default function PurchaseOrderDetail() {
       });
       setBudgetValidation(null);
       setAddLineSheetOpen(false);
-      setFmpRequestedItemKey(null);
       setEditingLineId(null);
       setItemEntryMode("master");
       setNewLineItem({
@@ -2665,51 +2588,6 @@ export default function PurchaseOrderDetail() {
     enabled: addLineSheetOpen || isLinesImportOpen,
   });
   const uomOptions = uomData || [];
-
-  // True only while the item the benchmark was requested for is still the one
-  // in the sheet — picking a different item re-arms the trigger button.
-  const fmpRequested =
-    !!newLineItem.itemId && fmpRequestedItemKey === newLineItem.itemId;
-
-  const fmpDeliveryLocation = po?.delivertto_location_name || "";
-
-  // Fair Market Price Intelligence — re-analyses the currently selected line
-  // item on every explicit user action. Deliberately POSTs /recalculate rather
-  // than GET /snapshot: the GET is cache-first (returns the stored row for
-  // STALE_DAYS), so clicking the button would replay an old scrape instead of
-  // re-analysing. staleTime/gcTime 0 does the same job on the client — the
-  // React Query defaults are staleTime: Infinity, which would otherwise serve
-  // the previous result for an item the user already benchmarked this session.
-  const {
-    data: fmpSnapshot,
-    isFetching: fmpFetching,
-    isError: fmpFailed,
-    refetch: refetchFmpSnapshot,
-  } = useQuery<FmpSnapshot>({
-    queryKey: [
-      "/api/fmpi/recalculate",
-      newLineItem.itemId,
-      po?.po_currency,
-      newLineItem.description,
-      fmpDeliveryLocation,
-      newLineItem.quantity,
-    ],
-    queryFn: () =>
-      apiRequest("POST", "/api/fmpi/recalculate", {
-        itemId: newLineItem.itemId,
-        itemName: newLineItem.itemName || "",
-        itemDescription: newLineItem.description || newLineItem.itemName || "",
-        categoryCode: newLineItem.categoryCode || "",
-        categoryName: newLineItem.categoryName || "",
-        currency: po?.po_currency || "AED",
-        uom: newLineItem.uom || "",
-        deliveryLocation: fmpDeliveryLocation || undefined,
-        quantity: newLineItem.quantity ? Number(newLineItem.quantity) : 1,
-      }).then((r) => r.json()),
-    enabled: fmpRequested && isAIEnabled("AI_FMP_INTELLIGENCE"),
-    staleTime: 0,
-    gcTime: 0,
-  });
 
   const updateTaxIncludedMethod = (value: string) => {
     updateTaxMutation.mutate(value);
@@ -2865,6 +2743,85 @@ export default function PurchaseOrderDetail() {
     }
   };
 
+  const getAuthHeaders = (): Record<string, string> => {
+    try {
+      const parsed = JSON.parse(localStorage.getItem("prokraya-auth") || "{}");
+      return {
+        "x-user-email": parsed.userId || "",
+        "x-user-name": parsed.userName || "",
+      };
+    } catch {
+      return {};
+    }
+  };
+
+  // Real attachment upload/view/delete for the "Upload Document" card — reuses
+  // the same /api/purchase-orders/:poNumber/documents endpoints the
+  // CollaborationPanel below already calls for this same PO. Declared above
+  // the isLoading early-return so these hooks always run (Rules of Hooks).
+  const poDocumentsUrl = `/api/purchase-orders/${poNumber}/documents`;
+  const { data: poDocumentsData } = useQuery<
+    { id: number; file_name: string; file_path: string; created_by: string; created_date: string }[]
+  >({
+    queryKey: [poDocumentsUrl],
+    enabled: !!poNumber,
+  });
+  const poDocuments = poDocumentsData || [];
+  const uploadDocInputRef = useRef<HTMLInputElement>(null);
+
+  const uploadPoDocumentMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch(poDocumentsUrl, {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: formData,
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error((err as any).error || "Failed to upload document");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [poDocumentsUrl] });
+      toast({ title: "Document added", description: "Document has been attached to this purchase order." });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Failed to add document", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const handleViewPoDocument = async (doc: { id: number; file_name: string }) => {
+    try {
+      const res = await fetch(`${poDocumentsUrl}/${doc.id}/download`, {
+        headers: getAuthHeaders(),
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to fetch document");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const tab = window.open(url, "_blank");
+      if (!tab) toast({ title: "Allow pop-ups to view documents", variant: "destructive" });
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch {
+      toast({ title: "Failed to open document", variant: "destructive" });
+    }
+  };
+
+  const deletePoDocumentMutation = useMutation({
+    mutationFn: async (docId: number) => apiRequest("DELETE", `${poDocumentsUrl}/${docId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [poDocumentsUrl] });
+      toast({ title: "Document deleted" });
+    },
+    onError: () => {
+      toast({ title: "Failed to delete document", variant: "destructive" });
+    },
+  });
+
   if (isLoading) {
     return (
       <div className="p-4 space-y-4">
@@ -2910,17 +2867,6 @@ export default function PurchaseOrderDetail() {
   const totalAmount = po.po_total_cost || 0;
   const netAmount = po.po_net_cost || totalAmount;
   const taxAmount = po.po_tax || 0;
-  const getAuthHeaders = (): Record<string, string> => {
-    try {
-      const parsed = JSON.parse(localStorage.getItem("prokraya-auth") || "{}");
-      return {
-        "x-user-email": parsed.userId || "",
-        "x-user-name": parsed.userName || "",
-      };
-    } catch {
-      return {};
-    }
-  };
   const downloadTemplate = async () => {
     try {
       const response = await fetch(
@@ -2988,13 +2934,6 @@ export default function PurchaseOrderDetail() {
                 </Button>
                 <StatusBadge status={po.po_status} />
               </div>
-              {(po.attribute_8 || po.attribute_9 || po.attribute_10) && (
-                <div className="flex items-center gap-1.5 mt-1">
-                  <SubStatusBadge label="Receipt" value={po.attribute_8} icon={Truck} />
-                  <SubStatusBadge label="Invoice" value={po.attribute_9} icon={Receipt} />
-                  <SubStatusBadge label="Payment" value={po.attribute_10} icon={Wallet} />
-                </div>
-              )}
               <p className="text-xs text-muted-foreground">
                 {po.po_type || "STANDARD"} Purchase Order
               </p>
@@ -3576,25 +3515,6 @@ export default function PurchaseOrderDetail() {
               </AlertDialog>
             )}
 
-            {isAIEnabled("AI_PO_ANOMALY_DETECTION") &&
-              !isVendorUser &&
-              !isDraft && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => aiAnalyzeMutation.mutate()}
-                  disabled={aiAnalyzeMutation.isPending}
-                  data-testid="button-ai-analyze"
-                >
-                  {aiAnalyzeMutation.isPending ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  ) : (
-                    <Brain className="h-4 w-4 mr-2" />
-                  )}
-                  {aiAnalyzeMutation.isPending ? "Analyzing..." : "AI Analyze"}
-                </Button>
-              )}
-
             {/* Download PO PDF - Available for all statuses except Draft */}
             {po && !isDraft && (
               <Button
@@ -3673,188 +3593,178 @@ export default function PurchaseOrderDetail() {
           </AlertDialogContent>
         </AlertDialog>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid gap-4 lg:grid-cols-2">
+          {/* PO details card */}
           <Card className="break-words">
-            <CardHeader className="py-3 px-4">
+            <CardHeader className="py-3 px-4 bg-primary/5 border-b border-primary/20 flex flex-row items-center justify-between gap-2">
               <CardTitle className="text-sm flex items-center gap-2">
-                <FileText className="h-4 w-4" />
-                Order Details
+                <FileText className="h-4 w-4 text-primary" />
+                PO details
               </CardTitle>
+              <div className="text-right">
+                <p className="text-xs text-muted-foreground">
+                  Created on : {formatDate(po.creation_date)}
+                </p>
+                <p className="text-xs font-medium text-primary">
+                  Total Cost: {formatCurrency(totalAmount, po.po_currency)}
+                </p>
+              </div>
             </CardHeader>
-            <CardContent className="space-y-3 px-4 pb-4 pt-0 text-sm">
-              {po.po_description && (
-                <div className="pb-2 border-b">
-                  <span className="text-muted-foreground text-xs">
-                    Description
-                  </span>
-                  <p className="font-medium mt-0.5">{po.po_description}</p>
-                </div>
-              )}
-              <div className="flex justify-between gap-2">
-                <span className="text-muted-foreground shrink-0">Created</span>
-                <span className="font-medium text-right whitespace-nowrap">
-                  {formatDate(po.creation_date)}
-                </span>
-              </div>
-              <div className="flex justify-between gap-2">
-                <span className="text-muted-foreground shrink-0">
-                  Issue Date
-                </span>
-                <span className="font-medium text-right whitespace-nowrap">
-                  {formatDate(po.po_issue_date)}
-                </span>
-              </div>
-              <div className="flex justify-between gap-2">
-                <span className="text-muted-foreground shrink-0">
-                  Required Date
-                </span>
-                <span className="font-medium text-right whitespace-nowrap">
-                  {formatDate(po.po_required_date)}
-                </span>
-              </div>
-              {po.pr_number && !isVendorUser && (
-                <div className="flex justify-between gap-2">
-                  <span className="text-muted-foreground shrink-0">
-                    Source PR
-                  </span>
-                  <Link href={`/app/requisitions/${po.pr_number}`}>
-                    <span className="text-primary hover:underline font-medium">
-                      {po.pr_number}
-                    </span>
-                  </Link>
-                </div>
-              )}
-              {po.attribute_5 && (
-                <div className="flex justify-between gap-2">
-                  <span className="text-muted-foreground shrink-0">
-                    Source Bid
-                  </span>
-                  <Link href={!isVendorUser ? `/app/bids/${po.attribute_6}/view` : `/app/suppbids/${po.attribute_6}/view`}>
-                    <span className="text-primary hover:underline font-medium">
-                      {po.attribute_5}
-                    </span>
-                  </Link>
-                </div>
-              )}
-              <Separator className="my-2" />
-              <div className="flex justify-between gap-2">
-                <span className="text-muted-foreground shrink-0">Buyer</span>
-                <div className="text-right min-w-0">
-                  <div className="font-medium truncate">
-                    {po.buyer_name || "-"}
-                  </div>
-                  {po.buyer_email && (
-                    <div className="text-xs text-muted-foreground truncate">
-                      {po.buyer_email}
-                    </div>
-                  )}
+            <CardContent className="space-y-4 px-4 pb-4 pt-4 text-sm">
+              <div>
+                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground mb-1">
+                  PO Description
+                </p>
+                <div className="rounded-md border px-3 py-2 text-sm min-h-[38px]" data-testid="text-po-description">
+                  {po.po_description || "-"}
                 </div>
               </div>
-              <div className="flex justify-between gap-2">
-                <span className="text-muted-foreground shrink-0">Owner</span>
-                <div className="text-right min-w-0">
-                  <div className="font-medium truncate">
-                    {po.po_owner_name || "-"}
-                  </div>
-                  {po.po_owner_email && (
-                    <div className="text-xs text-muted-foreground truncate">
-                      {po.po_owner_email}
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div className="flex justify-between gap-2">
-                <span className="text-muted-foreground shrink-0">
-                  Department
-                </span>
-                <span className="font-medium text-right truncate">
-                  {po.department_name || "-"}
-                </span>
-              </div>
-              {po.org_id && (
-                <div className="flex justify-between gap-2">
-                  <span className="text-muted-foreground shrink-0">
-                    Business Entity
-                  </span>
-                  <span className="font-medium text-right truncate">
-                    {organizations.find((o) => o.id === po.org_id)?.organization_name || String(po.org_id)}
-                  </span>
-                </div>
-              )}
-            </CardContent>
-          </Card>
 
-          <Card className="break-words">
-            <CardHeader className="py-3 px-4">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Building2 className="h-4 w-4" />
-                Supplier & Delivery
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 px-4 pb-4 pt-0 text-sm">
-              <div className="font-medium truncate">
-                {po.company_name || po.supplier?.supplier_name || "-"}
-              </div>
-              {po.supplier && (
-                <>
-                  {po.supplier.email_id && (
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Mail className="h-3 w-3 shrink-0" />
-                      <span className="truncate">{po.supplier.email_id}</span>
-                    </div>
-                  )}
-                  {po.supplier.phone && (
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Phone className="h-3 w-3 shrink-0" />
-                      <span className="truncate">{po.supplier.phone}</span>
-                    </div>
-                  )}
-                  {(po.supplier.city || po.supplier.country) && (
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <MapPin className="h-3 w-3 shrink-0" />
-                      <span className="truncate">
-                        {[po.supplier.city, po.supplier.country]
-                          .filter(Boolean)
-                          .join(", ")}
-                      </span>
-                    </div>
-                  )}
-                </>
-              )}
-              <Separator className="my-2" />
-              <div className="flex justify-between gap-2">
-                <span className="text-muted-foreground shrink-0">
-                  Delivery Location
-                </span>
-                <span className="font-medium text-right truncate">
-                  {po.delivertto_location_name || "-"}
-                </span>
-              </div>
-              {po.shipto_address && (
-                <div className="flex items-start gap-1 text-xs text-muted-foreground">
-                  <MapPin className="h-3 w-3 shrink-0 mt-0.5" />
-                  <span className="break-words">{po.shipto_address}</span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground mb-1">
+                    Issue Date
+                  </p>
+                  <div className="rounded-md border px-3 py-2 text-sm">
+                    {formatDate(po.po_issue_date)}
+                  </div>
                 </div>
-              )}
+                <div>
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground mb-1">
+                    Required Date
+                  </p>
+                  <div className="rounded-md border px-3 py-2 text-sm">
+                    {formatDate(po.po_required_date)}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground mb-1">
+                    Buyer
+                  </p>
+                  <div className="rounded-md border px-3 py-2 text-sm truncate">
+                    <div className="font-medium truncate">{po.buyer_name || "-"}</div>
+                    {po.buyer_email && (
+                      <div className="text-xs text-muted-foreground truncate">{po.buyer_email}</div>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground mb-1">
+                    Owner
+                  </p>
+                  <div className="rounded-md border px-3 py-2 text-sm truncate">
+                    <div className="font-medium truncate">{po.po_owner_name || "-"}</div>
+                    {po.po_owner_email && (
+                      <div className="text-xs text-muted-foreground truncate">{po.po_owner_email}</div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground mb-1">
+                    Department
+                  </p>
+                  <div className="rounded-md border px-3 py-2 text-sm truncate">
+                    {po.department_name || "-"}
+                  </div>
+                </div>
+                {po.org_id && (
+                  <div>
+                    <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1">
+                      <Building2 className="h-3 w-3" />
+                      Business Entity
+                    </p>
+                    <div className="rounded-md border px-3 py-2 text-sm truncate">
+                      {organizations.find((o) => o.id === po.org_id)?.organization_name || String(po.org_id)}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground mb-1">
+                    Supplier
+                  </p>
+                  <div className="rounded-md border px-3 py-2 text-sm">
+                    <div className="font-medium truncate">
+                      {po.company_name || po.supplier?.supplier_name || "-"}
+                    </div>
+                    {po.supplier?.email_id && (
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground truncate">
+                        <Mail className="h-3 w-3 shrink-0" />
+                        {po.supplier.email_id}
+                      </div>
+                    )}
+                    {po.supplier?.phone && (
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground truncate">
+                        <Phone className="h-3 w-3 shrink-0" />
+                        {po.supplier.phone}
+                      </div>
+                    )}
+                    {(po.supplier?.city || po.supplier?.country) && (
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground truncate">
+                        <MapPin className="h-3 w-3 shrink-0" />
+                        {[po.supplier.city, po.supplier.country].filter(Boolean).join(", ")}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground mb-1">
+                    Delivery Location
+                  </p>
+                  <div className="rounded-md border px-3 py-2 text-sm truncate" title={po.delivertto_location_name || undefined}>
+                    {po.delivertto_location_name || "-"}
+                    {po.shipto_address && (
+                      <p className="text-xs text-muted-foreground mt-0.5 truncate">{po.shipto_address}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground mb-1">
+                    Payment Terms
+                  </p>
+                  <div className="rounded-md border px-3 py-2 text-sm truncate">
+                    {po.payment_terms_name || "-"}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground mb-1">
+                    Currency
+                  </p>
+                  <div className="rounded-md border px-3 py-2 text-sm">
+                    {po.po_currency || "USD"}
+                  </div>
+                </div>
+              </div>
+
               {po.advance_flag === "Y" && (
-                <>
-                  <Separator className="my-2" />
-                  <div className="flex justify-between items-center gap-2">
-                    <span className="text-muted-foreground shrink-0">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground mb-1">
                       Advance Payment
-                    </span>
-                    <Badge variant="secondary" className="text-xs">
-                      {po.advance_percentage
-                        ? `${po.advance_percentage}%`
-                        : "Yes"}
-                    </Badge>
+                    </p>
+                    <div className="rounded-md border px-3 py-2 text-sm">
+                      <Badge variant="secondary" className="text-xs">
+                        {po.advance_percentage ? `${po.advance_percentage}%` : "Yes"}
+                      </Badge>
+                    </div>
                   </div>
                   {po.advance_percentage && po.po_total_cost ? (
-                    <div className="flex justify-between gap-2">
-                      <span className="text-muted-foreground shrink-0">
+                    <div>
+                      <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground mb-1">
                         Advance Amount
-                      </span>
-                      <span className="font-medium text-right whitespace-nowrap">
+                      </p>
+                      <div className="rounded-md border px-3 py-2 text-sm">
                         {formatCurrency(
                           String(
                             (parseFloat(String(po.po_total_cost)) *
@@ -3863,56 +3773,31 @@ export default function PurchaseOrderDetail() {
                           ),
                           po.po_currency,
                         )}
-                      </span>
+                      </div>
                     </div>
                   ) : null}
-                </>
+                </div>
               )}
-            </CardContent>
-          </Card>
 
-          <Card className="break-words">
-            <CardHeader className="py-3 px-4">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <DollarSign className="h-4 w-4" />
-                Payment & Amount
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 px-4 pb-4 pt-0 text-sm">
-              <div className="flex justify-between gap-2">
-                <span className="text-muted-foreground shrink-0">
-                  Payment Terms
-                </span>
-                <span className="font-medium text-right truncate">
-                  {po.payment_terms_name || "-"}
-                </span>
-              </div>
-              <div className="flex justify-between gap-2">
-                <span className="text-muted-foreground shrink-0">Currency</span>
-                <span className="font-medium text-right">
-                  {po.po_currency || "USD"}
-                </span>
-              </div>
               {po.budget_name && !isVendorUser && (
-                <div className="space-y-0.5">
-                  <p className="text-xs text-muted-foreground">Budget</p>
-                  <p className="text-sm font-medium break-words">
-                    {po.budget_name}
+                <div>
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground mb-1">
+                    Budget
                   </p>
                   {(() => {
                     const matchedBudgetLine = editBudgetLines.find(
-                      (bl) =>
-                        String(bl.id) === String(po?.budget_segment),
+                      (bl) => String(bl.id) === String(po?.budget_segment),
                     );
-                    if (!matchedBudgetLine) return null;
-                    const availableAmount = Math.max(
-                      0,
-                      (parseFloat(matchedBudgetLine.amount) || 0) -
-                      (parseFloat(matchedBudgetLine.consumed_amount) || 0) -
-                      (parseFloat(matchedBudgetLine.reserved_amount) || 0),
-                    );
-                    const currencySymbol =
-                      matchedBudgetLine.budget_curr === "INR"
+                    const availableAmount = matchedBudgetLine
+                      ? Math.max(
+                          0,
+                          (parseFloat(matchedBudgetLine.amount) || 0) -
+                          (parseFloat(matchedBudgetLine.consumed_amount) || 0) -
+                          (parseFloat(matchedBudgetLine.reserved_amount) || 0),
+                        )
+                      : null;
+                    const currencySymbol = matchedBudgetLine
+                      ? matchedBudgetLine.budget_curr === "INR"
                         ? "₹ "
                         : matchedBudgetLine.budget_curr === "USD"
                           ? "$ "
@@ -3922,67 +3807,459 @@ export default function PurchaseOrderDetail() {
                               ? "€ "
                               : matchedBudgetLine.budget_curr === "GBP"
                                 ? "£ "
-                                : `${matchedBudgetLine.budget_curr} `;
+                                : `${matchedBudgetLine.budget_curr} `
+                      : "";
                     return (
-                      <p className="text-xs text-green-600">
-                        Available - {currencySymbol}
-                        {availableAmount.toLocaleString("en-IN", {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}
-                      </p>
+                      <div className="rounded-md border px-3 py-2 text-sm flex items-center justify-between flex-wrap gap-2">
+                        <span className="flex items-center gap-1 truncate">
+                          <DollarSign className="h-3 w-3 text-muted-foreground shrink-0" />
+                          {po.budget_name}
+                        </span>
+                        {availableAmount !== null && (
+                          <span className="text-xs font-medium text-primary shrink-0">
+                            Available - {currencySymbol}
+                            {availableAmount.toLocaleString("en-IN", {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}
+                          </span>
+                        )}
+                      </div>
                     );
                   })()}
                 </div>
               )}
-              <Separator className="my-2" />
-              <div className="flex justify-between gap-2">
-                <span className="text-muted-foreground shrink-0">
-                  Gross Amount
-                </span>
-                <span className="font-medium text-right whitespace-nowrap">
-                  {formatCurrency(netAmount, po.po_currency)}
-                </span>
+
+              <div>
+                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground mb-1">
+                  Notes
+                </p>
+                <Textarea
+                  value={po.po_notes || ""}
+                  readOnly
+                  placeholder="No notes provided"
+                  rows={2}
+                  className="resize-none bg-muted/30"
+                  data-testid="text-po-notes"
+                />
               </div>
-              <div className="flex justify-between gap-2">
-                <span className="text-muted-foreground shrink-0">Tax</span>
-                <span className="font-medium text-right whitespace-nowrap">
-                  {formatCurrency(taxAmount, po.po_currency)}
-                </span>
+
+              {((po.pr_number && !isVendorUser) || po.attribute_5) && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t">
+                  {po.pr_number && !isVendorUser && (
+                    <div>
+                      <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground mb-1">
+                        Source PR
+                      </p>
+                      <div className="rounded-md border px-3 py-2 text-sm">
+                        <Link href={`/app/requisitions/${po.pr_number}`}>
+                          <span className="text-primary hover:underline font-medium">
+                            {po.pr_number}
+                          </span>
+                        </Link>
+                      </div>
+                    </div>
+                  )}
+                  {po.attribute_5 && (
+                    <div>
+                      <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground mb-1">
+                        Source Bid
+                      </p>
+                      <div className="rounded-md border px-3 py-2 text-sm">
+                        <Link href={!isVendorUser ? `/app/bids/${po.attribute_6}/view` : `/app/suppbids/${po.attribute_6}/view`}>
+                          <span className="text-primary hover:underline font-medium">
+                            {po.attribute_5}
+                          </span>
+                        </Link>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t">
+                <div>
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground mb-1">
+                    Gross Amount
+                  </p>
+                  <div className="rounded-md border px-3 py-2 text-sm">
+                    {formatCurrency(netAmount, po.po_currency)}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground mb-1">
+                    Tax
+                  </p>
+                  <div className="rounded-md border px-3 py-2 text-sm">
+                    {formatCurrency(taxAmount, po.po_currency)}
+                  </div>
+                </div>
               </div>
-              <Separator />
-              <div className="flex justify-between gap-2">
-                <span className="font-medium shrink-0">Net Amount</span>
-                <span className="font-bold text-lg whitespace-nowrap">
+              <div className="rounded-md border px-3 py-2 text-sm flex items-center justify-between bg-primary/5">
+                <span className="font-medium">Net Amount</span>
+                <span className="font-bold text-lg">
                   {formatCurrency(totalAmount, po.po_currency)}
                 </span>
               </div>
             </CardContent>
           </Card>
-        </div>
 
-        {/* Approval History Section - Hidden for vendor users, only shown when status is not Draft */}
-        {!isDraft && (!isVendorUser || po.po_status === "More Info Required" || po.po_status === "More Information Required" || po.po_status?.toLowerCase() === "more") && (
-          <Accordion
-            type="single"
-            collapsible
-            defaultValue="approval-history"
-            className="mb-4"
-          >
-            <AccordionItem
-              value="approval-history"
-              className="border rounded-lg"
-            >
-              <AccordionTrigger className="px-4 py-2 hover:no-underline">
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-semibold">
-                    Approval History
-                  </span>
-                </div>
-              </AccordionTrigger>
-              <AccordionContent className="px-4 pb-0">
-                <div className="overflow-x-auto w-full pb-4 custom-scrollbar min-w-0">
+          {/* Right sidebar column */}
+          <div className="flex flex-col gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {/* Status stepper card - includes Receipt/Invoice/Payment sub-status as additional nodes */}
+              <Card className="h-full flex flex-col">
+                <CardHeader className="py-3 px-4 bg-primary/5 border-b border-primary/20">
+                  <CardTitle className="text-sm">
+                    Status - {po.po_status || "Draft"}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="px-4 py-4 flex-1">
+                  {(() => {
+                    // PO lifecycle: Draft -> submitted for approval (Pending
+                    // Approval / More Info Required) -> Approved -> Complete
+                    // (or Closed). Rejected/Cancelled are terminal off-path
+                    // outcomes, shown at the "Submitted" stage with
+                    // destructive styling since that is as far as the PO got.
+                    const stageLabels = ["Submitted", "Approved", "Complete"];
+                    let currentStage = 0;
+                    if (isPendingApproval || isMoreInfoRequired) currentStage = 1;
+                    if (isApproved) currentStage = 2;
+                    if (isComplete || isClosed) currentStage = 3;
+                    const isTerminalNegative = isRejected || isCancelled;
+                    if (isTerminalNegative) currentStage = 1;
+
+                    const hasFulfillmentStages = !!(po.attribute_8 || po.attribute_9 || po.attribute_10);
+
+                    const fulfillmentStages = [
+                      { label: "Receipt", value: po.attribute_8, icon: Truck },
+                      { label: "Invoice", value: po.attribute_9, icon: Receipt },
+                      { label: "Payment", value: po.attribute_10, icon: Wallet },
+                    ];
+
+                    return (
+                      <>
+                        {stageLabels.map((label, idx) => {
+                          const stageNum = idx + 1;
+                          const isDone = currentStage > stageNum;
+                          const isActive = currentStage === stageNum;
+                          const isNegativeActive = isTerminalNegative && isActive;
+                          const isLastMainStage = idx === stageLabels.length - 1;
+                          return (
+                            <div key={label} className="flex items-start gap-3" data-testid={`status-stage-${stageNum}`}>
+                              <div className="flex flex-col items-center">
+                                <div
+                                  className={cn(
+                                    "h-9 w-9 rounded-full border-2 flex items-center justify-center shrink-0",
+                                    isNegativeActive
+                                      ? "border-destructive"
+                                      : isDone || isActive
+                                        ? "border-primary"
+                                        : "border-muted-foreground/40",
+                                  )}
+                                >
+                                  <div
+                                    className={cn(
+                                      "h-4 w-4 rounded-full",
+                                      isNegativeActive
+                                        ? "bg-destructive"
+                                        : isDone || isActive
+                                          ? "bg-primary"
+                                          : "bg-muted-foreground/60",
+                                    )}
+                                  />
+                                </div>
+                                {(!isLastMainStage || hasFulfillmentStages) && (
+                                  <div className="w-0 flex-1 min-h-[28px] border-l-2 border-dotted border-primary" />
+                                )}
+                              </div>
+                              <p
+                                className={cn(
+                                  "text-sm pb-6 mt-2",
+                                  isNegativeActive
+                                    ? "text-destructive font-medium"
+                                    : isActive
+                                      ? "text-primary font-medium"
+                                      : isDone
+                                        ? "font-medium"
+                                        : "text-muted-foreground",
+                                )}
+                              >
+                                {label}
+                                {isNegativeActive && (
+                                  <span className="ml-1.5 text-xs">
+                                    ({isRejected ? "Rejected" : "Cancelled"})
+                                  </span>
+                                )}
+                              </p>
+                            </div>
+                          );
+                        })}
+                        {hasFulfillmentStages && fulfillmentStages.map((stage, idx) => {
+                          const value = (stage.value || "").toLowerCase();
+                          const isDone = value === "received" || value === "invoiced" || value === "paid";
+                          const isPartial = value.startsWith("partially");
+                          const isSet = !!stage.value;
+                          const Icon = stage.icon;
+                          return (
+                            <div key={stage.label} className="flex items-start gap-3" data-testid={`fulfillment-stage-${stage.label.toLowerCase()}`}>
+                              <div className="flex flex-col items-center">
+                                <div
+                                  className={cn(
+                                    "h-9 w-9 rounded-full border-2 flex items-center justify-center shrink-0",
+                                    isDone
+                                      ? "border-primary"
+                                      : isPartial
+                                        ? "border-primary/60"
+                                        : "border-muted-foreground/40",
+                                  )}
+                                >
+                                  <div
+                                    className={cn(
+                                      "h-4 w-4 rounded-full flex items-center justify-center",
+                                      isDone
+                                        ? "bg-primary"
+                                        : isPartial
+                                          ? "bg-primary/60"
+                                          : "bg-muted-foreground/60",
+                                    )}
+                                  >
+                                    <Icon className="h-2.5 w-2.5 text-primary-foreground" />
+                                  </div>
+                                </div>
+                                {idx < fulfillmentStages.length - 1 && (
+                                  <div className="w-0 flex-1 min-h-[28px] border-l-2 border-dotted border-primary" />
+                                )}
+                              </div>
+                              <p
+                                className={cn(
+                                  "text-sm pb-6 mt-2",
+                                  isDone || isPartial ? "text-primary font-medium" : "text-muted-foreground",
+                                )}
+                              >
+                                {stage.label}
+                                {isSet && (
+                                  <span className="ml-1.5 text-xs text-muted-foreground">
+                                    ({stage.value})
+                                  </span>
+                                )}
+                              </p>
+                            </div>
+                          );
+                        })}
+                      </>
+                    );
+                  })()}
+                </CardContent>
+              </Card>
+
+              {/* Upload Document card — real attachments, via the same
+                  /api/purchase-orders/:poNumber/documents endpoints the
+                  CollaborationPanel below already uses for this PO. */}
+              <Card className="h-full flex flex-col">
+                <CardHeader className="py-3 px-4 bg-primary/5 border-b border-primary/20">
+                  <CardTitle className="text-sm">Upload Document</CardTitle>
+                </CardHeader>
+                <CardContent className="px-4 py-4 space-y-1 flex-1">
+                  <input
+                    ref={uploadDocInputRef}
+                    type="file"
+                    className="hidden"
+                    accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.jpg,.jpeg,.png,.gif,.webp,.bmp"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) uploadPoDocumentMutation.mutate(file);
+                      e.target.value = "";
+                    }}
+                    data-testid="input-upload-document"
+                  />
+                  <button
+                    type="button"
+                    className="w-full rounded-md border-2 border-dashed border-muted-foreground/30 flex flex-col items-center justify-center py-3 gap-1.5 text-center hover-elevate disabled:opacity-60"
+                    onClick={() => uploadDocInputRef.current?.click()}
+                    disabled={uploadPoDocumentMutation.isPending}
+                    data-testid="button-upload-document"
+                  >
+                    <div className="h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
+                      {uploadPoDocumentMutation.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Plus className="h-4 w-4" />
+                      )}
+                    </div>
+                    <p className="text-xs font-medium text-primary">Upload Document</p>
+                  </button>
+
+                  <div className="pt-1">
+                    {poDocuments.length === 0 ? (
+                      <p className="text-xs text-muted-foreground text-center py-3">
+                        No documents attached
+                      </p>
+                    ) : (
+                      poDocuments.slice(0, 5).map((doc, i) => (
+                        <div
+                          key={doc.id}
+                          className={cn(
+                            "flex items-center justify-between gap-2 py-2 px-1 text-xs",
+                            i < Math.min(poDocuments.length, 5) - 1 && "border-b",
+                          )}
+                          data-testid={`row-document-${doc.id}`}
+                        >
+                          <span className="truncate text-muted-foreground" title={doc.file_name}>
+                            {doc.file_name}
+                          </span>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => handleViewPoDocument(doc)}
+                              className="h-6 w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover-elevate"
+                              data-testid={`button-view-document-${doc.id}`}
+                            >
+                              <Eye className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => deletePoDocumentMutation.mutate(doc.id)}
+                              disabled={deletePoDocumentMutation.isPending}
+                              className="h-6 w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover-elevate disabled:opacity-60"
+                              data-testid={`button-delete-document-${doc.id}`}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                    {poDocuments.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => collaborationPanelRef.current?.open()}
+                        className="w-full text-center text-xs font-medium text-primary hover:underline pt-2"
+                        data-testid="button-view-all-documents"
+                      >
+                        View all
+                      </button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Quick actions card — mirrors the header's Submit/Delete/Edit
+                  buttons for Draft POs, same handlers as the header versions. */}
+              {isDraft && (isBuyer || isSuperadmin) && (
+                <Card className="h-full flex flex-col">
+                  <CardHeader className="py-3 px-4 bg-primary/5 border-b border-primary/20">
+                    <CardTitle className="text-sm">Quick Actions</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4 flex-1 flex flex-col gap-3">
+                    <Button
+                      className="font-semibold"
+                      onClick={() => {
+                        if (!po.items || po.items.length === 0) {
+                          toast({
+                            title: "Cannot submit PO",
+                            description: "Please add at least one line item before submitting for approval.",
+                            variant: "destructive",
+                          });
+                          return;
+                        }
+                        if (parseFloat(String(totalAmount)) <= 0) {
+                          toast({
+                            title: "Cannot submit PO",
+                            description: "Purchase order amount must be greater than zero.",
+                            variant: "destructive",
+                          });
+                          return;
+                        }
+                        if (isAIEnabled("AI_BUDGET_VALIDATION") && po.budget_name) {
+                          if (!budgetValidation) {
+                            toast({
+                              title: "Budget check required",
+                              description: "Please run the budget check before submitting this PO for approval.",
+                              variant: "destructive",
+                            });
+                            return;
+                          }
+                          if (!budgetValidation.isWithinBudget) {
+                            toast({
+                              title: "Cannot submit — over budget",
+                              description: "This PO exceeds the available budget. Please adjust the PO or contact your budget owner.",
+                              variant: "destructive",
+                              duration: 6000,
+                            });
+                            return;
+                          }
+                        }
+                        setSubmitConfirmOpen(true);
+                      }}
+                      disabled={submitMutation.isPending}
+                      data-testid="button-submit-approval-sidebar"
+                    >
+                      {submitMutation.isPending ? (
+                        <Loader2 className="h-4 w-4 shrink-0 animate-spin mr-2" />
+                      ) : (
+                        <Send className="h-4 w-4 mr-2" />
+                      )}
+                      Submit for Approval
+                    </Button>
+
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="text-destructive hover:text-destructive border-destructive/40"
+                          data-testid="button-delete-po-sidebar"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Delete
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Purchase Order</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete this purchase order? This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel data-testid="button-delete-cancel-sidebar">
+                            Cancel
+                          </AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => deleteMutation.mutate()}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            data-testid="button-delete-confirm-sidebar"
+                          >
+                            {deleteMutation.isPending && (
+                              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                            )}
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+
+                    <Button
+                      variant="outline"
+                      onClick={handleOpenEdit}
+                      data-testid="button-edit-po-sidebar"
+                    >
+                      <Pencil className="h-4 w-4 mr-2" />
+                      Edit Purchase Order
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+
+            {/* Approval History Section - Hidden for vendor users, only shown when status is not Draft */}
+            {!isDraft && (!isVendorUser || po.po_status === "More Info Required" || po.po_status === "More Information Required" || po.po_status?.toLowerCase() === "more") && (
+              <Card>
+                <CardHeader className="py-3 px-4 bg-primary/5 border-b border-primary/20">
+                  <CardTitle className="text-sm">Approval history</CardTitle>
+                </CardHeader>
+                <CardContent className="px-4 py-4">
+                  <div className="overflow-x-auto w-full pb-1 custom-scrollbar min-w-0">
                   {/* Horizontal Timeline */}
                   <div className="flex items-start min-w-max">
                     {(() => {
@@ -4183,11 +4460,12 @@ export default function PurchaseOrderDetail() {
                       });
                     })()}
                   </div>
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
-        )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </div>
 
         {po?.attribute_2 === "Submitted" ?
           <Card>
@@ -4236,400 +4514,6 @@ export default function PurchaseOrderDetail() {
               </CardContent>
             </Card>
           ) : <></>}
-
-        {aiAnalysisResult && isAIEnabled("AI_PO_ANOMALY_DETECTION") && (
-          <Card data-testid="card-ai-analysis">
-            <CardHeader className="py-3 px-4">
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <Brain className="h-4 w-4" />
-                  AI Analysis
-                </CardTitle>
-                <div className="flex items-center gap-2">
-                  {aiAnalysisResult.anomaly?.summary && (
-                    <Badge
-                      variant={
-                        aiAnalysisResult.anomaly.summary.overallRisk === "high"
-                          ? "destructive"
-                          : aiAnalysisResult.anomaly.summary.overallRisk ===
-                            "medium"
-                            ? "default"
-                            : aiAnalysisResult.anomaly.summary.overallRisk ===
-                              "low"
-                              ? "secondary"
-                              : "outline"
-                      }
-                      data-testid="badge-overall-risk"
-                    >
-                      {aiAnalysisResult.anomaly.summary.overallRisk ===
-                        "none" ? (
-                        <ShieldCheck className="h-3 w-3 mr-1" />
-                      ) : (
-                        <ShieldAlert className="h-3 w-3 mr-1" />
-                      )}
-                      {aiAnalysisResult.anomaly.summary.overallRisk?.toUpperCase()}{" "}
-                      RISK
-                    </Badge>
-                  )}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setAiAnalysisResult(null)}
-                    data-testid="button-dismiss-analysis"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="px-4 pb-4 pt-0 space-y-4">
-              {aiAnalysisResult.anomaly?.summary && (
-                <div
-                  className="space-y-3"
-                  data-testid="section-anomaly-analysis"
-                >
-                  <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                    <ShieldAlert className="h-3 w-3" />
-                    Anomaly Detection
-                    <span className="text-xs font-normal normal-case">
-                      ({aiAnalysisResult.anomaly.summary.totalAnomalies || 0}{" "}
-                      finding
-                      {(aiAnalysisResult.anomaly.summary.totalAnomalies ||
-                        0) !== 1
-                        ? "s"
-                        : ""}
-                      )
-                    </span>
-                  </div>
-                  <p
-                    className="text-sm text-muted-foreground"
-                    data-testid="text-analysis-narrative"
-                  >
-                    {aiAnalysisResult.anomaly.summary.narrative}
-                  </p>
-                  {aiAnalysisResult.anomaly.summary.totalAnomalies > 0 && (
-                    <div className="flex gap-3 text-xs flex-wrap">
-                      {aiAnalysisResult.anomaly.summary.highSeverity > 0 && (
-                        <span className="flex items-center gap-1 text-destructive">
-                          <TriangleAlert className="h-3 w-3" />{" "}
-                          {aiAnalysisResult.anomaly.summary.highSeverity} High
-                        </span>
-                      )}
-                      {aiAnalysisResult.anomaly.summary.mediumSeverity > 0 && (
-                        <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
-                          <AlertTriangle className="h-3 w-3" />{" "}
-                          {aiAnalysisResult.anomaly.summary.mediumSeverity}{" "}
-                          Medium
-                        </span>
-                      )}
-                      {aiAnalysisResult.anomaly.summary.lowSeverity > 0 && (
-                        <span className="flex items-center gap-1 text-muted-foreground">
-                          <Activity className="h-3 w-3" />{" "}
-                          {aiAnalysisResult.anomaly.summary.lowSeverity} Low
-                        </span>
-                      )}
-                    </div>
-                  )}
-                  {(aiAnalysisResult.anomaly.anomalies || []).length > 0 && (
-                    <Accordion type="multiple" className="space-y-2">
-                      {(aiAnalysisResult.anomaly.anomalies || []).map(
-                        (anomaly: any, idx: number) => (
-                          <AccordionItem
-                            key={idx}
-                            value={`anomaly-${idx}`}
-                            className={cn(
-                              "border rounded-lg px-3",
-                              anomaly.severity === "high" &&
-                              "border-destructive/40 bg-destructive/5",
-                              anomaly.severity === "medium" &&
-                              "border-amber-500/40 bg-amber-500/5",
-                              anomaly.severity === "low" && "border-border",
-                            )}
-                            data-testid={`anomaly-item-${idx}`}
-                          >
-                            <AccordionTrigger className="py-2 hover:no-underline">
-                              <div className="flex items-center gap-2 text-sm">
-                                {anomaly.type === "price_anomaly" && (
-                                  <TrendingUp className="h-4 w-4 shrink-0" />
-                                )}
-                                {anomaly.type === "duplicate_po" && (
-                                  <Copy className="h-4 w-4 shrink-0" />
-                                )}
-                                {anomaly.type === "unusual_quantity" && (
-                                  <TrendingDown className="h-4 w-4 shrink-0" />
-                                )}
-                                {anomaly.type === "vendor_inconsistency" && (
-                                  <AlertCircle className="h-4 w-4 shrink-0" />
-                                )}
-                                <span className="font-medium text-left">
-                                  {anomaly.title}
-                                </span>
-                                <Badge
-                                  variant={
-                                    anomaly.severity === "high"
-                                      ? "destructive"
-                                      : anomaly.severity === "medium"
-                                        ? "default"
-                                        : "secondary"
-                                  }
-                                  className="text-[10px] ml-auto shrink-0"
-                                >
-                                  {anomaly.severity}
-                                </Badge>
-                              </div>
-                            </AccordionTrigger>
-                            <AccordionContent className="pb-3 space-y-2 text-sm">
-                              <p>{anomaly.description}</p>
-                              {anomaly.evidence && (
-                                <div className="bg-muted/50 rounded p-2 text-xs">
-                                  <span className="font-medium">
-                                    Evidence:{" "}
-                                  </span>
-                                  {anomaly.evidence}
-                                </div>
-                              )}
-                              {anomaly.suggestedAction && (
-                                <div className="text-xs text-muted-foreground">
-                                  <span className="font-medium">
-                                    Suggested Action:{" "}
-                                  </span>
-                                  {anomaly.suggestedAction}
-                                </div>
-                              )}
-                              {anomaly.itemName && (
-                                <span className="text-xs text-muted-foreground">
-                                  Item: {anomaly.itemName}
-                                </span>
-                              )}
-                            </AccordionContent>
-                          </AccordionItem>
-                        ),
-                      )}
-                    </Accordion>
-                  )}
-                </div>
-              )}
-
-              {aiAnalysisResult.deliveryRisk && (
-                  <>
-                    {aiAnalysisResult.anomaly?.summary && (
-                      <div className="border-t" />
-                    )}
-                    <div
-                      className="space-y-3"
-                      data-testid="section-delivery-risk"
-                    >
-                      <div className="flex items-center justify-between flex-wrap gap-2">
-                        <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                          <Truck className="h-3 w-3" />
-                          Delivery Risk Prediction
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge
-                            variant={
-                              aiAnalysisResult.deliveryRisk.riskLevel === "high"
-                                ? "destructive"
-                                : aiAnalysisResult.deliveryRisk.riskLevel ===
-                                  "medium"
-                                  ? "default"
-                                  : aiAnalysisResult.deliveryRisk.riskLevel ===
-                                    "low"
-                                    ? "secondary"
-                                    : "outline"
-                            }
-                            data-testid="badge-delivery-risk"
-                          >
-                            {aiAnalysisResult.deliveryRisk.riskLevel ===
-                              "none" ? (
-                              <ShieldCheck className="h-3 w-3 mr-1" />
-                            ) : (
-                              <AlertTriangle className="h-3 w-3 mr-1" />
-                            )}
-                            {aiAnalysisResult.deliveryRisk.riskLevel ===
-                            "insufficient_data"
-                              ? "INSUFFICIENT DATA"
-                              : `${aiAnalysisResult.deliveryRisk.riskLevel.toUpperCase()} RISK`}
-                          </Badge>
-                          {aiAnalysisResult.deliveryRisk.riskLevel !==
-                            "insufficient_data" && (
-                            <span
-                              className="text-xs text-muted-foreground"
-                              data-testid="text-delivery-risk-stats"
-                            >
-                              {aiAnalysisResult.deliveryRisk.lateCount} late /{" "}
-                              {aiAnalysisResult.deliveryRisk.totalAnalyzed}{" "}
-                              orders
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <p
-                        className="text-sm text-muted-foreground"
-                        data-testid="text-delivery-risk-narrative"
-                      >
-                        {aiAnalysisResult.deliveryRisk.narrative}
-                      </p>
-                      {aiAnalysisResult.deliveryRisk.recommendation && (
-                        <p
-                          className="text-sm"
-                          data-testid="text-delivery-risk-recommendation"
-                        >
-                          <span className="font-medium">Recommendation: </span>
-                          <span className="text-muted-foreground">
-                            {aiAnalysisResult.deliveryRisk.recommendation}
-                          </span>
-                        </p>
-                      )}
-                      <div className="flex gap-4 text-xs flex-wrap">
-                        {aiAnalysisResult.deliveryRisk.lateCount > 0 && (
-                          <span
-                            className="flex items-center gap-1 text-destructive"
-                            data-testid="text-late-count"
-                          >
-                            <Clock className="h-3 w-3" />{" "}
-                            {aiAnalysisResult.deliveryRisk.lateCount} Late
-                          </span>
-                        )}
-                        {aiAnalysisResult.deliveryRisk.onTimeCount > 0 && (
-                          <span
-                            className="flex items-center gap-1 text-green-600 dark:text-green-400"
-                            data-testid="text-ontime-count"
-                          >
-                            <CheckCircle2 className="h-3 w-3" />{" "}
-                            {aiAnalysisResult.deliveryRisk.onTimeCount} On Time
-                          </span>
-                        )}
-                        {aiAnalysisResult.deliveryRisk.earlyCount > 0 && (
-                          <span
-                            className="flex items-center gap-1 text-blue-600 dark:text-blue-400"
-                            data-testid="text-early-count"
-                          >
-                            <TrendingDown className="h-3 w-3" />{" "}
-                            {aiAnalysisResult.deliveryRisk.earlyCount} Early
-                          </span>
-                        )}
-                        {aiAnalysisResult.deliveryRisk.avgDelayDays > 0 && (
-                          <span
-                            className="flex items-center gap-1 text-muted-foreground"
-                            data-testid="text-avg-delay"
-                          >
-                            Avg delay:{" "}
-                            {aiAnalysisResult.deliveryRisk.avgDelayDays} days
-                          </span>
-                        )}
-                        {aiAnalysisResult.deliveryRisk.trend &&
-                          aiAnalysisResult.deliveryRisk.trend !== "unknown" && (
-                            <span
-                              className={`flex items-center gap-1 ${
-                                aiAnalysisResult.deliveryRisk.trend ===
-                                "improving"
-                                  ? "text-green-600 dark:text-green-400"
-                                  : aiAnalysisResult.deliveryRisk.trend ===
-                                      "worsening"
-                                    ? "text-destructive"
-                                    : "text-muted-foreground"
-                              }`}
-                              data-testid="text-delivery-trend"
-                              title={
-                                aiAnalysisResult.deliveryRisk.trendSummary ||
-                                undefined
-                              }
-                            >
-                              {aiAnalysisResult.deliveryRisk.trend ===
-                              "improving" ? (
-                                <TrendingUp className="h-3 w-3" />
-                              ) : aiAnalysisResult.deliveryRisk.trend ===
-                                "worsening" ? (
-                                <TrendingDown className="h-3 w-3" />
-                              ) : (
-                                <Clock className="h-3 w-3" />
-                              )}
-                              Trend:{" "}
-                              {aiAnalysisResult.deliveryRisk.trend
-                                .charAt(0)
-                                .toUpperCase() +
-                                aiAnalysisResult.deliveryRisk.trend.slice(1)}
-                            </span>
-                          )}
-                      </div>
-                      {aiAnalysisResult.deliveryRisk.deliveryHistory &&
-                        aiAnalysisResult.deliveryRisk.deliveryHistory.length >
-                        0 && (
-                          <Accordion type="single" collapsible>
-                            <AccordionItem
-                              value="delivery-history"
-                              className="border-none"
-                            >
-                              <AccordionTrigger className="py-1 hover:no-underline text-xs text-muted-foreground">
-                                View delivery history (
-                                {
-                                  aiAnalysisResult.deliveryRisk.deliveryHistory
-                                    .length
-                                }{" "}
-                                orders)
-                              </AccordionTrigger>
-                              <AccordionContent>
-                                <div className="space-y-1 mt-1">
-                                  {aiAnalysisResult.deliveryRisk.deliveryHistory.map(
-                                    (item: any, idx: number) => (
-                                      <div
-                                        key={idx}
-                                        className="flex items-center justify-between text-xs py-1 border-b last:border-0"
-                                        data-testid={`delivery-history-row-${idx}`}
-                                      >
-                                        <span className="font-medium">
-                                          {item.poNumber}
-                                        </span>
-                                        <div className="flex items-center gap-3">
-                                          <span className="text-muted-foreground">
-                                            {item.requiredDate || "N/A"}{" "}
-                                            {item.receivedDate
-                                              ? `\u2192 ${item.receivedDate}`
-                                              : ""}
-                                          </span>
-                                          <Badge
-                                            variant={
-                                              item.status === "late"
-                                                ? "destructive"
-                                                : item.status === "early"
-                                                  ? "secondary"
-                                                  : "outline"
-                                            }
-                                            className="text-[10px]"
-                                            data-testid={`badge-delivery-status-${idx}`}
-                                          >
-                                            {item.status === "late"
-                                              ? `${item.delayDays}d late`
-                                              : item.status === "early"
-                                                ? `${Math.abs(item.delayDays)}d early`
-                                                : item.status === "on_time"
-                                                  ? "On time"
-                                                  : "N/A"}
-                                          </Badge>
-                                        </div>
-                                      </div>
-                                    ),
-                                  )}
-                                </div>
-                              </AccordionContent>
-                            </AccordionItem>
-                          </Accordion>
-                        )}
-                    </div>
-                  </>
-                )}
-
-              <p className="text-[10px] text-muted-foreground text-right">
-                Analyzed at{" "}
-                {new Date(
-                  aiAnalysisResult.anomaly?.analyzedAt ||
-                  aiAnalysisResult.deliveryRisk?.analyzedAt ||
-                  new Date(),
-                ).toLocaleString()}
-              </p>
-            </CardContent>
-          </Card>
-        )}
 
         {budgetValidation && isAIEnabled("AI_BUDGET_VALIDATION") && (
           <Card
@@ -4701,10 +4585,10 @@ export default function PurchaseOrderDetail() {
         )}
 
         <Card>
-          <CardHeader className="py-3 px-4">
-            <div className="flex items-center justify-between">
+          <CardHeader className="py-3 px-4 bg-primary/5 border-b border-primary/20">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <CardTitle className="text-sm flex items-center gap-2">
-                <Package className="h-4 w-4" />
+                <Package className="h-4 w-4 text-primary" />
                 Line Items ({po.items?.length || 0})
               </CardTitle>
               {(isDraft || isMoreInfoRequired) && (
@@ -5401,15 +5285,28 @@ export default function PurchaseOrderDetail() {
       />
 
       {/* Edit PO Sheet */}
-      <Sheet open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <SheetContent className="w-[50vw] sm:max-w-[50vw] overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle>Edit Purchase Order - {po?.po_number}</SheetTitle>
-            <SheetDescription>
-              Update the purchase order details below.
-            </SheetDescription>
-          </SheetHeader>
-          <div className="grid grid-cols-2 gap-4 mt-4">
+      <FormSheet
+        open={isEditOpen}
+        onOpenChange={setIsEditOpen}
+        title={`Edit Purchase Order - ${po?.po_number}`}
+        description="Update the purchase order details below."
+        onSubmit={handleUpdatePOLine}
+        submitLabel={editMutation.isPending ? "Saving..." : "Save Changes"}
+        isSubmitting={editMutation.isPending}
+        submitDisabled={
+          !editForm.description ||
+          !editForm.supplierId ||
+          !editForm.orgId ||
+          !editForm.currency ||
+          !editForm.budgetId ||
+          !editForm.paymentTermsId
+        }
+        widthClassName="w-full sm:max-w-3xl"
+      >
+          <p className="text-xs text-muted-foreground mb-4">
+            <span className="text-destructive">*</span> Indicates mandatory fields
+          </p>
+          <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2 space-y-2">
               <Label>
                 Description <span className="text-destructive">*</span>
@@ -5792,35 +5689,7 @@ export default function PurchaseOrderDetail() {
               )}
             </div>
           </div>
-          <SheetFooter className="mt-6 gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setIsEditOpen(false)}
-              data-testid="button-cancel-edit"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={() => handleUpdatePOLine()}
-              disabled={
-                editMutation.isPending ||
-                !editForm.description ||
-                !editForm.supplierId ||
-                !editForm.orgId ||
-                !editForm.currency ||
-                !editForm.budgetId ||
-                !editForm.paymentTermsId
-              }
-              data-testid="button-save-po"
-            >
-              {editMutation.isPending && (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              )}
-              Save Changes
-            </Button>
-          </SheetFooter>
-        </SheetContent>
-      </Sheet>
+      </FormSheet>
 
       {/* Submit for Approval Confirmation Dialog */}
       <Dialog open={submitConfirmOpen} onOpenChange={setSubmitConfirmOpen}>
@@ -6078,7 +5947,7 @@ export default function PurchaseOrderDetail() {
       />
 
       {/* Add/Edit Line Item Sheet */}
-      <Sheet
+      <FormSheet
         open={addLineSheetOpen}
         onOpenChange={(open) => {
           setAddLineSheetOpen(open);
@@ -6087,7 +5956,6 @@ export default function PurchaseOrderDetail() {
             setItemEntryMode("master");
             setCategoryOpen(false);
             setItemOpen(false);
-            setFmpRequestedItemKey(null);
             setNewLineItem({
               description: "",
               quantity: "1",
@@ -6105,25 +5973,18 @@ export default function PurchaseOrderDetail() {
             });
           }
         }}
+        title={editingLineId ? "Edit Line Item" : "Add Line Item"}
+        description={
+          editingLineId
+            ? "Update line item details."
+            : "Add a new line item to this purchase order."
+        }
+        onSubmit={handleSubmitLine}
+        submitLabel={editingLineId ? "Update Line Item" : "Add Line Item"}
+        isSubmitting={addLineMutation.isPending || editLineMutation.isPending}
+        widthClassName="w-full sm:max-w-[600px]"
       >
-        <SheetContent className="w-[500px] sm:max-w-[500px] overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle className="flex items-center gap-2">
-              {editingLineId ? (
-                <Pencil className="h-5 w-5" />
-              ) : (
-                <Plus className="h-5 w-5" />
-              )}
-              {editingLineId ? "Edit Line Item" : "Add Line Item"}
-            </SheetTitle>
-            <SheetDescription>
-              {editingLineId
-                ? "Update line item details."
-                : "Add a new line item to this purchase order."}
-            </SheetDescription>
-          </SheetHeader>
-
-          <div className="space-y-4 pt-2 pb-6">
+          <div className="space-y-4 pb-6">
             {/* Item Entry Mode Toggle - Free Text hidden, master mode only */}
 
             {/* Item Master Mode - Item Selection */}
@@ -6592,102 +6453,6 @@ export default function PurchaseOrderDetail() {
                 </>}
             </div>
 
-            {isAIEnabled("AI_FMP_INTELLIGENCE") &&
-              poIsDraft &&
-              !!newLineItem.itemId && (
-                <div className="space-y-2">
-                  {!fmpRequested ? (
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      className="w-full"
-                      onClick={() => setFmpRequestedItemKey(newLineItem.itemId)}
-                      data-testid="button-fmp-benchmark"
-                    >
-                      <Sparkles className="h-4 w-4 mr-1" aria-hidden="true" />
-                      AI Fair Market Price
-                    </Button>
-                  ) : fmpFetching ? (
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      className="w-full"
-                      disabled
-                      data-testid="button-fmp-benchmark"
-                    >
-                      <Loader2
-                        className="h-4 w-4 mr-1 animate-spin"
-                        aria-hidden="true"
-                      />
-                      Computing benchmark...
-                      <span className="sr-only">
-                        Computing AI fair market price benchmark, please wait
-                      </span>
-                    </Button>
-                  ) : fmpFailed ? (
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      className="w-full"
-                      onClick={() => refetchFmpSnapshot()}
-                      data-testid="button-fmp-benchmark"
-                    >
-                      <RefreshCw className="h-4 w-4 mr-1" aria-hidden="true" />
-                      Retry AI Benchmark
-                    </Button>
-                  ) : (
-                    <>
-                      <FmpBenchmarkCard
-                        snapshot={fmpSnapshot}
-                        enteredPrice={parseFloat(newLineItem.unitPrice) || null}
-                        currency={po?.po_currency || "AED"}
-                        onUseFairPrice={(price) =>
-                          setNewLineItem((prev) => {
-                            // Tax-inclusive POs drive unit price off the Line
-                            // Total field, so writing unitPrice alone would be
-                            // overwritten on the next edit — back-solve the
-                            // inclusive total using the same formula as that
-                            // input's onChange.
-                            if (po?.tax_included !== "Yes") {
-                              return { ...prev, unitPrice: String(price) };
-                            }
-                            const quantity = parseFloat(prev.quantity) || 1;
-                            const taxRate = Number(prev.taxRate) || 0;
-                            const netFactor = 1 - taxRate / 100;
-                            if (netFactor <= 0) {
-                              return { ...prev, unitPrice: String(price) };
-                            }
-                            return {
-                              ...prev,
-                              unitPrice: String(price),
-                              inclusiveTaxAmt: Math.round(
-                                (price * quantity) / netFactor,
-                              ).toString(),
-                            };
-                          })
-                        }
-                      />
-                      {/* The trigger button is gone once the card renders, so this
-                          is the only way to re-run the analysis for the same item. */}
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        className="w-full"
-                        onClick={() => refetchFmpSnapshot()}
-                        data-testid="button-fmp-reanalyze"
-                      >
-                        <RefreshCw className="h-4 w-4 mr-1" aria-hidden="true" />
-                        Re-analyze
-                      </Button>
-                    </>
-                  )}
-                </div>
-              )}
-
             {/* Preview calculated values */}
             <div className="mt-4 p-3 bg-muted rounded-md space-y-1 text-sm">
               <div className="flex justify-between">
@@ -6771,31 +6536,7 @@ export default function PurchaseOrderDetail() {
               </div>
             </div>
           </div>
-
-          <SheetFooter className="gap-2">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setAddLineSheetOpen(false);
-                setFmpRequestedItemKey(null);
-              }}
-              data-testid="button-cancel-line"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSubmitLine}
-              disabled={addLineMutation.isPending || editLineMutation.isPending}
-              data-testid="button-save-line"
-            >
-              {(addLineMutation.isPending || editLineMutation.isPending) && (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              )}
-              {editingLineId ? "Update Line Item" : "Add Line Item"}
-            </Button>
-          </SheetFooter>
-        </SheetContent>
-      </Sheet>
+      </FormSheet>
 
       {/* Raise Delivery Note Sheet */}
       <Sheet open={isDNOpen} onOpenChange={setIsDNOpen}>

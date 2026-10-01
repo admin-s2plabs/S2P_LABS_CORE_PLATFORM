@@ -1,5 +1,4 @@
 import {
-  ArrowRight,
   BarChart3,
   Building2,
   CheckCircle,
@@ -50,10 +49,10 @@ export function HomePage() {
   ];
   const modules = [
     { icon: ShoppingCart, title: "Purchase Requisition", description: "Streamline procurement requests with intelligent approvals and automated workflows.", color: "bg-violet-50 text-violet-600" },
-    { icon: Search, title: "eSourcing", description: "Automate RFQ creation, bid analysis, and supplier selection with AI intelligence.", color: "bg-blue-50 text-blue-600" },
+    { icon: Search, title: "eSourcing", description: "Automate RFQ creation, bid analysis, and supplier selection with intelligent automation.", color: "bg-blue-50 text-blue-600" },
     { icon: Users, title: "Supplier Management", description: "Manage supplier relationships, performance tracking, and compliance monitoring.", color: "bg-teal-50 text-teal-600" },
-    { icon: FileText, title: "Contract Management", description: "Track contracts, automate renewals, and ensure compliance with AI-powered intelligence.", color: "bg-orange-50 text-orange-600" },
-    { icon: Receipt, title: "eInvoicing", description: "Automate invoice processing, validation, and payment workflows with AI accuracy.", color: "bg-pink-50 text-pink-600" },
+    { icon: FileText, title: "Contract Management", description: "Track contracts, automate renewals, and ensure compliance with built-in intelligence.", color: "bg-orange-50 text-orange-600" },
+    { icon: Receipt, title: "eInvoicing", description: "Automate invoice processing, validation, and payment workflows with precision.", color: "bg-pink-50 text-pink-600" },
     { icon: BarChart3, title: "Spend Analytics", description: "Get real-time insights into spending patterns and identify savings opportunities.", color: "bg-indigo-50 text-indigo-600" },
   ];
 
@@ -70,17 +69,17 @@ export function HomePage() {
           async
           src="https://www.googletagmanager.com/gtag/js?id=G-KDV6R2SDN2"
         ></script>
-        <meta property="og:title" content="AI Procurement Software | Agentic Source-to-Pay Platform" /> 
-        <meta property="og:description" content="Meet your AI procurement team. Specialized agents for sourcing, suppliers, contracts, invoicing, spend, and compliance operating 24/7." /> 
+        <meta property="og:title" content="Procurement Software | Source-to-Pay Platform" /> 
+        <meta property="og:description" content="One platform for sourcing, suppliers, contracts, invoicing, spend, and compliance, operating 24/7." /> 
         <meta property="og:type" content="website" /> 
         <meta property="og:url" content="https://prokraya.ai/" /> 
-        <meta property="og:site_name" content="Prokraya" /> 
+        <meta property="og:site_name" content="S2P Labs" /> 
         <meta property="og:image" content={LogoBlack} />
         <meta name="twitter:card" content={LogoBlack} />
         <meta name="twitter:site" content="@prokraya" />
-        <title>AI Procurement Software | Agentic Source-to-Pay Platform | Prokraya</title>
-        <meta name="description" content="Transform procurement with AI agents that automate sourcing, suppliers, contracts, invoicing, compliance, and spend management across the entire Source-to-Pay lifecycle." /> 
-        <meta name="keywords" content="AI procurement software, source to pay platform, procurement automation software, agentic procurement, procurement AI agents, enterprise procurement software, sourcing automation, supplier management software, spend analytics platform" />
+        <title>Procurement Software | Source-to-Pay Platform | S2P Labs</title>
+        <meta name="description" content="Transform procurement with automation for sourcing, suppliers, contracts, invoicing, compliance, and spend management across the entire Source-to-Pay lifecycle." /> 
+        <meta name="keywords" content="procurement software, source to pay platform, procurement automation software, enterprise procurement software, sourcing automation, supplier management software, spend analytics platform" />
       </Helmet>
       <div className="flex flex-col">
         {/* Hero Section */}
@@ -97,7 +96,7 @@ export function HomePage() {
               {/* Badge */}
               <div className="inline-flex items-center gap-2 px-3 py-1 bg-violet-50 border border-violet-200/50 rounded-full mb-6 text-xs font-medium text-violet-700">
                 <Sparkles className="w-3 h-3" />
-                Introducing AI Agentic Procurement
+                Introducing Intelligent Procurement
               </div>
 
               {/* Headline */}
@@ -113,18 +112,11 @@ export function HomePage() {
 
               {/* Subtext */}
               <p className="text-lg text-gray-500 mb-8 max-w-2xl mx-auto">
-                Meet your AI procurement team. Specialized agents for Sourcing, Suppliers, Contracts, Spend, and Compliance, powered by Agentic Workflows that execute procurement processes autonomously - 24/7.
+                One platform for Sourcing, Suppliers, Contracts, Spend, and Compliance, powered by automated workflows that execute procurement processes autonomously - 24/7.
               </p>
 
               {/* CTAs */}
               <div className="flex flex-col sm:flex-row gap-3 mb-7">
-                <Link
-                  to="/book-demo"
-                  className="inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-violet-600 text-white text-sm font-semibold rounded-lg hover:bg-violet-700 transition-colors shadow-md shadow-violet-200"
-                >
-                  Book a Demo
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
                 <Link
                   to="/roi-calculator"
                   className="inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-white border border-violet-200 text-violet-700 text-sm font-semibold rounded-lg hover:bg-violet-50 transition-colors"
@@ -170,10 +162,8 @@ export function HomePage() {
         {/* Stats Bar */}
         <section className="py-8 bg-gradient-to-r from-violet-600 via-purple-600 to-teal-500">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 text-center text-white">
+            <div className="grid grid-cols-2 gap-6 text-center text-white">
               {[
-                { value: "30+", label: "AI Features" },
-                { value: "7", label: "Specialized AI Agents" },
                 { value: "6", label: "Core Platform Modules" },
                 { value: "100%", label: "Source-to-Pay Coverage" },
               ].map((stat, i) => (
@@ -184,7 +174,7 @@ export function HomePage() {
               ))}
             </div>
             <p className="text-center text-white text-xs font-medium mt-4">
-              Powered by specialized AI agents for Sourcing, Suppliers, Contracts, Procurement, Payables, and Compliance, running autonomously - 24/7
+              Covering Sourcing, Suppliers, Contracts, Procurement, Payables, and Compliance, running autonomously - 24/7
             </p>
           </div>
         </section>
@@ -201,7 +191,7 @@ export function HomePage() {
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-teal-500">Complete S2P Loop.</span>
               </h2>
               <p className="text-sm text-gray-500">
-                Every step of your procurement journey, connected, automated, and AI-enhanced. No more switching between tools.
+                Every step of your procurement journey, connected and automated. No more switching between tools.
               </p>
             </div>
 
@@ -218,7 +208,7 @@ export function HomePage() {
 
             <div className="grid md:grid-cols-3 gap-4">
               {[
-                { icon: Cpu, title: "AI powered at every step", desc: "Access, validate, and act", color: "text-violet-500", bg: "bg-violet-50" },
+                { icon: Cpu, title: "Automation at every step", desc: "Access, validate, and act", color: "text-violet-500", bg: "bg-violet-50" },
                 { icon: RefreshCw, title: "Connected data across modules", desc: "PRs, spend from PR to budget", color: "text-teal-500", bg: "bg-teal-50" },
                 { icon: CheckCircle, title: "Full audit trail", desc: "Every action with user, timestamps, and context for compliance", color: "text-blue-500", bg: "bg-blue-50" },
               ].map((item, i) => (
@@ -234,19 +224,19 @@ export function HomePage() {
           </div>
         </section>
 
-        {/* Agentic Workflows */}
+        {/* Automated Workflows */}
         <section className="py-16 bg-gray-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center max-w-2xl mx-auto mb-10">
               <span className="inline-block px-3 py-1 text-xs font-semibold text-violet-700 bg-violet-50 rounded-full mb-3 uppercase tracking-wider">
-                Agentic Workflows
+                Automated Workflows
               </span>
               <h2 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-3">
                 Configure Once,{" "}
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-600 to-teal-400">Runs Autonomously</span>
               </h2>
               <p className="text-sm text-gray-500">
-                Beyond automation. Set up trigger-based workflows where AI agents execute procurement processes automatically - 24/7 without human intervention.
+                Beyond automation. Set up trigger-based workflows that execute procurement processes automatically - 24/7 without human intervention.
               </p>
             </div>
 
@@ -297,7 +287,7 @@ export function HomePage() {
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-teal-500">Platform</span>
               </h2>
               <p className="text-sm text-gray-500">
-                From supplier discovery to contract closeout, every module connected, every workflow AI-enhanced.
+                From supplier discovery to contract closeout, every module connected, every workflow automated.
               </p>
             </div>
 
@@ -315,56 +305,6 @@ export function HomePage() {
           </div>
         </section>
 
-        {/* AI Agents */}
-        <section className="py-16 bg-gray-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center max-w-2xl mx-auto mb-10">
-              <span className="inline-block px-3 py-1 text-xs font-semibold text-violet-700 bg-violet-50 rounded-full mb-3 uppercase tracking-wider">
-                AI Agents
-              </span>
-              <h2 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-3">
-                Action-Capable{" "}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-teal-500">AI Agents</span>
-              </h2>
-              <p className="text-sm text-gray-500">
-                AI agents that execute real procurement actions: creating documents, managing suppliers, processing invoices, and running sourcing events autonomously.
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              {[
-                { icon: Users, name: "Vendor Agent", color: "bg-blue-50 text-blue-600", pill: "bg-blue-50 border-blue-100 text-blue-700", caps: ["Vendor search", "Onboarding", "Invitation", "Risk analysis", "Performance tracking", "Intelligence & profiling"] },
-                { icon: Search, name: "Sourcing Agent", color: "bg-teal-50 text-teal-600", pill: "bg-teal-50 border-teal-100 text-teal-700", caps: ["Create RFQ/RFP/tender", "Add lines & vendors", "Publish bids", "Manage sourcing events", "Vendor participation support"] },
-                { icon: ShoppingCart, name: "Procurement Ops Agent", color: "bg-orange-50 text-orange-600", pill: "bg-orange-50 border-orange-100 text-orange-700", caps: ["Create/update PRs", "Add PR/PO lines", "Submit for approval", "Manage items", "Category/UNSPSC", "Delivery notes", "GRN handling"] },
-                { icon: CreditCard, name: "Payables Agent", color: "bg-pink-50 text-pink-600", pill: "bg-pink-50 border-pink-100 text-pink-700", caps: ["Create invoices", "Add line items", "Submit & pay", "3-way PO-GRN-invoice matching", "Approval support"] },
-                { icon: FileText, name: "Contracting Agent", color: "bg-violet-50 text-violet-600", pill: "bg-violet-50 border-violet-100 text-violet-700", caps: ["Draft contracts", "Clause extraction", "Risk flagging", "Renewal alerts", "Redline suggestion", "Contract review support"] },
-                { icon: BarChart3, name: "Spend Intelligence Agent", color: "bg-indigo-50 text-indigo-600", pill: "bg-indigo-50 border-indigo-100 text-indigo-700", caps: ["Spend visibility", "Savings identification", "Maverick spend detection", "Benchmarking", "Cost optimisation insights"] },
-                { icon: Shield, name: "Compliance Agent", color: "bg-red-50 text-red-600", pill: "bg-red-50 border-red-100 text-red-700", caps: ["Regulatory monitoring", "Audit trail tracking", "Policy adherence", "Risk management", "Governance monitoring"] },
-              ].map((agent, i) => (
-                <div key={i} className="bg-white border border-gray-100 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center gap-3 hover:shadow-sm transition-shadow">
-                  <div className="flex items-center gap-3 sm:w-48 flex-shrink-0">
-                    <div className={`w-8 h-8 ${agent.color} rounded-lg flex items-center justify-center flex-shrink-0`}>
-                      <agent.icon className="w-4 h-4" />
-                    </div>
-                    <p className="text-sm font-semibold text-gray-900">{agent.name}</p>
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {agent.caps.map((cap, j) => (
-                      <span key={j} className={`px-2 py-0.5 border rounded-full text-sm ${agent.pill}`}>{cap}</span>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-7 text-center">
-              <Link href="/ai-agents" className="inline-flex items-center gap-2 px-5 py-2 border border-violet-200 text-violet-600 text-sm font-semibold rounded-lg hover:bg-violet-50 transition-colors">
-                Explore All AI Agents <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
-          </div>
-        </section>
-
         {/* Integrations */}
         <section className="py-16 bg-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -377,7 +317,7 @@ export function HomePage() {
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-teal-500">Existing Stack</span>
               </h2>
               <p className="text-sm text-gray-500">
-                Prokraya integrates with your existing enterprise systems. Connect your ERP and get started without disrupting your current setup.
+                S2P Labs integrates with your existing enterprise systems. Connect your ERP and get started without disrupting your current setup.
               </p>
             </div>
 

@@ -9,13 +9,7 @@ import {
   CollaborationPanel,
   CollaborationPanelRef,
 } from "@/components/collaboration-panel";
-import { FmpBenchmarkCard, type FmpSnapshot } from "@/components/fmpi/fmp-benchmark-card";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
+import { FormSheet } from "@/components/form-sheet";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -68,14 +62,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -112,29 +98,24 @@ import {
   Copy,
   DollarSign,
   Download,
+  Eye,
   FileCheck,
   FileText,
   HelpCircle,
   Loader2,
-  Mail,
-  MapPin,
   MessageSquare,
   Package,
   Pencil,
   Plus,
-  RefreshCw,
   Send,
   ShieldCheck,
-  ShoppingCart,
-  Sparkles,
   ThumbsDown,
   ThumbsUp,
   Trash2,
-  Truck,
   Upload,
   User,
   Wallet,
-  XCircle
+  XCircle,
 } from "lucide-react";
 import { ReactNode, useEffect, useRef, useState } from "react";
 import { Link, useLocation, useRoute } from "wouter";
@@ -262,6 +243,19 @@ const statusConfig: Record<
     variant: "outline",
     className: "border-amber-300 text-amber-600 dark:text-amber-400",
   },
+};
+
+/** Blank line-item form state — used both as the initial value and to reset
+ *  the Add/Edit Line Item sheet (on close and via its "Reset all" button). */
+const EMPTY_NEW_LINE_ITEM = {
+  description: "",
+  quantity: "1",
+  unitPrice: "",
+  uom: "",
+  categoryCode: "",
+  categoryName: "",
+  itemId: "",
+  itemName: "",
 };
 
 const ROLE_NAMES = [
@@ -403,26 +397,6 @@ function LineStatusBadge({ status }: { status: string | null }) {
   return <Badge variant="secondary">{status}</Badge>;
 }
 
-interface SuggestedItem {
-  itemId: string;
-  itemCode: string;
-  name: string;
-  description: string;
-  categoryCode: string;
-  categoryName: string;
-  unitOfMeasure: string;
-  standardPrice: number;
-  relevanceScore: number;
-  reason: string;
-}
-
-interface QuantityPrediction {
-  suggestedQuantity: number;
-  reasoning: string;
-  confidence: number;
-  basedOn: string[];
-}
-
 interface Location {
   id: number;
   location_id: string;
@@ -491,6 +465,7 @@ export default function RequisitionDetail() {
   const { isAIEnabled } = useAISettings();
   const [addLineSheetOpen, setAddLineSheetOpen] = useState(false);
   const [editingLineId, setEditingLineId] = useState<number | null>(null);
+  const [isSavingLine, setIsSavingLine] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [submitConfirmOpen, setSubmitConfirmOpen] = useState(false);
   const [reSubmitConfirmOpen, setReSubmitConfirmOpen] = useState(false);
@@ -510,8 +485,6 @@ export default function RequisitionDetail() {
     queryKey: ["/api/users/dropdown"],
     enabled: approvalDialogOpen && approvalAction === "Request",
   });
-  const [suggestedItems, setSuggestedItems] = useState<SuggestedItem[]>([]);
-  const [aiChatOpen, setAiChatOpen] = useState(false);
   const [budgetValidation, setBudgetValidation] = useState<{
     isWithinBudget: boolean;
     totalAmount: number;
@@ -519,33 +492,7 @@ export default function RequisitionDetail() {
     warnings: string[];
     severity: "low" | "medium" | "high";
   } | null>(null);
-  const [aiChatInput, setAiChatInput] = useState("");
-  const [aiRecommendations, setAiRecommendations] = useState<any[]>([]);
-  const [selectedRecommendations, setSelectedRecommendations] = useState<
-    Set<string>
-  >(new Set());
-  const [newLineItem, setNewLineItem] = useState({
-    description: "",
-    quantity: "1",
-    unitPrice: "",
-    uom: "",
-    categoryCode: "",
-    categoryName: "",
-    itemId: "",
-    itemName: "",
-  });
-  const [quantityPrediction, setQuantityPrediction] =
-    useState<QuantityPrediction | null>(null);
-  const [quantityPredictionItemKey, setQuantityPredictionItemKey] = useState<
-    string | null
-  >(null);
-  // Fair Market Price Intelligence is opt-in per item: computing a snapshot can
-  // hit the live supplier scraper + mandi price API, so it only runs once the
-  // user explicitly asks for it. Stored as the item key it was requested for so
-  // switching items re-arms the button (same trick as quantityPredictionItemKey).
-  const [fmpRequestedItemKey, setFmpRequestedItemKey] = useState<string | null>(
-    null,
-  );
+  const [newLineItem, setNewLineItem] = useState(EMPTY_NEW_LINE_ITEM);
 
   const sanitizeDecimalInput = (value: string) =>
     value.replace(/[^0-9.]/g, "").replace(/(\..*)\./g, "$1");
@@ -809,55 +756,6 @@ export default function RequisitionDetail() {
   });
   const items = itemsData || [];
 
-  // True only while the item the benchmark was requested for is still the one
-  // in the sheet — picking a different item re-arms the trigger button.
-  const fmpRequested =
-    !!newLineItem.itemId && fmpRequestedItemKey === newLineItem.itemId;
-
-  const selectedDeliveryLocation =
-    (locations.find((l) => String(l.id) === String(editForm.deliveryLocation))?.location_name) ||
-    editForm.deliveryLocation ||
-    header?.delivertto_location_name ||
-    "";
-
-  // Fair Market Price Intelligence — re-analyses the currently selected line
-  // item on every explicit user action. Deliberately POSTs /recalculate rather
-  // than GET /snapshot: the GET is cache-first (returns the stored row for
-  // STALE_DAYS), so clicking the button would replay an old scrape instead of
-  // re-analysing. staleTime/gcTime 0 does the same job on the client — the
-  // React Query defaults are staleTime: Infinity, which would otherwise serve
-  // the previous result for an item the user already benchmarked this session.
-  const {
-    data: fmpSnapshot,
-    isFetching: fmpFetching,
-    isError: fmpFailed,
-    refetch: refetchFmpSnapshot,
-  } = useQuery<FmpSnapshot>({
-    queryKey: [
-      "/api/fmpi/recalculate",
-      newLineItem.itemId,
-      header?.currency,
-      newLineItem.description,
-      selectedDeliveryLocation,
-      newLineItem.quantity,
-    ],
-    queryFn: () =>
-      apiRequest("POST", "/api/fmpi/recalculate", {
-        itemId: newLineItem.itemId,
-        itemName: newLineItem.itemName || "",
-        itemDescription: newLineItem.description || newLineItem.itemName || "",
-        categoryCode: newLineItem.categoryCode || "",
-        categoryName: newLineItem.categoryName || "",
-        currency: header?.currency || "AED",
-        uom: newLineItem.uom || "",
-        deliveryLocation: selectedDeliveryLocation || undefined,
-        quantity: newLineItem.quantity ? Number(newLineItem.quantity) : 1,
-      }).then((r) => r.json()),
-    enabled: fmpRequested && isAIEnabled("AI_FMP_INTELLIGENCE"),
-    staleTime: 0,
-    gcTime: 0,
-  });
-
   // Fetch UOM values from lookup table
   const { data: uomData } = useQuery<{ id: number; description: string }[]>({
     queryKey: ["/api/lookups/by-property/UOM"],
@@ -980,50 +878,53 @@ export default function RequisitionDetail() {
     },
   });
 
-  // itemKey identifies which item a prediction belongs to (item master id, or
-  // free-text description) - passed through as the mutation variable so
-  // onSuccess can tag the result even if newLineItem changes mid-flight.
-  const predictQuantityMutation = useMutation({
-    mutationFn: async (itemKey: string) => {
-      const matchingBudgetLine = budgetLines.find(
-        (bl) => String(bl.id) === String(header?.budget_segment),
-      );
-      const res = await apiRequest(
-        "POST",
-        "/api/purchase-requests/ai/predict-quantity",
-        {
-          itemDescription: newLineItem.description,
-          department: header?.department_name || "",
-          existingQuantity: newLineItem.quantity
-            ? parseFloat(newLineItem.quantity)
-            : undefined,
-          budgetLineId: matchingBudgetLine?.id ?? null,
-        },
-      );
-      if (!res.ok) {
-        throw new Error("Failed to get AI quantity recommendation");
-      }
-      return (await res.json()) as QuantityPrediction;
-    },
-    onSuccess: (data, itemKey) => {
-      setQuantityPrediction(data);
-      setQuantityPredictionItemKey(itemKey);
-      setNewLineItem((prev) => ({
-        ...prev,
-        quantity: String(data.suggestedQuantity),
-      }));
-    },
-    onError: () => {
-      setQuantityPrediction(null);
-      setQuantityPredictionItemKey(null);
+  // Shared submit-for-approval validation, used by both the header's Submit
+  // button and the sidebar action card so the two stay in sync.
+  const handleSubmitForApproval = () => {
+    if (!header) return;
+    const readiness = checkRequisitionSubmitReadiness(header, lines?.length || 0);
+    if (!readiness.ready) {
       toast({
-        title: "Error",
-        description:
-          "Unable to generate an AI quantity recommendation. Please try again.",
+        title: "Cannot submit requisition",
+        description: `Please complete ${describeMissingRequirements(readiness.missing)} before submitting for approval.`,
+        variant: "destructive",
+        duration: 6000,
+      });
+      return;
+    }
+
+    const prAmount = parseFloat(header.pr_amount || totalAmount.toString() || "0");
+    if (isNaN(prAmount) || prAmount <= 0) {
+      toast({
+        title: "Cannot submit requisition",
+        description: "PR amount must be greater than 0 to submit for approval.",
         variant: "destructive",
       });
-    },
-  });
+      return;
+    }
+
+    if (isAIEnabled("AI_BUDGET_VALIDATION") && header?.budget_name) {
+      if (!budgetValidation) {
+        toast({
+          title: "Budget check required",
+          description: "Please run the budget check before submitting this PR for approval.",
+          variant: "destructive",
+        });
+        return;
+      }
+      if (!budgetValidation.isWithinBudget) {
+        toast({
+          title: "Cannot submit — over budget",
+          description: "This PR exceeds the available budget. Please adjust the PR or contact your budget owner.",
+          variant: "destructive",
+          duration: 6000,
+        });
+        return;
+      }
+    }
+
+    setSubmitConfirmOpen(true);
+  };
 
   const approvalMutation = useMutation({
     mutationFn: async (data: { action: string; remarks: string }) => {
@@ -1134,7 +1035,6 @@ export default function RequisitionDetail() {
       isEditOpen ||
       addLineSheetOpen ||
       deleteLineConfirmOpen ||
-      aiChatOpen ||
       isLinesImportOpen ||
       categoryOpen ||
       itemOpen;
@@ -1175,149 +1075,10 @@ export default function RequisitionDetail() {
     isEditOpen,
     addLineSheetOpen,
     deleteLineConfirmOpen,
-    aiChatOpen,
     isLinesImportOpen,
     categoryOpen,
     itemOpen
   ]);
-
-  const suggestItemsMutation = useMutation({
-    mutationFn: async (prData: {
-      title: string;
-      description: string;
-      department: string;
-    }) => {
-      const response = await apiRequest("POST", "/api/purchase-requests/ai/suggest-items", prData);
-      if (!response.ok) throw new Error("Failed to get suggestions");
-      return response.json();
-    },
-    onSuccess: async (data) => {
-      const suggestions = data.suggestions || [];
-      setSuggestedItems(suggestions);
-
-      // Auto-create lines for each suggestion
-      for (const item of suggestions) {
-        try {
-          await apiRequest("POST", `/api/requisitions/${prNumber}/lines`, {
-            itemDescription: item.name,
-            quantity: 1,
-            unitCost: item.unitPrice ?? item.standardPrice ?? 0,
-            uom: item.unitOfMeasure || "Each",
-            categoryId: item.categoryCode || null,
-            categoryName: item.categoryName || null,
-            itemId: item.itemId || null,
-          });
-        } catch (error) {
-          console.error("Failed to add line:", error);
-        }
-      }
-
-      if (suggestions.length > 0) {
-        const assumedCount = suggestions.filter((s: any) => s.priceAssumed).length;
-        toast({
-          title: "AI Lines Added",
-          description:
-            `Added ${suggestions.length} line item(s) based on PR title` +
-            (assumedCount > 0
-              ? `. ${assumedCount} price(s) are AI-estimated (no purchase history) — please review.`
-              : ""),
-          duration: 5000,
-        });
-        queryClient.invalidateQueries({
-          queryKey: [`/api/requisitions/${prNumber}`],
-        });
-      } else {
-        toast({
-          title: "No Items Found",
-          description: "No matching items found in the item master",
-          duration: 5000,
-        });
-      }
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to get AI suggestions",
-        variant: "destructive",
-        duration: 5000,
-      });
-    },
-  });
-
-  const aiChatMutation = useMutation({
-    mutationFn: async (userRequest: string) => {
-      const response = await apiRequest("POST", `/api/requisitions/${prNumber}/ai-chat`, { userRequest });
-      if (!response.ok) throw new Error("Failed to get recommendations");
-      return response.json();
-    },
-    onSuccess: (result) => {
-      const recommendations = result.recommendations || [];
-      setAiRecommendations(recommendations);
-      setSelectedRecommendations(
-        new Set(recommendations.map((r: any) => r.itemId)),
-      );
-
-      if (recommendations.length === 0) {
-        toast({
-          title: "No Recommendations",
-          description:
-            "No matching items found for your request. Try a different description.",
-          duration: 5000,
-        });
-      }
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to get AI recommendations",
-        variant: "destructive",
-        duration: 5000,
-      });
-    },
-  });
-
-  const addSelectedItemsMutation = useMutation({
-    mutationFn: async (items: any[]) => {
-      for (const item of items) {
-        await apiRequest("POST", `/api/requisitions/${prNumber}/lines`, {
-          itemDescription: item.name,
-          quantity: 1,
-          unitCost: item.unitPrice ?? 0,
-          uom: item.unitOfMeasure || "Each",
-          categoryId: item.categoryCode || null,
-          categoryName: item.categoryName || null,
-          itemId: item.itemId || null,
-        });
-      }
-      return { count: items.length, assumedCount: items.filter((i) => i.priceAssumed).length };
-    },
-    onSuccess: ({ count, assumedCount }) => {
-      toast({
-        title: "Items Added",
-        description:
-          `Added ${count} line item(s) to the requisition` +
-          (assumedCount > 0
-            ? `. ${assumedCount} price(s) are AI-estimated (no purchase history) — please review.`
-            : ""),
-        duration: 5000,
-      });
-      queryClient.invalidateQueries({
-        queryKey: [`/api/requisitions/${prNumber}`],
-      });
-      setAiChatOpen(false);
-      setAiChatInput("");
-      setAiRecommendations([]);
-      setSelectedRecommendations(new Set());
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to add selected items",
-        variant: "destructive",
-        duration: 5000,
-      });
-    },
-  });
 
   const updatePRMutation = useMutation({
     mutationFn: async (formData: EditPRForm) => {
@@ -1364,6 +1125,37 @@ export default function RequisitionDetail() {
   }, [isEditOpen]);
 
   // Populate edit form only once when opening the edit sheet
+  // Shared by the initial-open effect below and the "Reset all" button —
+  // both need to rebuild the edit form from the PR header exactly the same way.
+  const buildInitialEditForm = () => {
+    const header = data?.header;
+    if (!header) return null;
+    const matchingLocation = locations.find(
+      (l) => l.location_name === header.delivertto_location_name,
+    );
+    const matchingDept = departments.find(
+      (d) => d.value === header.department_name,
+    );
+    const matchingBudget = budgetLines.find(
+      (bl) => String(bl.id) === String(header?.budget_segment),
+    );
+
+    return {
+      description: header.pr_description || "",
+      deliveryLocation: matchingLocation?.id?.toString() || "",
+      needByDate: header.delivery_date
+        ? header.delivery_date.split("T")[0]
+        : "",
+      requestorId: header.requestor_id?.toString() || "",
+      requestorDepartment: matchingDept?.id?.toString() || "",
+      buyerId: header.pr_owner_id?.toString() || "",
+      currency: header.currency || "AED",
+      isBudgeted: header.budgeted ? "yes" : "no",
+      budgetId: matchingBudget?.id?.toString() || "",
+      orgId: header.org_id?.toString() || "",
+    };
+  };
+
   useEffect(() => {
     if (
       isEditOpen &&
@@ -1373,36 +1165,8 @@ export default function RequisitionDetail() {
       departments.length > 0
     ) {
       editFormInitialized.current = true;
-      const header = data.header;
-      // Find matching location ID
-      const matchingLocation = locations.find(
-        (l) => l.location_name === header.delivertto_location_name,
-      );
-      // Find matching department
-      const matchingDept = departments.find(
-        (d) => d.value === header.department_name,
-      );
-      // Find matching budget line (optional — may not exist)
-      const matchingBudget = budgetLines.find(
-        (bl) =>
-          String(bl.id) === String(header?.budget_segment),
-      );
-
-      // Use requestor_id and pr_owner_id directly from header
-      setEditForm({
-        description: header.pr_description || "",
-        deliveryLocation: matchingLocation?.id?.toString() || "",
-        needByDate: header.delivery_date
-          ? header.delivery_date.split("T")[0]
-          : "",
-        requestorId: header.requestor_id?.toString() || "",
-        requestorDepartment: matchingDept?.id?.toString() || "",
-        buyerId: header.pr_owner_id?.toString() || "",
-        currency: header.currency || "AED",
-        isBudgeted: header.budgeted ? "yes" : "no",
-        budgetId: matchingBudget?.id?.toString() || "",
-        orgId: header.org_id?.toString() || "",
-      });
+      const initial = buildInitialEditForm();
+      if (initial) setEditForm(initial);
     }
   }, [isEditOpen, data?.header, locations, departments, budgetLines, organizations]);
 
@@ -1410,8 +1174,88 @@ export default function RequisitionDetail() {
     updatePRMutation.mutate(editForm);
   };
 
+  const handleResetEditForm = () => {
+    const initial = buildInitialEditForm();
+    if (initial) setEditForm(initial);
+  };
+
   const handleOpenAddLine = () => {
     setAddLineSheetOpen(true);
+  };
+
+  const handleResetLineForm = () => {
+    setNewLineItem(EMPTY_NEW_LINE_ITEM);
+  };
+
+  const handleSaveLine = async () => {
+    const price = parseFloat(newLineItem.unitPrice);
+    if (isNaN(price) || price <= 0) {
+      toast({
+        title: "Invalid Unit Price",
+        description: "Unit price must be greater than 0.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setIsSavingLine(true);
+    try {
+      if (editingLineId) {
+        // Update existing line
+        await apiRequest(
+          "PUT",
+          `/api/requisitions/${prNumber}/lines/${editingLineId}`,
+          {
+            itemDescription: newLineItem.description,
+            quantity: parseFloat(newLineItem.quantity) || 1,
+            unitCost: parseFloat(newLineItem.unitPrice) || 0,
+            uom: newLineItem.uom || "Each",
+            categoryId: newLineItem.categoryCode || null,
+            categoryName: newLineItem.categoryName || null,
+            itemId: newLineItem.itemId || null,
+          },
+        );
+        toast({
+          title: "Line Updated",
+          description: "Line item updated successfully",
+        });
+      } else {
+        // Add new line
+        await apiRequest(
+          "POST",
+          `/api/requisitions/${prNumber}/lines`,
+          {
+            itemDescription: newLineItem.description,
+            quantity: parseFloat(newLineItem.quantity) || 1,
+            unitCost: parseFloat(newLineItem.unitPrice) || 0,
+            uom: newLineItem.uom || "Each",
+            categoryId: newLineItem.categoryCode || null,
+            categoryName: newLineItem.categoryName || null,
+            itemId: newLineItem.itemId || null,
+          },
+        );
+        toast({
+          title: "Line Added",
+          description: "Line item added successfully",
+        });
+      }
+      queryClient.invalidateQueries({
+        queryKey: [`/api/requisitions/${prNumber}`],
+      });
+      setAddLineSheetOpen(false);
+      setEditingLineId(null);
+      setNewLineItem(EMPTY_NEW_LINE_ITEM);
+    } catch (error) {
+      console.error("Failed to save line:", error);
+      toast({
+        title: "Error",
+        description: editingLineId
+          ? "Failed to update line item"
+          : "Failed to add line item",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingLine(false);
+    }
   };
 
   const validateLinesImportMutation = useMutation({
@@ -1458,57 +1302,38 @@ export default function RequisitionDetail() {
     },
   });
 
-  const handleAIAssisted = () => {
-    if (data?.header) {
-      suggestItemsMutation.mutate({
-        title: data.header.pr_description || "",
-        description: data.header.business_justification || "",
-        department: data.header.department_name || "",
+  // Duplicates a line item by re-posting its fields through the standard
+  // "create line" endpoint.
+  const duplicateLineMutation = useMutation({
+    mutationFn: async (line: RequisitionLine) => {
+      return apiRequest("POST", `/api/requisitions/${prNumber}/lines`, {
+        itemDescription: line.item_description || "",
+        quantity: line.qty ? Number(line.qty) : 1,
+        unitCost: line.unit_cost ? Number(line.unit_cost) : 0,
+        uom: line.uom || "Each",
+        categoryId: line.product_category ? String(line.product_category) : null,
+        categoryName: line.product_category_name || null,
+        itemId: line.item_id ? String(line.item_id) : null,
       });
-    }
-  };
-
-  const handleAIChatSubmit = () => {
-    if (aiChatInput.trim()) {
-      setAiRecommendations([]);
-      setSelectedRecommendations(new Set());
-      aiChatMutation.mutate(aiChatInput.trim());
-    }
-  };
-
-  const handleAddSelectedItems = () => {
-    const selectedItems = aiRecommendations.filter((r) =>
-      selectedRecommendations.has(r.itemId),
-    );
-    if (selectedItems.length > 0) {
-      addSelectedItemsMutation.mutate(selectedItems);
-    }
-  };
-
-  const toggleRecommendation = (itemId: string) => {
-    setSelectedRecommendations((prev) => {
-      const next = new Set(prev);
-      if (next.has(itemId)) {
-        next.delete(itemId);
-      } else {
-        next.add(itemId);
-      }
-      return next;
-    });
-  };
-
-  const handleSelectSuggestedItem = (item: SuggestedItem) => {
-    setNewLineItem({
-      description: item.name,
-      quantity: "1",
-      unitPrice: (item.standardPrice ?? 0).toString(),
-      uom: item.unitOfMeasure || "Each",
-      categoryCode: item.categoryCode || "",
-      categoryName: item.categoryName || "",
-      itemId: item.itemId || "",
-      itemName: item.name || "",
-    });
-  };
+    },
+    onSuccess: () => {
+      toast({
+        title: "Line duplicated",
+        description: "A copy of the line item has been added.",
+        duration: 4000,
+      });
+      queryClient.invalidateQueries({
+        queryKey: [`/api/requisitions/${prNumber}`],
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to duplicate line",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleDeleteLine = async () => {
     if (!lineToDelete) return;
@@ -1536,6 +1361,85 @@ export default function RequisitionDetail() {
       setLineToDelete(null);
     }
   };
+
+  const getAuthHeaders = (): Record<string, string> => {
+    try {
+      const parsed = JSON.parse(localStorage.getItem("prokraya-auth") || "{}");
+      return {
+        "x-user-email": parsed.userId || "",
+        "x-user-name": parsed.userName || "",
+      };
+    } catch {
+      return {};
+    }
+  };
+
+  // Real attachment upload/view/delete for the "Upload Document" card — reuses
+  // the same /api/requisitions/:prNumber/documents endpoints the
+  // CollaborationPanel below already calls for this same PR. Declared above
+  // the isLoading early-return so these hooks always run (Rules of Hooks).
+  const prDocumentsUrl = `/api/requisitions/${prNumber}/documents`;
+  const { data: prDocumentsData } = useQuery<
+    { id: number; file_name: string; file_path: string; created_by: string; created_date: string }[]
+  >({
+    queryKey: [prDocumentsUrl],
+    enabled: !!prNumber,
+  });
+  const prDocuments = prDocumentsData || [];
+  const uploadDocInputRef = useRef<HTMLInputElement>(null);
+
+  const uploadPrDocumentMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch(prDocumentsUrl, {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: formData,
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error((err as any).error || "Failed to upload document");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [prDocumentsUrl] });
+      toast({ title: "Document added", description: "Document has been attached to this requisition." });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Failed to add document", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const handleViewPrDocument = async (doc: { id: number; file_name: string }) => {
+    try {
+      const res = await fetch(`${prDocumentsUrl}/${doc.id}/download`, {
+        headers: getAuthHeaders(),
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to fetch document");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const tab = window.open(url, "_blank");
+      if (!tab) toast({ title: "Allow pop-ups to view documents", variant: "destructive" });
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch {
+      toast({ title: "Failed to open document", variant: "destructive" });
+    }
+  };
+
+  const deletePrDocumentMutation = useMutation({
+    mutationFn: async (docId: number) => apiRequest("DELETE", `${prDocumentsUrl}/${docId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [prDocumentsUrl] });
+      toast({ title: "Document deleted" });
+    },
+    onError: () => {
+      toast({ title: "Failed to delete document", variant: "destructive" });
+    },
+  });
 
   if (isLoading) {
     return (
@@ -1590,18 +1494,6 @@ export default function RequisitionDetail() {
   const isCancelled = header.pr_status?.toLowerCase() === "cancelled";
   const isComplete = header.pr_status?.toLowerCase() === "complete";
 
-  // Identifies which item the current Add/Edit Line sheet is populated with -
-  // an Item Master id when picked from the combobox, otherwise the free-text
-  // description. Used to detect "item changed" and invalidate a stale AI
-  // quantity prediction without a separate reset effect.
-  const currentLineItemKey =
-    newLineItem.itemId || newLineItem.description.trim().toLowerCase();
-  const hasSelectedLineItem = currentLineItemKey.length > 0;
-  const activeQuantityPrediction =
-    quantityPrediction && quantityPredictionItemKey === currentLineItemKey
-      ? quantityPrediction
-      : null;
-
   const linkedPos = data?.linkedPos ?? [];
   const canCancelAfterPoCancelled = (() => {
     if (!isComplete || linkedPos.length === 0) return false;
@@ -1624,18 +1516,6 @@ export default function RequisitionDetail() {
     (isSuperadmin || isOwner) &&
     (isApproved || isRejected || canCancelAfterPoCancelled);
 
-   const getAuthHeaders = (): Record<string, string> => {
-      try {
-        const parsed = JSON.parse(localStorage.getItem("prokraya-auth") || "{}");
-        return {
-          "x-user-email": parsed.userId || "",
-          "x-user-name": parsed.userName || "",
-        };
-      } catch {
-        return {};
-      }
-    };
-
   return (
     <div className="flex">
       {/* Main Content Area */}
@@ -1645,26 +1525,32 @@ export default function RequisitionDetail() {
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-3">
             <Link href="/app/purchase-requests">
-              <Button variant="ghost" size="icon" className="h-8 w-8">
+              <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" data-testid="button-back-to-requisitions">
                 <ArrowLeft className="h-4 w-4" />
               </Button>
             </Link>
-            <div className="flex h-9 w-9 items-center justify-center rounded bg-primary/10">
-              <ShoppingCart className="h-4 w-4 text-primary" />
-            </div>
             <div>
               <div className="flex items-center gap-2">
                 <h1
-                  className="text-xl font-semibold"
+                  className="text-2xl font-bold text-primary leading-tight"
                   data-testid="text-pr-number"
                 >
                   {header.pr_number}
                 </h1>
+                <HelpCircle
+                  className="h-4 w-4 text-muted-foreground"
+                  aria-hidden="true"
+                />
                 <StatusBadge status={header.pr_status} />
               </div>
-              <p className="text-xs text-muted-foreground">
-                {header.pr_type || "STANDARD"} Requisition
-              </p>
+              <Link href="/app/purchase-requests">
+                <span
+                  className="text-xs font-semibold uppercase tracking-wide text-primary hover:underline cursor-pointer"
+                  data-testid="link-back-to-requisitions"
+                >
+                  {header.pr_type || "STANDARD"} Purchase Requisition
+                </span>
+              </Link>
             </div>
           </div>
 
@@ -1675,7 +1561,7 @@ export default function RequisitionDetail() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="text-destructive hover:text-destructive"
+                      className="text-destructive hover:text-destructive border-destructive/40"
                       data-testid="button-delete-pr"
                     >
                       <Trash2 className="h-4 w-4 mr-2" />
@@ -1719,7 +1605,7 @@ export default function RequisitionDetail() {
                   data-testid="button-edit-pr"
                 >
                   <Pencil className="h-4 w-4 mr-2" />
-                  Edit
+                  Save as draft
                 </Button>
 
                 {isAIEnabled("AI_BUDGET_VALIDATION") && lines.length > 0 && (
@@ -1798,7 +1684,7 @@ export default function RequisitionDetail() {
                   ) : (
                     <Send className="h-4 w-4 mr-2" />
                   )}
-                  Submit for Approval
+                  Submit
                 </Button>
               </>
             )}
@@ -2087,324 +1973,565 @@ export default function RequisitionDetail() {
         </div>
 
         <div className="grid gap-4 lg:grid-cols-2">
+          {/* PR details card */}
           <Card>
-            <CardHeader className="py-3 px-4 flex flex-row items-center justify-between gap-2">
+            <CardHeader className="py-3 px-4 bg-primary/5 border-b border-primary/20 flex flex-row items-center justify-between gap-2">
               <CardTitle className="text-sm flex items-center gap-2">
-                <FileText className="h-4 w-4" />
-                Requisition Details
+                <FileText className="h-4 w-4 text-primary" />
+                PR details
               </CardTitle>
               <div className="text-right">
-                <p className="text-lg font-bold text-primary">
-                  {formatCurrency(
-                    header.pr_amount || totalAmount.toString(),
+                <p className="text-xs text-muted-foreground">
+                  Created on : {formatDate(header.pr_created_date)}
+                </p>
+                <p className="text-xs font-medium text-primary">
+                  Estimated Cost: {formatCurrency(
+                    header.estimated_cost || header.pr_amount || totalAmount.toString(),
                     header.currency,
                   )}
                 </p>
-                <p className="text-xs text-muted-foreground">
-                  {header.currency || "USD"}
-                </p>
               </div>
             </CardHeader>
-            <CardContent className="space-y-3 px-4 pb-4 pt-0">
+            <CardContent className="space-y-4 px-4 pb-4 pt-4">
               <div>
-                <p className="text-xs text-muted-foreground mb-0.5">
-                  Description
+                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground mb-1">
+                  PR Description
                 </p>
-                <p className="text-sm font-medium">
-                  {header.pr_description || "No description"}
-                </p>
+                <div className="rounded-md border px-3 py-2 text-sm min-h-[38px]" data-testid="text-pr-description">
+                  {header.pr_description || "-"}
+                </div>
               </div>
 
-              <Separator />
-
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <p className="text-xs text-muted-foreground mb-0.5 flex items-center gap-1">
-                    <Building2 className="h-3 w-3" />
-                    Department
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground mb-1">
+                    Delivery Location
                   </p>
-                  <p className="text-sm font-medium">
-                    {header.department_name || "-"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground mb-0.5 flex items-center gap-1">
-                    <Calendar className="h-3 w-3" />
-                    Created Date
-                  </p>
-                  <p className="text-sm font-medium">
-                    {formatDateTime(header.pr_created_date)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground mb-0.5 flex items-center gap-1">
-                    <Truck className="h-3 w-3" />
-                    Delivery Date
-                  </p>
-                  <p className="text-sm font-medium">
-                    {formatDate(header.delivery_date)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground mb-0.5 flex items-center gap-1">
-                    <MapPin className="h-3 w-3" />
-                    Deliver To
-                  </p>
-                  <p className="text-sm font-medium">
+                  <div className="rounded-md border px-3 py-2 text-sm truncate" title={header.delivertto_location_name || undefined}>
                     {header.delivertto_location_name || "-"}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground mb-1">
+                    Need By Date
                   </p>
+                  <div className="rounded-md border px-3 py-2 text-sm">
+                    {formatDate(header.delivery_date)}
+                  </div>
                 </div>
               </div>
 
-              {header.po_number && (
-                <>
-                  <Separator />
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-0.5 flex items-center gap-1">
-                      <FileCheck className="h-3 w-3" />
-                      Linked PO
-                    </p>
-                    <Badge variant="outline" className="font-mono text-sm">
-                      {header.po_number}
-                    </Badge>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground mb-1">
+                    Requestor
+                  </p>
+                  <div className="rounded-md border px-3 py-2 text-sm truncate" title={header.requestor_name || undefined}>
+                    {header.requestor_name || "-"}
                   </div>
-                </>
+                </div>
+                <div>
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground mb-1">
+                    Requestor Department
+                  </p>
+                  <div className="rounded-md border px-3 py-2 text-sm truncate" title={header.department_name || undefined}>
+                    {header.department_name || "-"}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground mb-1">
+                    Buyer
+                  </p>
+                  <div className="rounded-md border px-3 py-2 text-sm truncate" title={header.pr_owner_name || undefined}>
+                    {header.pr_owner_name || "-"}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground mb-1">
+                    Currency
+                  </p>
+                  <div className="rounded-md border px-3 py-2 text-sm">
+                    {header.currency || "-"}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                    Budgeted
+                  </p>
+                  <RadioGroup value={header.budgeted ? "yes" : "no"} className="flex gap-6">
+                    <div className="flex items-center gap-2">
+                      <RadioGroupItem value="yes" id="pr-budgeted-yes-display" disabled />
+                      <Label htmlFor="pr-budgeted-yes-display" className="cursor-default text-sm">
+                        Yes
+                      </Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <RadioGroupItem value="no" id="pr-budgeted-no-display" disabled />
+                      <Label htmlFor="pr-budgeted-no-display" className="cursor-default text-sm">
+                        No
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+
+                <div className="space-y-2">
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                    Budget
+                  </p>
+                  {header.budgeted && header.budget_name ? (() => {
+                    const matchedBudgetLine = budgetLines.find(
+                      (bl) => String(bl.id) === String(header.budget_segment),
+                    );
+                    const availableAmount = matchedBudgetLine
+                      ? Math.max(
+                          0,
+                          (parseFloat(matchedBudgetLine.amount) || 0) -
+                            (parseFloat(matchedBudgetLine.consumed_amount) || 0) -
+                            (parseFloat(matchedBudgetLine.reserved_amount) || 0),
+                        )
+                      : null;
+                    const currencySymbol = matchedBudgetLine
+                      ? matchedBudgetLine.budget_curr === "INR"
+                        ? "₹ "
+                        : matchedBudgetLine.budget_curr === "USD"
+                          ? "$ "
+                          : matchedBudgetLine.budget_curr === "AED"
+                            ? "AED "
+                            : matchedBudgetLine.budget_curr === "EUR"
+                              ? "€ "
+                              : `${matchedBudgetLine.budget_curr} `
+                      : "";
+                    return (
+                      <div className="rounded-md border px-3 py-2 text-sm flex items-center justify-between flex-wrap gap-2">
+                        <span className="flex items-center gap-1 truncate">
+                          <DollarSign className="h-3 w-3 text-muted-foreground shrink-0" />
+                          {header.budget_name}
+                          {matchedBudgetLine?.segment_dtl_name ? ` · ${matchedBudgetLine.segment_dtl_name}` : ""}
+                        </span>
+                        {availableAmount !== null && (
+                          <span className="text-xs font-medium text-primary shrink-0">
+                            Available Amount: {currencySymbol}
+                            {availableAmount.toLocaleString("en-IN", {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })() : (
+                    <div className="rounded-md border px-3 py-2 text-sm text-muted-foreground">-</div>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground mb-1">
+                  Notes to Approver
+                </p>
+                <Textarea
+                  value={header.notes_to_approver || ""}
+                  readOnly
+                  placeholder="No notes to approver provided"
+                  rows={2}
+                  className="resize-none bg-muted/30"
+                  data-testid="text-notes-to-approver"
+                />
+              </div>
+
+              {(header.org_id || header.po_number || header.business_justification) && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t">
+                  {header.org_id && (() => {
+                    const orgName = organizations.find((o) => String(o.id) === String(header.org_id))?.organization_name;
+                    return orgName ? (
+                      <div>
+                        <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1">
+                          <Building2 className="h-3 w-3" />
+                          Business Entity
+                        </p>
+                        <div className="rounded-md border px-3 py-2 text-sm truncate" title={orgName}>
+                          {orgName}
+                        </div>
+                      </div>
+                    ) : null;
+                  })()}
+                  {header.po_number && (
+                    <div>
+                      <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-1">
+                        <FileCheck className="h-3 w-3" />
+                        Linked PO
+                      </p>
+                      <div className="rounded-md border px-3 py-2 text-sm">
+                        <Badge variant="outline" className="font-mono">
+                          {header.po_number}
+                        </Badge>
+                      </div>
+                    </div>
+                  )}
+                  {header.business_justification && (
+                    <div className="sm:col-span-2">
+                      <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground mb-1">
+                        Business Justification
+                      </p>
+                      <div className="rounded-md border px-3 py-2 text-sm">
+                        {header.business_justification}
+                        {header.business_justification_details && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {header.business_justification_details}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
               )}
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="py-3 px-4">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <User className="h-4 w-4" />
-                People & Budget
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 px-4 pb-4 pt-0">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <p className="text-xs text-muted-foreground mb-0.5">
-                    Requester
-                  </p>
-                  <p className="text-sm font-medium">
-                    {header.requestor_name || "-"}
-                  </p>
-                  {header.requestor_email && (
-                    <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                      <Mail className="h-3 w-3" />
-                      {header.requestor_email}
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground mb-0.5">
-                    PR Buyer
-                  </p>
-                  <p className="text-sm font-medium">
-                    {header.pr_owner_name || "-"}
-                  </p>
-                  {header.pr_owner_email && (
-                    <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                      <Mail className="h-3 w-3" />
-                      {header.pr_owner_email}
-                    </p>
-                  )}
-                </div>
-              </div>
+          {/* Right sidebar column */}
+          <div className="flex flex-col gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {/* Status stepper card */}
+            <Card className="h-full flex flex-col">
+              <CardHeader className="py-3 px-4 bg-primary/5 border-b border-primary/20">
+                <CardTitle className="text-sm">
+                  Status - {header.pr_status || "Draft"}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 py-4 flex-1">
+                {(() => {
+                  // Real PR lifecycle: Draft -> submitted for approval
+                  // (Pending Approval / More Info Required) -> Approved ->
+                  // Complete (a PO has been raised against it). Rejected and
+                  // Cancelled are terminal off-path outcomes — shown at the
+                  // "Submitted" stage with destructive styling since that is
+                  // as far as the PR got.
+                  const stageLabels = ["Submitted", "Approved", "Converted to PO"];
+                  let currentStage = 0;
+                  if (isPendingApproval || isMoreInfoRequired) currentStage = 1;
+                  if (isApproved) currentStage = 2;
+                  if (isComplete) currentStage = 3;
+                  const isTerminalNegative = isRejected || isCancelled;
+                  if (isTerminalNegative) currentStage = 1;
 
-              {header.org_id && (() => {
-                const orgName = organizations.find((o) => String(o.id) === String(header.org_id))?.organization_name;
-                return orgName ? (
-                  <>
-                    <Separator />
-                    <div>
-                      <p className="text-xs text-muted-foreground mb-0.5 flex items-center gap-1">
-                        <Building2 className="h-3 w-3" />
-                        Business Entity
-                      </p>
-                      <p className="text-sm font-medium">{orgName}</p>
-                    </div>
-                  </>
-                ) : null;
-              })()}
-
-              <Separator />
-              <div>
-                <p className="text-xs text-muted-foreground mb-0.5">Budgeted</p>
-                <p className="text-sm font-medium">
-                  {header.budgeted ? "Yes" : "No"}
-                </p>
-              </div>
-
-              {header.budget_name && (
-                <>
-                  <Separator />
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-0.5 flex items-center gap-1">
-                      <DollarSign className="h-3 w-3" />
-                      Budget
-                    </p>
-                    <p className="text-sm font-medium">{header.budget_name}</p>
-                    {(() => {
-                      const matchedBudgetLine = budgetLines.find(
-                        (bl) =>
-                          String(bl.id) === String(header.budget_segment),
-                      );
-                      if (!matchedBudgetLine) return null;
-                      const availableAmount =
-                        (parseFloat(matchedBudgetLine.amount) || 0) -
-                        (parseFloat(matchedBudgetLine.consumed_amount) || 0) -
-                        (parseFloat(matchedBudgetLine.reserved_amount) || 0);
-                      const availableDisplay = Math.max(0, availableAmount);
-                      const currencySymbol =
-                        matchedBudgetLine.budget_curr === "INR"
-                          ? "₹ "
-                          : matchedBudgetLine.budget_curr === "USD"
-                            ? "$ "
-                            : matchedBudgetLine.budget_curr === "AED"
-                              ? "AED "
-                              : matchedBudgetLine.budget_curr === "EUR"
-                                ? "€ "
-                                : `${matchedBudgetLine.budget_curr} `;
-                      return (
-                        <p className="text-xs text-green-600 mt-0.5">
-                          Available Budget -{" "}
-                          {currencySymbol}
-                          {availableDisplay.toLocaleString("en-IN", {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })}
+                  return stageLabels.map((label, idx) => {
+                    const stageNum = idx + 1;
+                    const isDone = currentStage > stageNum;
+                    const isActive = currentStage === stageNum;
+                    const isNegativeActive = isTerminalNegative && isActive;
+                    return (
+                      <div key={label} className="flex items-start gap-3" data-testid={`status-stage-${stageNum}`}>
+                        <div className="flex flex-col items-center">
+                          <div
+                            className={cn(
+                              "h-9 w-9 rounded-full border-2 flex items-center justify-center shrink-0",
+                              isNegativeActive
+                                ? "border-destructive"
+                                : isDone || isActive
+                                  ? "border-primary"
+                                  : "border-muted-foreground/40",
+                            )}
+                          >
+                            <div
+                              className={cn(
+                                "h-4 w-4 rounded-full",
+                                isNegativeActive
+                                  ? "bg-destructive"
+                                  : isDone || isActive
+                                    ? "bg-primary"
+                                    : "bg-muted-foreground/60",
+                              )}
+                            />
+                          </div>
+                          {idx < stageLabels.length - 1 && (
+                            <div className="w-0 flex-1 min-h-[28px] border-l-2 border-dotted border-primary" />
+                          )}
+                        </div>
+                        <p
+                          className={cn(
+                            "text-sm pb-6 mt-2",
+                            isNegativeActive
+                              ? "text-destructive font-medium"
+                              : isActive
+                                ? "text-primary font-medium"
+                                : isDone
+                                  ? "font-medium"
+                                  : "text-muted-foreground",
+                          )}
+                        >
+                          {label}
+                          {isNegativeActive && (
+                            <span className="ml-1.5 text-xs">
+                              ({isRejected ? "Rejected" : "Cancelled"})
+                            </span>
+                          )}
                         </p>
-                      );
-                    })()}
-                  </div>
-                </>
-              )}
+                      </div>
+                    );
+                  });
+                })()}
+              </CardContent>
+            </Card>
 
-              {header.business_justification && (
-                <>
-                  <Separator />
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-0.5">
-                      Business Justification
-                    </p>
-                    <p className="text-sm">{header.business_justification}</p>
-                    {header.business_justification_details && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {header.business_justification_details}
-                      </p>
+            {/* Upload Document card — real attachments, via the same
+                /api/requisitions/:prNumber/documents endpoints the
+                CollaborationPanel below already uses for this PR. */}
+            <Card className="h-full flex flex-col">
+              <CardHeader className="py-3 px-4 bg-primary/5 border-b border-primary/20">
+                <CardTitle className="text-sm">Upload Document</CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 py-4 space-y-1 flex-1">
+                <input
+                  ref={uploadDocInputRef}
+                  type="file"
+                  className="hidden"
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.jpg,.jpeg,.png,.gif,.webp,.bmp"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) uploadPrDocumentMutation.mutate(file);
+                    e.target.value = "";
+                  }}
+                  data-testid="input-upload-document"
+                />
+                <button
+                  type="button"
+                  className="w-full rounded-md border-2 border-dashed border-muted-foreground/30 flex flex-col items-center justify-center py-3 gap-1.5 text-center hover-elevate disabled:opacity-60"
+                  onClick={() => uploadDocInputRef.current?.click()}
+                  disabled={uploadPrDocumentMutation.isPending}
+                  data-testid="button-upload-document"
+                >
+                  <div className="h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
+                    {uploadPrDocumentMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Plus className="h-4 w-4" />
                     )}
                   </div>
-                </>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+                  <p className="text-xs font-medium text-primary">Upload Document</p>
+                </button>
 
-        {/* Approval History Section - Only shown when status is not Draft */}
-        {!isDraft && (
-          <Accordion
-            type="single"
-            collapsible
-            defaultValue="approval-history"
-            className="mb-4"
-          >
-            <AccordionItem
-              value="approval-history"
-              className="border rounded-lg"
-            >
-              <AccordionTrigger className="px-4 py-2 hover:no-underline">
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-semibold">
-                    Approval History
-                  </span>
+                <div className="pt-1">
+                  {prDocuments.length === 0 ? (
+                    <p className="text-xs text-muted-foreground text-center py-3">
+                      No documents attached
+                    </p>
+                  ) : (
+                    prDocuments.slice(0, 5).map((doc, i) => (
+                      <div
+                        key={doc.id}
+                        className={cn(
+                          "flex items-center justify-between gap-2 py-2 px-1 text-xs",
+                          i < Math.min(prDocuments.length, 5) - 1 && "border-b",
+                        )}
+                        data-testid={`row-document-${doc.id}`}
+                      >
+                        <span className="truncate text-muted-foreground" title={doc.file_name}>
+                          {doc.file_name}
+                        </span>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => handleViewPrDocument(doc)}
+                            className="h-6 w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover-elevate"
+                            data-testid={`button-view-document-${doc.id}`}
+                          >
+                            <Eye className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => deletePrDocumentMutation.mutate(doc.id)}
+                            disabled={deletePrDocumentMutation.isPending}
+                            className="h-6 w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover-elevate disabled:opacity-60"
+                            data-testid={`button-delete-document-${doc.id}`}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                  {prDocuments.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => collaborationPanelRef.current?.open()}
+                      className="w-full text-center text-xs font-medium text-primary hover:underline pt-2"
+                      data-testid="button-view-all-documents"
+                    >
+                      View all
+                    </button>
+                  )}
                 </div>
-              </AccordionTrigger>
-              <AccordionContent className="px-4 pb-0">
-                <div className="overflow-x-auto w-full pb-4 custom-scrollbar">
-                  {/* Horizontal Timeline */}
-                  <div className="flex items-start min-w-max">
-                    {(() => {
-                      // Get approval history from database
-                      const approvalHistory = data?.approvalHistory || [];
+              </CardContent>
+            </Card>
 
-                      // Build timeline
-                      const timelineItems: Array<{
-                        name: string;
-                        email?: string;
-                        designation?: string;
-                        status: "Approved" | "Rejected" | "More" | "Pending" | "ReSubmit" | "more" | "Delegation" | "Delegated User";
-                        date?: string;
-                        comments?: string;
-                        stepOrder: number;
-                        roleName?: string;
-                      }> = [];
+            {/* Quick actions card — mirrors the header's Submit/Delete/Edit
+                buttons for Draft PRs, same handlers as the header versions
+                (handleSubmitForApproval, deleteMutation, setIsEditOpen). */}
+            {isDraft && (isOwner || isSuperadmin) && (
+              <Card className="h-full flex flex-col">
+                <CardContent className="p-4 flex-1 flex flex-col gap-3">
+                  <Button
+                    className="font-semibold"
+                    onClick={handleSubmitForApproval}
+                    disabled={submitMutation.isPending}
+                    data-testid="button-submit-approval-sidebar"
+                  >
+                    {submitMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 shrink-0 animate-spin mr-2" />
+                    ) :""}
+                    Submit for Approval
+                  </Button>
 
-                      // 1. Add all completed actions from approvalHistory (sorted by date/id)
-                      [...approvalHistory]
-                        .sort((a, b) => {
-                          const dateA = a.approved_date ? new Date(a.approved_date).getTime() : 0;
-                          const dateB = b.approved_date ? new Date(b.approved_date).getTime() : 0;
-                          if (dateA !== dateB) return dateA - dateB;
-                          return (a.id || 0) - (b.id || 0); // Fallback to ID sorting
-                        })
-                        .forEach((approval, index) => {
-                          const approverTrimmed = (approval.approver_name || "").trim();
-                          const isRole = ROLE_NAMES.some(
-                            (role) => approverTrimmed.toUpperCase() === role,
-                          );
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="text-destructive hover:text-destructive border-destructive/40"
+                        data-testid="button-delete-pr-sidebar"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>
+                          Delete Purchase Requisition
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to delete this purchase
+                          requisition? This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel data-testid="button-delete-cancel-sidebar">
+                          Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => deleteMutation.mutate()}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          data-testid="button-delete-confirm-sidebar"
+                        >
+                          {deleteMutation.isPending && (
+                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          )}
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
 
-                          timelineItems.push({
-                            name: approval.approver_name || approval.email || formatApproverDisplayName(""),
-                            email: approval.email || undefined,
-                            designation: approval.designation || undefined,
-                            status:
-                              (approval.status === "Approve" || approval.status === "approve") ? "Approved" :
-                                (approval.status === "Reject" || approval.status === "reject") ? "Rejected" :
-                                  (approval.status === "More" || approval.status === "more") ? "More" :
-                                    approval.status === "ReSubmit" ? "ReSubmit" :  approval.status === "Delegation" ? "Delegation" : approval.status === "Delegated User" ? "Delegated User" : "Approved",
-                            date: formatDate(approval.approved_date) || undefined,
-                            comments: approval.comments || undefined,
-                            stepOrder: index + 1,
-                            roleName: isRole ? approverTrimmed : undefined,
-                          });
-                        });
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsEditOpen(true)}
+                    data-testid="button-edit-pr-sidebar"
+                  >
+                    <Pencil className="h-4 w-4 mr-2" />
+                    Edit Requisition
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+            </div>
 
-                      // 2. Add pending approvers from approvers_list if in a pending state
-                      const pendingStatus = ["Pending Approval", "Pending", "PENDING", "Pending_Approval"];
-                      if (header.pr_status && pendingStatus.includes(header.pr_status)) {
-                        const currentApprovers = header.approvers_list
-                          ? header.approvers_list
-                            .split(",")
-                            .map((a: string) => a.trim())
-                            .filter(Boolean)
-                          : [];
+            {/* Approval history card */}
+            <Card>
+              <CardHeader className="py-3 px-4 bg-primary/5 border-b border-primary/20">
+                <CardTitle className="text-sm">Approval history</CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 py-4">
+                {(() => {
+                  // Get approval history from database
+                  const approvalHistory = data?.approvalHistory || [];
 
-                        currentApprovers.forEach((approver: string, index: number) => {
-                          const approverTrimmed = approver.trim();
-                          const isRole = ROLE_NAMES.some(
-                            (role) => approverTrimmed.toUpperCase() === role,
-                          );
+                  // Build timeline
+                  const timelineItems: Array<{
+                    name: string;
+                    email?: string;
+                    designation?: string;
+                    status: "Approved" | "Rejected" | "More" | "Pending" | "ReSubmit" | "more" | "Delegation" | "Delegated User";
+                    date?: string;
+                    comments?: string;
+                    stepOrder: number;
+                    roleName?: string;
+                  }> = [];
 
-                          timelineItems.push({
-                            name: formatApproverDisplayName(approver),
-                            status: "Pending",
-                            stepOrder: timelineItems.length + 1,
-                            roleName: isRole ? approverTrimmed : undefined,
-                          });
-                        });
-                      }
+                  // 1. Add all completed actions from approvalHistory (sorted by date/id)
+                  [...approvalHistory]
+                    .sort((a, b) => {
+                      const dateA = a.approved_date ? new Date(a.approved_date).getTime() : 0;
+                      const dateB = b.approved_date ? new Date(b.approved_date).getTime() : 0;
+                      if (dateA !== dateB) return dateA - dateB;
+                      return (a.id || 0) - (b.id || 0); // Fallback to ID sorting
+                    })
+                    .forEach((approval, index) => {
+                      const approverTrimmed = (approval.approver_name || "").trim();
+                      const isRole = ROLE_NAMES.some(
+                        (role) => approverTrimmed.toUpperCase() === role,
+                      );
 
-                      if (timelineItems.length === 0) {
-                        return (
-                          <p className="text-sm text-muted-foreground">
-                            No approval history available
-                          </p>
-                        );
-                      }
+                      timelineItems.push({
+                        name: approval.approver_name || approval.email || formatApproverDisplayName(""),
+                        email: approval.email || undefined,
+                        designation: approval.designation || undefined,
+                        status:
+                          (approval.status === "Approve" || approval.status === "approve") ? "Approved" :
+                            (approval.status === "Reject" || approval.status === "reject") ? "Rejected" :
+                              (approval.status === "More" || approval.status === "more") ? "More" :
+                                approval.status === "ReSubmit" ? "ReSubmit" :  approval.status === "Delegation" ? "Delegation" : approval.status === "Delegated User" ? "Delegated User" : "Approved",
+                        date: formatDate(approval.approved_date) || undefined,
+                        comments: approval.comments || undefined,
+                        stepOrder: index + 1,
+                        roleName: isRole ? approverTrimmed : undefined,
+                      });
+                    });
 
-                      return timelineItems.map((item, index, arr) => {
+                  // 2. Add pending approvers from approvers_list if in a pending state
+                  const pendingStatus = ["Pending Approval", "Pending", "PENDING", "Pending_Approval"];
+                  if (header.pr_status && pendingStatus.includes(header.pr_status)) {
+                    const currentApprovers = header.approvers_list
+                      ? header.approvers_list
+                        .split(",")
+                        .map((a: string) => a.trim())
+                        .filter(Boolean)
+                      : [];
+
+                    currentApprovers.forEach((approver: string, index: number) => {
+                      const approverTrimmed = approver.trim();
+                      const isRole = ROLE_NAMES.some(
+                        (role) => approverTrimmed.toUpperCase() === role,
+                      );
+
+                      timelineItems.push({
+                        name: formatApproverDisplayName(approver),
+                        status: "Pending",
+                        stepOrder: timelineItems.length + 1,
+                        roleName: isRole ? approverTrimmed : undefined,
+                      });
+                    });
+                  }
+
+                  if (timelineItems.length === 0) {
+                    return (
+                      <div className="flex flex-col items-center justify-center py-6 gap-1.5 text-center">
+                        <FileText className="h-10 w-10 text-primary/70 -rotate-12 mb-1" />
+                        <p className="text-sm font-medium">No Records!</p>
+                        <p className="text-xs text-muted-foreground px-4">
+                          No approval history is available as of now
+                        </p>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="space-y-0">
+                      {timelineItems.map((item, index, arr) => {
                         const status = item.status;
                         const isApproved = status.toLowerCase() === "approved";
                         const isRejected = status.toLowerCase() === "rejected";
@@ -2420,7 +2547,7 @@ export default function RequisitionDetail() {
                             : isMoreInfo
                               ? "bg-amber-500 border-amber-500 text-white"
                               : isResubmit
-                                ? "bg-blue-500 border-blue-500 text-white"
+                                ? "bg-primary border-primary text-primary-foreground"
                                 : "bg-muted border-muted-foreground/30 text-muted-foreground";
 
                         const dotColor = isApproved
@@ -2430,7 +2557,7 @@ export default function RequisitionDetail() {
                             : isMoreInfo
                               ? "bg-amber-500"
                               : isResubmit
-                                ? "bg-blue-500"
+                                ? "bg-primary"
                                 : "bg-orange-500";
 
                         const statusLabel = isApproved
@@ -2441,20 +2568,20 @@ export default function RequisitionDetail() {
                               ? "More Info"
                               : isResubmit
                                 ? "ReSubmit"
-                                : isDelegated? status : "Pending";
+                                : isDelegated ? status : "Pending";
 
                         const iconElement = (
                           <div
-                            className={`flex h-8 w-8 items-center justify-center rounded-full border-2 ${statusColor} cursor-pointer`}
+                            className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 ${statusColor} cursor-pointer`}
                           >
                             {isPending ? (
-                              <Clock className="h-4 w-4" />
+                              <Clock className="h-3.5 w-3.5" />
                             ) : isApproved ? (
-                              <CheckCircle2 className="h-4 w-4" />
+                              <CheckCircle2 className="h-3.5 w-3.5" />
                             ) : isRejected ? (
-                              <XCircle className="h-4 w-4" />
+                              <XCircle className="h-3.5 w-3.5" />
                             ) : (
-                              <AlertCircle className="h-4 w-4" />
+                              <AlertCircle className="h-3.5 w-3.5" />
                             )}
                           </div>
                         );
@@ -2462,12 +2589,10 @@ export default function RequisitionDetail() {
                         return (
                           <div
                             key={index}
-                            className="flex items-start"
+                            className="flex items-start gap-3"
                             data-testid={`approval-history-item-${index}`}
                           >
-                            {/* Approver Node */}
-                            <div className="flex flex-col items-center min-w-[140px] max-w-[160px]">
-                              {/* Circle with icon - wrap in tooltip if role-based */}
+                            <div className="flex flex-col items-center">
                               {item.roleName ? (
                                 <RoleUsersTooltip roleName={item.roleName}>
                                   {iconElement}
@@ -2475,60 +2600,42 @@ export default function RequisitionDetail() {
                               ) : (
                                 iconElement
                               )}
-
-                              {/* Approver Details */}
-                              <div className="mt-1.5 text-center px-1">
-                                <p
-                                  className="text-xs font-medium truncate max-w-[140px]"
-                                  title={item.name}
-                                >
-                                  {item.name}
-                                </p>
-                                <div className="flex items-center justify-center gap-1 mt-0.5">
-                                  <span
-                                    className={`inline-block w-1.5 h-1.5 rounded-full ${dotColor}`}
-                                  />
-                                  <span className="text-xs">{statusLabel}</span>
-                                </div>
-                                {/* Date for completed steps */}
-                                {item.date && (
-                                  <p className="text-[10px] text-muted-foreground mt-0.5">
-                                    {item.date}
-                                  </p>
-                                )}
-                                {/* Comments for completed steps */}
-                                {item.comments && (
-                                  <p
-                                    className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2 break-all"
-                                    title={item.comments}
-                                  >
-                                    {item.comments}
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-
-                            {/* Dotted Connector Line */}
-                            {index < arr.length - 1 && (
-                              <div className="flex items-center h-8">
+                              {index < arr.length - 1 && (
                                 <div
-                                  className={`w-10 border-t-2 border-dashed ${isApproved
-                                    ? "border-emerald-500"
-                                    : "border-muted-foreground/30"
-                                    }`}
+                                  className={`w-0.5 flex-1 min-h-[20px] border-l-2 border-dashed ${isApproved ? "border-emerald-500" : "border-muted-foreground/30"}`}
                                 />
+                              )}
+                            </div>
+                            <div className="pb-4 min-w-0">
+                              <p className="text-xs font-medium truncate" title={item.name}>
+                                {item.name}
+                              </p>
+                              <div className="flex items-center gap-1 mt-0.5">
+                                <span className={`inline-block w-1.5 h-1.5 rounded-full ${dotColor}`} />
+                                <span className="text-xs">{statusLabel}</span>
+                                {item.date && (
+                                  <span className="text-[10px] text-muted-foreground ml-1">{item.date}</span>
+                                )}
                               </div>
-                            )}
+                              {item.comments && (
+                                <p
+                                  className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2 break-all"
+                                  title={item.comments}
+                                >
+                                  {item.comments}
+                                </p>
+                              )}
+                            </div>
                           </div>
                         );
-                      });
-                    })()}
-                  </div>
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
-        )}
+                      })}
+                    </div>
+                  );
+                })()}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
 
         {budgetValidation && isAIEnabled("AI_BUDGET_VALIDATION") && (
           <Card
@@ -2600,52 +2707,18 @@ export default function RequisitionDetail() {
         )}
 
         <Card>
-          <CardHeader className="py-3 px-4">
-            <div className="flex items-center justify-between">
+          <CardHeader className="py-3 px-4 bg-primary/5 border-b border-primary/20">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <CardTitle className="text-sm flex items-center gap-2">
-                <Package className="h-4 w-4" />
-                Line Items ({lines.length})
+                <Package className="h-4 w-4 text-primary" />
+                Line items ({lines.length})
               </CardTitle>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 flex-wrap">
                 {(isDraft || isMoreInfoRequired) && (
-                  <div className="flex items-center gap-2">
-                    {isAIEnabled("AI_ITEM_SUGGESTIONS") && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={handleAIAssisted}
-                        disabled={suggestItemsMutation.isPending}
-                        data-testid="button-ai-assisted"
-                      >
-                        {suggestItemsMutation.isPending ? (
-                          <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                        ) : (
-                          <Sparkles className="h-4 w-4 mr-1" />
-                        )}
-                        AI Assisted
-                      </Button>
-                    )}
-                    {isAIEnabled("AI_ITEM_SUGGESTIONS") && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setAiChatOpen(true)}
-                        data-testid="button-ai-chat"
-                      >
-                        <MessageSquare className="h-4 w-4 mr-1" />
-                        AI Advisor
-                      </Button>
-                    )}
-                    {isOwner || isSuperadmin ?
+                  <>
+                   
+                    {(isOwner || isSuperadmin) && (
                       <>
-                        <Button
-                          size="sm"
-                          onClick={handleOpenAddLine}
-                          data-testid="button-add-line-item"
-                        >
-                          <Plus className="h-4 w-4 mr-1" />
-                          Add Line Item
-                        </Button>
                         <Button
                           size="sm"
                           variant="outline"
@@ -2653,7 +2726,7 @@ export default function RequisitionDetail() {
                           data-testid="button-import-excel"
                         >
                           <Download className="h-4 w-4 mr-1" />
-                          Import from Excel
+                          Import excel
                         </Button>
                         <input
                           ref={excelFileRef}
@@ -2670,14 +2743,15 @@ export default function RequisitionDetail() {
                             e.target.value = "";
                           }}
                         />
-                      </> : <></>}
-                  </div>
+                      </>
+                    )}
+                  </>
                 )}
               </div>
             </div>
           </CardHeader>
           <CardContent className="p-0">
-            {lines.length === 0 ? (
+            {lines.length === 0 && !(isDraft || isMoreInfoRequired) ? (
               <div className="flex flex-col items-center justify-center py-10 text-center">
                 <Package className="h-10 w-10 text-muted-foreground/50 mb-2" />
                 <p className="text-sm text-muted-foreground">
@@ -2690,10 +2764,10 @@ export default function RequisitionDetail() {
                   <TableHeader>
                     <TableRow className="hover:bg-transparent">
                       <TableHead className="text-xs font-medium w-[50px]">
-                        Line
+                        No
                       </TableHead>
                       <TableHead className="text-xs font-medium">
-                        Description
+                        Item name
                       </TableHead>
                       <TableHead className="text-xs font-medium">
                         Category
@@ -2701,12 +2775,18 @@ export default function RequisitionDetail() {
                       <TableHead className="text-xs font-medium text-right">
                         Qty
                       </TableHead>
-                      <TableHead className="text-xs font-medium">UoM</TableHead>
+                      <TableHead className="text-xs font-medium">UOM</TableHead>
                       <TableHead className="text-xs font-medium text-right">
                         Unit Price
                       </TableHead>
                       <TableHead className="text-xs font-medium text-right">
-                        Amount
+                        Total Cost
+                      </TableHead>
+                      <TableHead className="text-xs font-medium">
+                        Delivery location
+                      </TableHead>
+                      <TableHead className="text-xs font-medium">
+                        Delivery date
                       </TableHead>
                       <TableHead className="text-xs font-medium">
                         Status
@@ -2721,7 +2801,14 @@ export default function RequisitionDetail() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {lines.map((line) => (
+                    {lines.map((line) => {
+                      const canEditLine =
+                        (header.pr_status === "Draft" ||
+                          header.pr_status === "More Info Required" ||
+                          header.pr_status?.toLowerCase() === "more info required" ||
+                          header.pr_status?.toLowerCase() === "more") &&
+                        (isOwner || isSuperadmin);
+                      return (
                       <TableRow key={line.id}>
                         <TableCell className="font-mono text-sm py-2">
                           {line.line_num || "-"}
@@ -2759,16 +2846,18 @@ export default function RequisitionDetail() {
                             line.curr_code || header.currency,
                           )}
                         </TableCell>
+                        <TableCell className="text-sm py-2">
+                          {header.delivertto_location_name || "-"}
+                        </TableCell>
+                        <TableCell className="text-sm py-2">
+                          {formatDate(line.need_by_date) || "-"}
+                        </TableCell>
                         <TableCell className="py-2">
                           <LineStatusBadge status={line.status} />
                         </TableCell>
-                        {((header.pr_status === "Draft" ||
-                          (header.pr_status === "More Info Required" || header.pr_status?.toLowerCase() === "more info required" || header.pr_status?.toLowerCase() === "more")) && (isOwner || isSuperadmin)) &&
-                          (
+                        {canEditLine && (
                             <TableCell className="py-2">
                               <div className="flex items-center justify-center gap-1">
-                                {((header.pr_status === "Draft" ||
-                                  (header.pr_status === "More Info Required" || header.pr_status?.toLowerCase() === "more info required" || header.pr_status?.toLowerCase() === "more")) && (isOwner || isSuperadmin)) && (
                                 <Button
                                   size="icon"
                                   variant="ghost"
@@ -2798,9 +2887,15 @@ export default function RequisitionDetail() {
                                 >
                                   <Pencil className="h-4 w-4" />
                                 </Button>
-                                )}
-                                {((header.pr_status === "Draft" ||
-                                  (header.pr_status === "More Info Required" || header.pr_status?.toLowerCase() === "more info required" || header.pr_status?.toLowerCase() === "more")) && (isOwner || isSuperadmin)) && (
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  onClick={() => duplicateLineMutation.mutate(line)}
+                                  disabled={duplicateLineMutation.isPending}
+                                  data-testid={`button-duplicate-line-${line.id}`}
+                                >
+                                  <Copy className="h-4 w-4" />
+                                </Button>
                                 <Button
                                   size="icon"
                                   variant="ghost"
@@ -2812,59 +2907,52 @@ export default function RequisitionDetail() {
                                 >
                                   <Trash2 className="h-4 w-4 text-destructive" />
                                 </Button>
-                                )}
                               </div>
                             </TableCell>
                           )}
                       </TableRow>
-                    ))}
+                      );
+                    })}
                   </TableBody>
                 </Table>
+                {(isDraft || isMoreInfoRequired) && (isOwner || isSuperadmin) && (
+                  <button
+                    type="button"
+                    onClick={handleOpenAddLine}
+                    className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-primary/40 text-primary text-sm font-medium py-3 hover:bg-primary/5 transition-colors"
+                    data-testid="button-add-new-line-row"
+                  >
+                    <Plus className="h-4 w-4" />
+                    ADD NEW
+                  </button>
+                )}
               </div>
             )}
           </CardContent>
         </Card>
 
-        <Sheet
+        <FormSheet
           open={addLineSheetOpen}
           onOpenChange={(open) => {
             setAddLineSheetOpen(open);
             if (!open) {
               setEditingLineId(null);
-              setNewLineItem({
-                description: "",
-                quantity: "1",
-                uom: "",
-                unitPrice: "",
-                categoryCode: "",
-                categoryName: "",
-                itemId: "",
-                itemName: "",
-              });
-              setQuantityPrediction(null);
-              setQuantityPredictionItemKey(null);
-              setFmpRequestedItemKey(null);
+              setNewLineItem(EMPTY_NEW_LINE_ITEM);
             }
           }}
+          title={editingLineId ? "Edit Line Item" : "Add Line Item"}
+          description={
+            editingLineId
+              ? "Update line item details."
+              : "Add a new line item to this requisition manually."
+          }
+          onSubmit={handleSaveLine}
+          submitLabel={editingLineId ? "Update Line Item" : "Add Line Item"}
+          isSubmitting={isSavingLine}
+          submitDisabled={!newLineItem.description || !newLineItem.quantity || !newLineItem.unitPrice}
+          widthClassName="w-full sm:max-w-[600px]"
         >
-          <SheetContent className="w-[600px] sm:max-w-[600px] overflow-y-auto">
-            <SheetHeader>
-              <SheetTitle className="flex items-center gap-2">
-                {editingLineId ? (
-                  <Pencil className="h-5 w-5" />
-                ) : (
-                  <Plus className="h-5 w-5" />
-                )}
-                {editingLineId ? "Edit Line Item" : "Add Line Item"}
-              </SheetTitle>
-              <SheetDescription>
-                {editingLineId
-                  ? "Update line item details."
-                  : "Add a new line item to this requisition manually."}
-              </SheetDescription>
-            </SheetHeader>
-
-            <div className="space-y-4 pt-2 pb-6">
+            <div className="space-y-4 pb-6">
             {/* Item Entry Mode Toggle - Free Text hidden, master mode only */}
 
             {/* Item Master Mode - Item Selection */}
@@ -2917,8 +3005,6 @@ export default function RequisitionDetail() {
                                     : "",
                                 });
                                 setItemOpen(false);
-                                setQuantityPrediction(null);
-                                setQuantityPredictionItemKey(null);
                               }}
                               data-testid={`item-option-${item.id}`}
                             >
@@ -3042,122 +3128,7 @@ export default function RequisitionDetail() {
               </>
             )}
 
-            {hasSelectedLineItem && isAIEnabled("AI_QUANTITY_PREDICTION") && (
-              <div className="space-y-2">
-                {!activeQuantityPrediction && (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    className="w-full"
-                    disabled={predictQuantityMutation.isPending}
-                    onClick={() =>
-                      predictQuantityMutation.mutate(currentLineItemKey)
-                    }
-                    data-testid="button-predict-quantity"
-                  >
-                    {predictQuantityMutation.isPending ? (
-                      <>
-                        <Loader2
-                          className="h-4 w-4 mr-1 animate-spin"
-                          aria-hidden="true"
-                        />
-                        Generating recommendation...
-                        <span className="sr-only">
-                          Generating AI quantity recommendation, please wait
-                        </span>
-                      </>
-                    ) : predictQuantityMutation.isError ? (
-                      <>
-                        <RefreshCw className="h-4 w-4 mr-1" aria-hidden="true" />
-                        Retry AI Prediction
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="h-4 w-4 mr-1" aria-hidden="true" />
-                        AI Predict Quantity
-                      </>
-                    )}
-                  </Button>
-                )}
-
-                {activeQuantityPrediction && (() => {
-                  const confidencePct = Math.round(
-                    activeQuantityPrediction.confidence * 100,
-                  );
-                  const tier =
-                    confidencePct >= 80
-                      ? "high"
-                      : confidencePct >= 60
-                        ? "medium"
-                        : "low";
-                  const tierClasses = {
-                    high: "border-green-300 bg-green-50/50 dark:border-green-800 dark:bg-green-950/20",
-                    medium:
-                      "border-amber-300 bg-amber-50/50 dark:border-amber-800 dark:bg-amber-950/20",
-                    low: "border-red-300 bg-red-50/50 dark:border-red-800 dark:bg-red-950/20",
-                  } as const;
-                  const badgeLabel = {
-                    high: "High Confidence",
-                    medium: "Medium Confidence",
-                    low: "Low Confidence",
-                  } as const;
-                  return (
-                    <Card
-                      className={`border ${tierClasses[tier]}`}
-                      data-testid="card-quantity-prediction"
-                    >
-                      <CardHeader className="py-3 px-4">
-                        <CardTitle className="text-sm flex items-center gap-2 flex-wrap">
-                          <Sparkles className="h-4 w-4 text-primary" aria-hidden="true" />
-                          AI Quantity Recommendation
-                          <Badge
-                            variant={
-                              tier === "high"
-                                ? "default"
-                                : tier === "medium"
-                                  ? "outline"
-                                  : "destructive"
-                            }
-                            className="text-xs"
-                          >
-                            {badgeLabel[tier]} ({confidencePct}%)
-                          </Badge>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="py-2 px-4 space-y-2">
-                        <div className="text-sm">
-                          <span className="font-medium">
-                            Suggested Quantity:{" "}
-                          </span>
-                          {activeQuantityPrediction.suggestedQuantity}
-                        </div>
-                        <p className="text-sm text-muted-foreground whitespace-pre-line">
-                          {activeQuantityPrediction.reasoning}
-                        </p>
-                        {activeQuantityPrediction.basedOn?.length > 0 && (
-                          <div className="text-xs text-muted-foreground">
-                            <span className="font-medium">Based On: </span>
-                            {activeQuantityPrediction.basedOn
-                              .map((b) =>
-                                b
-                                  .split("_")
-                                  .map(
-                                    (w) =>
-                                      w.charAt(0).toUpperCase() + w.slice(1),
-                                  )
-                                  .join(" "),
-                              )
-                              .join(", ")}
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  );
-                })()}
-              </div>
-            )}
-
+           
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="line-quantity">Quantity <span className="text-destructive">*</span></Label>
@@ -3227,186 +3198,30 @@ export default function RequisitionDetail() {
               </div>              
             </div>
 
-            {isAIEnabled("AI_FMP_INTELLIGENCE") && !!newLineItem.itemId && (
-              <div className="space-y-2">
-                {!fmpRequested ? (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => setFmpRequestedItemKey(newLineItem.itemId)}
-                    data-testid="button-fmp-benchmark"
-                  >
-                    <Sparkles className="h-4 w-4 mr-1" aria-hidden="true" />
-                    AI Fair Market Price
-                  </Button>
-                ) : fmpFetching ? (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    className="w-full"
-                    disabled
-                    data-testid="button-fmp-benchmark"
-                  >
-                    <Loader2
-                      className="h-4 w-4 mr-1 animate-spin"
-                      aria-hidden="true"
-                    />
-                    Computing benchmark...
-                    <span className="sr-only">
-                      Computing AI fair market price benchmark, please wait
-                    </span>
-                  </Button>
-                ) : fmpFailed ? (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => refetchFmpSnapshot()}
-                    data-testid="button-fmp-benchmark"
-                  >
-                    <RefreshCw className="h-4 w-4 mr-1" aria-hidden="true" />
-                    Retry AI Benchmark
-                  </Button>
-                ) : (
-                  <>
-                    <FmpBenchmarkCard
-                      snapshot={fmpSnapshot}
-                      enteredPrice={parseFloat(newLineItem.unitPrice) || null}
-                      currency={header.currency || "AED"}
-                      onUseFairPrice={(price) =>
-                        setNewLineItem((prev) => ({
-                          ...prev,
-                          unitPrice: String(price),
-                        }))
-                      }
-                    />
-                    {/* The trigger button is gone once the card renders, so this
-                        is the only way to re-run the analysis for the same item. */}
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      className="w-full"
-                      onClick={() => refetchFmpSnapshot()}
-                      data-testid="button-fmp-reanalyze"
-                    >
-                      <RefreshCw className="h-4 w-4 mr-1" aria-hidden="true" />
-                      Re-analyze
-                    </Button>
-                  </>
-                )}
-              </div>
-            )}
           </div>
-
-            <SheetFooter>
-              <Button
-                variant="outline"
-                onClick={() => setAddLineSheetOpen(false)}
-                data-testid="button-cancel-line"
-              >
-                Cancel
-              </Button>
-              <Button
-                disabled={!newLineItem.description || !newLineItem.quantity || !newLineItem.unitPrice}
-                data-testid="button-save-line"
-                onClick={async () => {
-                  const price = parseFloat(newLineItem.unitPrice);
-                  if (isNaN(price) || price <= 0) {
-                    toast({
-                      title: "Invalid Unit Price",
-                      description: "Unit price must be greater than 0.",
-                      variant: "destructive",
-                    });
-                    return;
-                  }
-                  try {
-                    if (editingLineId) {
-                      // Update existing line
-                      await apiRequest(
-                        "PUT",
-                        `/api/requisitions/${prNumber}/lines/${editingLineId}`,
-                        {
-                          itemDescription: newLineItem.description,
-                          quantity: parseFloat(newLineItem.quantity) || 1,
-                          unitCost: parseFloat(newLineItem.unitPrice) || 0,
-                          uom: newLineItem.uom || "Each",
-                          categoryId: newLineItem.categoryCode || null,
-                          categoryName: newLineItem.categoryName || null,
-                          itemId: newLineItem.itemId || null,
-                        },
-                      );
-                      toast({
-                        title: "Line Updated",
-                        description: "Line item updated successfully",
-                      });
-                    } else {
-                      // Add new line
-                      await apiRequest(
-                        "POST",
-                        `/api/requisitions/${prNumber}/lines`,
-                        {
-                          itemDescription: newLineItem.description,
-                          quantity: parseFloat(newLineItem.quantity) || 1,
-                          unitCost: parseFloat(newLineItem.unitPrice) || 0,
-                          uom: newLineItem.uom || "Each",
-                          categoryId: newLineItem.categoryCode || null,
-                          categoryName: newLineItem.categoryName || null,
-                          itemId: newLineItem.itemId || null,
-                        },
-                      );
-                      toast({
-                        title: "Line Added",
-                        description: "Line item added successfully",
-                      });
-                    }
-                    queryClient.invalidateQueries({
-                      queryKey: [`/api/requisitions/${prNumber}`],
-                    });
-                    setAddLineSheetOpen(false);
-                    setEditingLineId(null);
-                    setNewLineItem({
-                      description: "",
-                      quantity: "1",
-                      uom: "",
-                      unitPrice: "",
-                      categoryCode: "",
-                      categoryName: "",
-                      itemId: "",
-                      itemName: "",
-                    });
-                  } catch (error) {
-                    console.error("Failed to save line:", error);
-                    toast({
-                      title: "Error",
-                      description: editingLineId
-                        ? "Failed to update line item"
-                        : "Failed to add line item",
-                      variant: "destructive",
-                    });
-                  }
-                }}
-              >
-                {editingLineId ? "Update Line Item" : "Add Line Item"}
-              </Button>
-            </SheetFooter>
-          </SheetContent>
-        </Sheet>
+        </FormSheet>
 
         {/* Edit PR Sheet */}
-        <Sheet open={isEditOpen} onOpenChange={setIsEditOpen}>
-          <SheetContent className="w-[50vw] sm:max-w-[50vw] overflow-y-auto">
-            <SheetHeader>
-              <SheetTitle>Edit Purchase Requisition</SheetTitle>
-              <SheetDescription>
-                <span className="text-destructive">*</span> Indicates mandatory
-                fields
-              </SheetDescription>
-            </SheetHeader>
+        <FormSheet
+          open={isEditOpen}
+          onOpenChange={setIsEditOpen}
+          title="Edit Purchase Requisition"
+          onSubmit={handleUpdatePR}
+          submitLabel={updatePRMutation.isPending ? "Updating..." : "Update"}
+          isSubmitting={updatePRMutation.isPending}
+          submitDisabled={
+            !editForm.description ||
+            !editForm.deliveryLocation ||
+            !editForm.needByDate ||
+            !editForm.requestorId ||
+            !editForm.requestorDepartment ||
+            !editForm.buyerId ||
+            (editForm.isBudgeted === "yes" && !editForm.budgetId)
+          }
+        >
+            <p className="text-xs text-muted-foreground mb-4">
+              <span className="text-destructive">*</span> Indicates mandatory fields
+            </p>
             <div className="mt-2">
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2 space-y-2">
@@ -3708,26 +3523,7 @@ export default function RequisitionDetail() {
                 )}
               </div>
             </div>
-
-            <div className="flex justify-end gap-2 mt-6 pt-4">
-              <Button
-                variant="outline"
-                onClick={() => setIsEditOpen(false)}
-                data-testid="button-cancel-edit-pr"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleUpdatePR}
-                disabled={updatePRMutation.isPending || !editForm.description || !editForm.deliveryLocation || !editForm.needByDate || !editForm.requestorId || !editForm.requestorDepartment || !editForm.buyerId || (editForm.isBudgeted === "yes" && !editForm.budgetId)}
-                data-testid="button-save-edit-pr"
-              >
-                {updatePRMutation.isPending && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
-                Update
-              </Button>
-            </div>
-          </SheetContent>
-        </Sheet>
+        </FormSheet>
 
         {/* Submit for Approval Confirmation Dialog */}
         <Dialog open={submitConfirmOpen} onOpenChange={setSubmitConfirmOpen}>
@@ -4005,154 +3801,6 @@ export default function RequisitionDetail() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-        {/* AI Advisor Dialog */}
-        {isAIEnabled("AI_ITEM_SUGGESTIONS") && (
-          <Dialog
-            open={aiChatOpen}
-            onOpenChange={(open) => {
-              setAiChatOpen(open);
-              if (!open) {
-                setAiRecommendations([]);
-                setSelectedRecommendations(new Set());
-              }
-            }}
-          >
-            <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <Sparkles className="h-5 w-5" />
-                  AI Advisor
-                </DialogTitle>
-                <DialogDescription>
-                  Describe what you need. AI will match your request to items
-                  from the Item Master.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 py-4 flex-1 overflow-hidden flex flex-col">
-                <div className="flex gap-2">
-                  <Textarea
-                    placeholder="e.g., I need laptops and accessories for new employees..."
-                    value={aiChatInput}
-                    onChange={(e) => setAiChatInput(e.target.value)}
-                    className="min-h-[80px] resize-none flex-1"
-                    data-testid="textarea-ai-chat-input"
-                  />
-                  <Button
-                    onClick={handleAIChatSubmit}
-                    disabled={aiChatMutation.isPending || !aiChatInput.trim()}
-                    className="self-end"
-                    data-testid="button-ai-chat-search"
-                  >
-                    {aiChatMutation.isPending ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-4 w-4" />
-                    )}
-                  </Button>
-                </div>
-
-                {aiRecommendations.length > 0 && (
-                  <div className="border rounded-md overflow-auto flex-1 max-h-[300px]">
-                    <div className="p-2 bg-muted/50 border-b text-xs font-medium flex items-center justify-between">
-                      <span>
-                        Recommended Items ({aiRecommendations.length})
-                      </span>
-                      <span className="text-muted-foreground">
-                        {selectedRecommendations.size} selected
-                      </span>
-                    </div>
-                    <div className="divide-y">
-                      {aiRecommendations.map((item) => (
-                        <div
-                          key={item.itemId}
-                          className={cn(
-                            "p-3 flex gap-3 cursor-pointer hover:bg-muted/30 transition-colors",
-                            selectedRecommendations.has(item.itemId) &&
-                            "bg-muted/50",
-                          )}
-                          onClick={() => toggleRecommendation(item.itemId)}
-                          data-testid={`recommendation-item-${item.itemId}`}
-                        >
-                          <div className="pt-0.5">
-                            <div
-                              className={cn(
-                                "h-4 w-4 rounded border flex items-center justify-center transition-colors",
-                                selectedRecommendations.has(item.itemId)
-                                  ? "bg-primary border-primary"
-                                  : "border-muted-foreground/50",
-                              )}
-                            >
-                              {selectedRecommendations.has(item.itemId) && (
-                                <Check className="h-3 w-3 text-primary-foreground" />
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="font-medium text-sm truncate">
-                              {item.name}
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              {item.categoryName || "No category"} •{" "}
-                              {item.unitOfMeasure} • AED{" "}
-                              {item.unitPrice?.toLocaleString()}
-                            </div>
-                            <div className="text-xs text-muted-foreground/70 mt-1 italic">
-                              {item.reason}
-                            </div>
-                            {item.frequency > 0 && (
-                              <Badge
-                                variant="secondary"
-                                className="text-[10px] mt-1"
-                              >
-                                Ordered {item.frequency}x before
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-              <DialogFooter className="gap-2 sm:gap-0">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setAiChatOpen(false);
-                    setAiChatInput("");
-                    setAiRecommendations([]);
-                    setSelectedRecommendations(new Set());
-                  }}
-                  data-testid="button-ai-chat-cancel"
-                >
-                  Cancel
-                </Button>
-                {aiRecommendations.length > 0 && (
-                  <Button
-                    onClick={handleAddSelectedItems}
-                    disabled={
-                      addSelectedItemsMutation.isPending ||
-                      selectedRecommendations.size === 0
-                    }
-                    data-testid="button-ai-chat-add-selected"
-                  >
-                    {addSelectedItemsMutation.isPending ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Adding...
-                      </>
-                    ) : (
-                      <>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add {selectedRecommendations.size} Item(s)
-                      </>
-                    )}
-                  </Button>
-                )}
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        )}
       </div>
 
       {/* Import Line Items from Excel — 3-step dialog */}

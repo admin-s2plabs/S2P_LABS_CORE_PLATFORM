@@ -2,6 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { FormSheet } from "@/components/form-sheet";
 import {
   Form, FormControl, FormField, FormItem, FormLabel, FormMessage,
 } from "@/components/ui/form";
@@ -11,9 +12,6 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import {
-  Sheet, SheetContent, SheetHeader, SheetTitle,
-} from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -24,12 +22,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { ArrowLeft, ChevronDown, ChevronRight, Download, Eye, File, FileImage, FileText, Landmark, Loader2, Pencil, Plus, Trash2, Upload, X } from "lucide-react";
 import { useVendorRegistrationDraftOptional } from "@/pages/modules/vendor-registration/vendor-registration-draft-context";
-import { bankingFieldHighlightClass } from "@/pages/modules/vendor-registration/vendor-registration-field-states";
-import { MANDATORY_BANKING_KEYS } from "@/pages/modules/vendor-registration/registration-mandatory";
-import { cn } from "@/lib/utils";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
-import { useLocation, useSearch } from "wouter";
+import { useLocation } from "wouter";
 import { z } from "zod";
 
 function validateIBAN(iban: string): boolean {
@@ -408,35 +403,9 @@ export default function VendorBanking() {
     },
   });
 
-  const watchedBank = form.watch();
 
   const draftCtx = useVendorRegistrationDraftOptional();
-  const urlSearch = useSearch();
   const bankDraftPrefilled = useRef(false);
-  const isFirstBankAiGuidedEntry = !(bankAccounts && bankAccounts.length > 0);
-  const bankHighlight = !!(
-    draftCtx?.highlightFromAi &&
-    draftCtx?.draft &&
-    isFirstBankAiGuidedEntry
-  );
-  const bankRing = useCallback(
-    (key: keyof BankFormData) => {
-      const raw = String(watchedBank[key] ?? "").trim();
-      const hasHighlightValue =
-        key === "primary_account" ? raw !== "" && raw !== "N" : raw !== "";
-      return cn(
-        bankingFieldHighlightClass(
-          draftCtx?.draft ?? null,
-          key as string,
-          bankHighlight,
-          MANDATORY_BANKING_KEYS.includes(key as string) && !raw,
-          hasHighlightValue,
-        ),
-      );
-    },
-    [draftCtx?.draft, bankHighlight, watchedBank],
-  );
-
   const onBankFormBlur = useCallback(
     (ev: React.FocusEvent<HTMLFormElement>) => {
       if (!draftCtx?.setBankingField) return;
@@ -517,10 +486,7 @@ export default function VendorBanking() {
       primary_account: "N",
     });
     setSheetOpen(true);
-    if (new URLSearchParams(urlSearch).get("source") === "ai-draft") {
-      draftCtx?.setHighlightFromAi(true);
-    }
-  }, [bankAccounts, draftCtx, form, urlSearch]);
+  }, [bankAccounts, draftCtx, form]);
 
   const createMutation = useMutation({
     mutationFn: (data: BankFormData) => apiRequest("POST", "/api/vendor/bank-accounts", data),
@@ -560,7 +526,6 @@ export default function VendorBanking() {
       setPendingAiBankDocId(null);
       form.reset();
       draftCtx?.clearBankingDraftLocal?.();
-      draftCtx?.setHighlightFromAi(false);
       toast({ title: "Bank account added successfully" });
     },
     onError: () => toast({ title: "Failed to add bank account", variant: "destructive" }),
@@ -633,7 +598,6 @@ export default function VendorBanking() {
     setEditingBank(null);
     if (bankAccounts && bankAccounts.length > 0) {
       userDismissedAutoBankDoc.current = true;
-      draftCtx?.setHighlightFromAi(false);
     } else {
       userDismissedAutoBankDoc.current = false;
     }
@@ -963,7 +927,7 @@ export default function VendorBanking() {
         </CardContent>
       </Card>
 
-      <Sheet
+      <FormSheet
         open={sheetOpen}
         onOpenChange={(open) => {
           setSheetOpen(open);
@@ -976,19 +940,16 @@ export default function VendorBanking() {
             form.reset();
           }
         }}
+        title={editingBank ? "Edit Bank Account" : "Add Bank Account"}
+        widthClassName="sm:max-w-4xl"
+        onCancel={() => setSheetOpen(false)}
+        onSubmit={form.handleSubmit(onSubmit)}
+        submitLabel={docUploading ? "Uploading Document..." : editingBank ? "Update" : "Add"}
+        isSubmitting={createMutation.isPending || updateMutation.isPending || docUploading}
       >
-        <SheetContent className="w-[50vw] sm:max-w-[50vw] overflow-y-auto p-4">
-          <SheetHeader className="mb-3">
-            <SheetTitle className="text-base">{editingBank ? "Edit Bank Account" : "Add Bank Account"}</SheetTitle>
-          </SheetHeader>
-          {bankHighlight && (
-            <div className="rounded-md border border-amber-500/35 bg-amber-500/[0.06] p-2 text-xs text-muted-foreground mb-3">
-              <span className="font-medium text-foreground">Review before submit: </span>
-              <span className="font-semibold text-amber-950/80 dark:text-amber-100/90">Amber</span> highlighted fields
-              contain AI-filled values that require your confirmation.{" "}
-              <span className="font-semibold text-destructive">Red</span> fields are required and still missing.
-            </div>
-          )}
+          <p className="text-xs text-muted-foreground mb-4">
+            <span className="text-destructive">*</span> Indicates mandatory fields
+          </p>
           <Form {...form}>
             <form
               onSubmit={form.handleSubmit(onSubmit)}
@@ -1000,7 +961,7 @@ export default function VendorBanking() {
                   <FormItem>
                     <FormLabel>Country <span className="text-destructive">*</span></FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl className={bankRing(field.name as keyof BankFormData)}><SelectTrigger data-testid="select-bank-country"><SelectValue placeholder="Select country" /></SelectTrigger></FormControl>
+                      <FormControl><SelectTrigger data-testid="select-bank-country"><SelectValue placeholder="Select country" /></SelectTrigger></FormControl>
                       <SelectContent>
                         {countries?.map((c: any) => <SelectItem key={c.value} value={c.value}>{c.label} ({c.value})</SelectItem>)}
                       </SelectContent>
@@ -1012,7 +973,7 @@ export default function VendorBanking() {
                   <FormItem>
                     <FormLabel>Currency <span className="text-destructive">*</span></FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl className={bankRing(field.name as keyof BankFormData)}><SelectTrigger data-testid="select-currency"><SelectValue placeholder="Select currency" /></SelectTrigger></FormControl>
+                      <FormControl><SelectTrigger data-testid="select-currency"><SelectValue placeholder="Select currency" /></SelectTrigger></FormControl>
                       <SelectContent>
                         {currencies?.map((c: any) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
                       </SelectContent>
@@ -1025,14 +986,14 @@ export default function VendorBanking() {
                 <FormField control={form.control} name="bank_name" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Bank Name <span className="text-destructive">*</span></FormLabel>
-                    <FormControl className={bankRing(field.name as keyof BankFormData)}><Input {...field} data-testid="input-bank-name" /></FormControl>
+                    <FormControl><Input {...field} data-testid="input-bank-name" /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="branch_name" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Branch Name <span className="text-destructive">*</span></FormLabel>
-                    <FormControl className={bankRing(field.name as keyof BankFormData)}><Input {...field} data-testid="input-branch-name" /></FormControl>
+                    <FormControl><Input {...field} data-testid="input-branch-name" /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
@@ -1041,14 +1002,14 @@ export default function VendorBanking() {
                 <FormField control={form.control} name="swift_code" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Swift Code</FormLabel>
-                    <FormControl className={bankRing(field.name as keyof BankFormData)}><Input {...field} data-testid="input-swift" /></FormControl>
+                    <FormControl><Input {...field} data-testid="input-swift" /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="aba_routing" render={({ field }) => (
                   <FormItem>
                     <FormLabel>ABA Routing No</FormLabel>
-                    <FormControl className={bankRing(field.name as keyof BankFormData)}><Input {...field} data-testid="input-aba-routing" /></FormControl>
+                    <FormControl><Input {...field} data-testid="input-aba-routing" /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
@@ -1057,14 +1018,14 @@ export default function VendorBanking() {
                 <FormField control={form.control} name="ifsccode" render={({ field }) => (
                   <FormItem>
                     <FormLabel>IFSC Code</FormLabel>
-                    <FormControl className={bankRing(field.name as keyof BankFormData)}><Input {...field} data-testid="input-ifsc" /></FormControl>
+                    <FormControl><Input {...field} data-testid="input-ifsc" /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="bank_address" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Bank/Branch Address</FormLabel>
-                    <FormControl className={bankRing(field.name as keyof BankFormData)}><Input {...field} data-testid="input-bank-address" /></FormControl>
+                    <FormControl><Input {...field} data-testid="input-bank-address" /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
@@ -1072,7 +1033,7 @@ export default function VendorBanking() {
               <FormField control={form.control} name="beneficiary_name" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Account / Beneficiary Name <span className="text-destructive">*</span></FormLabel>
-                  <FormControl className={bankRing(field.name as keyof BankFormData)}><Input {...field} data-testid="input-beneficiary-name" /></FormControl>
+                  <FormControl><Input {...field} data-testid="input-beneficiary-name" /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
@@ -1080,14 +1041,14 @@ export default function VendorBanking() {
                 <FormField control={form.control} name="account_no" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Account Number <span className="text-destructive">*</span></FormLabel>
-                    <FormControl className={bankRing(field.name as keyof BankFormData)}><Input {...field} data-testid="input-account-no" inputMode="numeric" onKeyDown={(e) => { if (!/[\d]/.test(e.key) && !["Backspace", "Delete", "Tab", "ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)) e.preventDefault(); }} /></FormControl>
+                    <FormControl><Input {...field} data-testid="input-account-no" inputMode="numeric" onKeyDown={(e) => { if (!/[\d]/.test(e.key) && !["Backspace", "Delete", "Tab", "ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)) e.preventDefault(); }} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="confirm_account_no" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Confirm Account Number <span className="text-destructive">*</span></FormLabel>
-                    <FormControl className={bankRing(field.name as keyof BankFormData)}><Input {...field} data-testid="input-confirm-account-no" inputMode="numeric" onKeyDown={(e) => { if (!/[\d]/.test(e.key) && !["Backspace", "Delete", "Tab", "ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)) e.preventDefault(); }} /></FormControl>
+                    <FormControl><Input {...field} data-testid="input-confirm-account-no" inputMode="numeric" onKeyDown={(e) => { if (!/[\d]/.test(e.key) && !["Backspace", "Delete", "Tab", "ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)) e.preventDefault(); }} /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
@@ -1096,7 +1057,7 @@ export default function VendorBanking() {
                 <FormItem className="w-1/2">
                   <FormLabel>Account Type <span className="text-destructive">*</span></FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl className={bankRing(field.name as keyof BankFormData)}><SelectTrigger data-testid="select-account-type"><SelectValue placeholder="Select type" /></SelectTrigger></FormControl>
+                    <FormControl><SelectTrigger data-testid="select-account-type"><SelectValue placeholder="Select type" /></SelectTrigger></FormControl>
                     <SelectContent>
                       {accountTypes.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
                     </SelectContent>
@@ -1108,14 +1069,14 @@ export default function VendorBanking() {
                 <FormField control={form.control} name="street" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Location/Street</FormLabel>
-                    <FormControl className={bankRing(field.name as keyof BankFormData)}><Input {...field} data-testid="input-street" /></FormControl>
+                    <FormControl><Input {...field} data-testid="input-street" /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="beneficiary_address" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Beneficiary Address</FormLabel>
-                    <FormControl className={bankRing(field.name as keyof BankFormData)}><Input {...field} data-testid="input-beneficiary-address" /></FormControl>
+                    <FormControl><Input {...field} data-testid="input-beneficiary-address" /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
@@ -1124,21 +1085,21 @@ export default function VendorBanking() {
                 <FormField control={form.control} name="city" render={({ field }) => (
                   <FormItem>
                     <FormLabel>City</FormLabel>
-                    <FormControl className={bankRing(field.name as keyof BankFormData)}><Input {...field} data-testid="input-bank-city" /></FormControl>
+                    <FormControl><Input {...field} data-testid="input-bank-city" /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="region" render={({ field }) => (
                   <FormItem>
                     <FormLabel>State</FormLabel>
-                    <FormControl className={bankRing(field.name as keyof BankFormData)}><Input {...field} data-testid="input-bank-region" /></FormControl>
+                    <FormControl><Input {...field} data-testid="input-bank-region" /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="iban_no" render={({ field }) => (
                   <FormItem>
                     <FormLabel>IBAN Number</FormLabel>
-                    <FormControl className={bankRing(field.name as keyof BankFormData)}><Input {...field} data-testid="input-iban" /></FormControl>
+                    <FormControl><Input {...field} data-testid="input-iban" /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
@@ -1146,7 +1107,7 @@ export default function VendorBanking() {
               <FormField control={form.control} name="postal_code" render={({ field }) => (
                 <FormItem className="w-1/3">
                   <FormLabel>Postal Code</FormLabel>
-                  <FormControl className={bankRing(field.name as keyof BankFormData)}><Input {...field} data-testid="input-bank-postal" /></FormControl>
+                  <FormControl><Input {...field} data-testid="input-bank-postal" /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
@@ -1154,7 +1115,7 @@ export default function VendorBanking() {
               <FormField control={form.control} name="primary_account" render={({ field }) => (
                 <FormItem>
                   <FormLabel>Is Primary <span className="text-destructive">*</span></FormLabel>
-                  <FormControl className={bankRing(field.name as keyof BankFormData)}>
+                  <FormControl>
                     <RadioGroup onValueChange={field.onChange} value={field.value} className="flex gap-4" data-testid="radio-primary-account">
                       <div className="flex items-center gap-2">
                         <RadioGroupItem value="Y" id="primary-yes" />
@@ -1228,13 +1189,13 @@ export default function VendorBanking() {
                         className="text-[11px] text-muted-foreground"
                         title={
                           pendingAiBankDocId != null && !selectedFile
-                            ? "From your AI registration uploads"
+                            ? "Previously uploaded document"
                             : (sheetDocForPreview?.doc_type ?? docType)
                         }
                         data-testid="text-bank-doc-subtype"
                       >
                         {pendingAiBankDocId != null && !selectedFile
-                          ? "From your AI registration uploads"
+                          ? "Previously uploaded document"
                           : (sheetDocForPreview?.doc_type ?? docType)}
                       </p>
                       <p className="text-[10px] text-muted-foreground">
@@ -1320,18 +1281,9 @@ export default function VendorBanking() {
                   </Card>
                 )}
               </div>
-
-              <div className="flex justify-end gap-2 mt-4 pt-3 border-t">
-                <Button type="button" variant="outline" onClick={() => setSheetOpen(false)}>Cancel</Button>
-                <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending || docUploading} data-testid="button-save-bank">
-                  {(createMutation.isPending || updateMutation.isPending || docUploading) && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
-                  {docUploading ? "Uploading Document..." : editingBank ? "Update" : "Add"}
-                </Button>
-              </div>
             </form>
           </Form>
-        </SheetContent>
-      </Sheet>
+      </FormSheet>
 
       <Dialog open={!!previewDoc} onOpenChange={(open) => { if (!open) setPreviewDoc(null); }}>
         <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">

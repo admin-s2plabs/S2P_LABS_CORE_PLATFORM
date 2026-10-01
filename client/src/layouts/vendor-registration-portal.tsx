@@ -1,6 +1,5 @@
-import prokrayaLogoLight from "@/assets/images/prokraya-logo-light.png";
+import s2pLabsLogo from "@/assets/images/s2plabs_logo.jpeg";
 import { Footer } from "@/components/footer";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -24,7 +23,6 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import FeedbackPage from "@/pages/modules/common/feedback";
 import ProfilePage from "@/pages/modules/common/profile";
 import TermsConditions from "@/pages/modules/common/terms-conditions";
-import VendorAIChat from "@/pages/modules/vendor-registration/vendor-ai-chat";
 import { VendorRegistrationDraftProvider } from "@/pages/modules/vendor-registration/vendor-registration-draft-context";
 import VendorBanking from "@/pages/modules/vendor-registration/vendor-banking";
 import VendorCertificates from "@/pages/modules/vendor-registration/vendor-certificates";
@@ -37,7 +35,6 @@ import {
   ArrowLeft,
   ArrowRight,
   Bell,
-  Bot,
   Building2,
   CircleCheck,
   ClipboardCheck,
@@ -51,7 +48,6 @@ import {
   Mail,
   Package,
   Send,
-  Sparkles,
   Upload,
   Users,
 } from "lucide-react";
@@ -393,7 +389,6 @@ export default function VendorRegistrationPortal({
   const completedCount = sectionComplete.filter(Boolean).length;
   const completionPercent = Math.round((completedCount / 6) * 100);
 
-  const isAIChatMode = location.startsWith("/vendor/register/ai-chat");
   const isModeSelection =
     location === "/vendor/register" || location === "/vendor/register/";
   const currentStepIndex = registrationSteps.findIndex((s) =>
@@ -438,7 +433,7 @@ export default function VendorRegistrationPortal({
 
 
   useEffect(() => {
-    if (isAIChatMode || isModeSelection || isPendingApproval) return;
+    if (isModeSelection || isPendingApproval) return;
     if (location === "/vendor" || location === "/vendor/") {
       navigate("/vendor/register");
       return;
@@ -473,7 +468,6 @@ export default function VendorRegistrationPortal({
     hasSupplier,
     isProfileFetching,
     isContactsFetching,
-    isAIChatMode,
     isModeSelection,
     hasActiveContact,
     isPendingApproval,
@@ -674,18 +668,15 @@ export default function VendorRegistrationPortal({
   return (
     <VendorRegistrationDraftProvider>
       <div className="flex h-screen w-full bg-background overflow-hidden">
-      {!isAIChatMode && !isModeSelection && (
+      {!isModeSelection && (
         <aside className="w-[240px] bg-sidebar text-sidebar-foreground flex flex-col shrink-0">
           <div className="px-3 py-2 border-b border-sidebar-border">
             <div className="flex flex-col" data-testid="img-vendor-reg-logo">
               <img
-                src={prokrayaLogoLight}
-                alt="Prokraya"
+                src={s2pLabsLogo}
+                alt="S2P Labs"
                 className="h-7 w-32 object-contain object-left"
               />
-              <span className="text-[10px] text-emerald-400 font-semibold mt-0.5 uppercase tracking-wider ml-[34px] bg-emerald-500/20 px-1.5 py-0.5 rounded">
-                AI-Powered S2P
-              </span>
             </div>
           </div>
 
@@ -815,26 +806,10 @@ export default function VendorRegistrationPortal({
               className="text-lg font-semibold"
               data-testid="text-registration-title"
             >
-              {isAIChatMode
-                ? "AI-Powered Registration"
-                : isModeSelection
-                  ? "Supplier Registration"
-                  : "New Supplier Registration"}
+              {isModeSelection
+                ? "Supplier Registration"
+                : "New Supplier Registration"}
             </h1>
-            {!isAIChatMode && !isModeSelection && !isNonRegistrationPage && !isPendingApproval && (
-              <Link href="/vendor/register/ai-chat">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-1.5"
-                  data-testid="button-switch-to-ai"
-                >
-                  <Bot className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">Try AI Assistant</span>
-                  <Sparkles className="h-3 w-3 text-cyan-500" />
-                </Button>
-              </Link>
-            )}
           </div>
           <div className="flex items-center gap-1">
             <span
@@ -985,7 +960,6 @@ export default function VendorRegistrationPortal({
 
         <main className="flex-1 min-h-0 bg-muted/30 overflow-auto">
           <Switch>
-            <Route path="/vendor/register/ai-chat" component={VendorAIChat} />
             <Route
               path="/vendor/register/company-details"
               component={VendorCompanyDetails}
@@ -1012,47 +986,22 @@ export default function VendorRegistrationPortal({
                   <div className="max-w-2xl w-full space-y-6 text-center">
                     <div>
                       <img
-                        src={prokrayaLogoLight}
-                        alt="Prokraya"
+                        src={s2pLabsLogo}
+                        alt="S2P Labs"
                         className="h-10 mx-auto mb-4"
                       />
                       <h2
                         className="text-2xl font-semibold mb-1"
                         data-testid="text-mode-selection-title"
                       >
-                        Choose Your Registration Method
+                        Supplier Registration
                       </h2>
                       <p className="text-sm text-muted-foreground">
-                        Select how you'd like to complete your supplier
-                        registration
+                        Complete your supplier registration using the
+                        step-by-step form
                       </p>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <Card
-                        className="hover-elevate cursor-pointer"
-                        onClick={() => navigate("/vendor/register/ai-chat")}
-                        data-testid="card-ai-registration"
-                      >
-                        <CardContent className="p-6 text-center space-y-3">
-                          <div className="p-3 rounded-full bg-cyan-100 dark:bg-cyan-900/30 w-fit mx-auto">
-                            <Bot className="h-8 w-8 text-cyan-600 dark:text-cyan-400" />
-                          </div>
-                          <h3 className="font-semibold text-lg">
-                            AI Assistant
-                          </h3>
-                          <p className="text-sm text-muted-foreground">
-                            Complete registration through a guided conversation.
-                            Just tell the AI your details and it handles the
-                            rest.
-                          </p>
-                          <Badge
-                            variant="outline"
-                            className="gap-1 bg-cyan-50 dark:bg-cyan-900/20 text-cyan-600 dark:text-cyan-400"
-                          >
-                            <Sparkles className="h-3 w-3" /> Recommended
-                          </Badge>
-                        </CardContent>
-                      </Card>
+                    <div className="grid grid-cols-1 max-w-sm mx-auto gap-4">
                       <Card
                         className="hover-elevate cursor-pointer"
                         onClick={() =>
@@ -1071,7 +1020,6 @@ export default function VendorRegistrationPortal({
                             Fill out a traditional 6-step form wizard with
                             structured fields for each registration section.
                           </p>
-                          <Badge variant="outline">Classic Method</Badge>
                         </CardContent>
                       </Card>
                     </div>
@@ -1084,8 +1032,7 @@ export default function VendorRegistrationPortal({
           </Switch>
         </main>
 
-        {!isAIChatMode &&
-          !isModeSelection &&
+        {!isModeSelection &&
           !isNonRegistrationPage &&
           !isPendingApproval &&
           currentStepIndex >= 0 && (

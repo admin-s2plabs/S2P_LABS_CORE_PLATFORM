@@ -1,14 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { FormSheet } from "@/components/form-sheet";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -455,38 +448,23 @@ export default function ApprovalQueuePage() {
         </div>
       </div>
 
-      <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Reject Approval</DialogTitle>
-            <DialogDescription>
-              Please provide a reason for rejecting this approval request.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            <Textarea
-              placeholder="Enter rejection reason..."
-              value={rejectionReason}
-              onChange={(e) => setRejectionReason(e.target.value)}
-              className="min-h-24"
-              data-testid="input-rejection-reason"
-            />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowRejectDialog(false)} data-testid="button-cancel-reject">
-              Cancel
-            </Button>
-            <Button 
-              variant="destructive" 
-              onClick={handleReject}
-              disabled={!rejectionReason.trim()}
-              data-testid="button-confirm-reject"
-            >
-              Confirm Rejection
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <FormSheet
+        open={showRejectDialog}
+        onOpenChange={setShowRejectDialog}
+        title="Reject Approval"
+        description="Please provide a reason for rejecting this approval request."
+        onSubmit={handleReject}
+        submitLabel="Confirm Rejection"
+        submitDisabled={!rejectionReason.trim()}
+      >
+        <Textarea
+          placeholder="Enter rejection reason..."
+          value={rejectionReason}
+          onChange={(e) => setRejectionReason(e.target.value)}
+          className="min-h-24"
+          data-testid="input-rejection-reason"
+        />
+      </FormSheet>
     </div>
   );
 }

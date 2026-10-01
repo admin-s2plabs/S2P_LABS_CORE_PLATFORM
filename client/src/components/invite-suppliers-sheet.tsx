@@ -8,7 +8,6 @@ import {
   Loader2,
   Package,
   Search,
-  Users,
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -21,20 +20,13 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
+import { FormSheet } from "@/components/form-sheet";
 import { Input } from "@/components/ui/input";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
 import {
   Table,
   TableBody,
@@ -232,16 +224,20 @@ export function InviteSuppliersSheet({
       : `Invite (${selectedSupplierIds.length})`);
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-[600px] sm:max-w-[600px] flex flex-col p-0 gap-0">
-        <SheetHeader className="px-6 pt-6 pb-4">
-          <SheetTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            {title}
-          </SheetTitle>
-          <SheetDescription>{description}</SheetDescription>
-        </SheetHeader>
-        <div className="px-6 pb-3 space-y-3">
+    <FormSheet
+      open={open}
+      onOpenChange={onOpenChange}
+      title={title}
+      description={description}
+      widthClassName="sm:max-w-[600px]"
+      onCancel={() => onOpenChange(false)}
+      onSubmit={handleConfirm}
+      submitLabel={resolvedConfirmLabel}
+      isSubmitting={isConfirming}
+      submitDisabled={selectedSupplierIds.length === 0}
+    >
+        <p className="text-sm text-muted-foreground mb-3">{description}</p>
+        <div className="pb-3 space-y-3">
           <Popover open={vendorCategoryOpen} onOpenChange={setVendorCategoryOpen}>
             <PopoverTrigger asChild>
               <Button
@@ -322,7 +318,7 @@ export function InviteSuppliersSheet({
             />
           </div>
         </div>
-        <div className="flex-1 overflow-y-auto px-6">
+        <div>
           {isLoading ? (
             <div className="flex justify-center py-12">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -394,7 +390,7 @@ export function InviteSuppliersSheet({
           )}
         </div>
         {(approvedSuppliersData?.totalPages || 1) > 1 && (
-          <div className="flex items-center justify-between px-6 py-2 border-t">
+          <div className="flex items-center justify-between py-2 border-t">
             <span className="text-xs text-muted-foreground">
               Page {supplierPage} of {approvedSuppliersData?.totalPages || 1} (
               {approvedSuppliersData?.total || 0} suppliers)
@@ -421,31 +417,11 @@ export function InviteSuppliersSheet({
             </div>
           </div>
         )}
-        <SheetFooter className="px-6 py-4 border-t">
-          <div className="flex items-center justify-between w-full">
-            <span className="text-sm text-muted-foreground">
-              {selectedSupplierIds.length} supplier(s) selected
-            </span>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                data-testid="button-cancel-invite"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleConfirm}
-                disabled={selectedSupplierIds.length === 0 || isConfirming}
-                data-testid="button-invite-suppliers"
-              >
-                {isConfirming && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                {resolvedConfirmLabel}
-              </Button>
-            </div>
-          </div>
-        </SheetFooter>
-      </SheetContent>
-    </Sheet>
+        <div className="pt-3 border-t">
+          <span className="text-sm text-muted-foreground">
+            {selectedSupplierIds.length} supplier(s) selected
+          </span>
+        </div>
+    </FormSheet>
   );
 }

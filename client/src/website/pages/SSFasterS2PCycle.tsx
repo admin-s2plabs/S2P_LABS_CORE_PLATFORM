@@ -196,7 +196,7 @@ const solutionsList = [
       {
         id: "simplofiedworkflowlist1",
         label:
-          "PO and Invoice flows are configured in Prokraya to overcome ERP usability challenges",
+          "PO and Invoice flows are configured in S2P Labs to overcome ERP usability challenges",
       },
       {
         id: "simplofiedworkflowlist2",

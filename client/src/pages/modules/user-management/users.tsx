@@ -18,6 +18,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { FormSheet } from "@/components/form-sheet";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -33,12 +34,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -346,8 +341,7 @@ export default function ManageUsers() {
     },
   });
 
-  const handleCreateUser = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleCreateUser = () => {
     const errors: Record<string, string> = {};
     if (!newUser.email_id.trim()) {
       errors.email_id = "Email is required";
@@ -670,8 +664,7 @@ export default function ManageUsers() {
     assignedRoleIds.includes(role.id),
   );
 
-  const handleUpdateUser = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleUpdateUser = () => {
     const errors: Record<string, string> = {};
     if (!editUser.name.trim()) errors.name = "Full name is required";
     if (!editUser.designation.trim()) errors.designation = "Designation is required";
@@ -1190,22 +1183,27 @@ export default function ManageUsers() {
         </Card>
       </Tabs>
 
-      <Sheet
+      <FormSheet
         open={showEditSheet}
         onOpenChange={(open) => {
           setShowEditSheet(open);
           if (!open) { setSelectedUser(null); setEditErrors({}); }
         }}
+        title="Edit User"
+        widthClassName="sm:max-w-4xl"
+        onCancel={() => {
+          setShowEditSheet(false);
+          setSelectedUser(null);
+        }}
+        onSubmit={handleUpdateUser}
+        submitLabel="Update"
+        isSubmitting={updateUserMutation.isPending}
       >
-        <SheetContent className="w-[50vw] sm:max-w-[50vw] overflow-y-auto p-4">
-          <SheetHeader className="space-y-0 pb-1">
-            <SheetTitle className="text-base">Edit User</SheetTitle>
-            <p className="text-xs text-muted-foreground text-right">
-              * indicates mandatory fields
-            </p>
-          </SheetHeader>
+          <p className="text-xs text-muted-foreground mb-4">
+            <span className="text-destructive">*</span> Indicates mandatory fields
+          </p>
           {selectedUser && (
-            <form onSubmit={handleUpdateUser} className="space-y-3 mt-2">
+            <div className="space-y-3">
               <div className="space-y-2">
                 <Label htmlFor="edit-email">Email ID <span className="text-destructive">*</span></Label>
                 <div className="relative">
@@ -1440,56 +1438,36 @@ export default function ManageUsers() {
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
               </div>
-
-              <div className="flex justify-end gap-3 pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setShowEditSheet(false);
-                    setSelectedUser(null);
-                  }}
-                  data-testid="button-cancel-edit-user"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={updateUserMutation.isPending}
-                  data-testid="button-submit-edit-user"
-                >
-                  {updateUserMutation.isPending && (
-                    <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
-                  )}
-                  Update
-                </Button>
-              </div>
-            </form>
+            </div>
           )}
-        </SheetContent>
-      </Sheet>
+      </FormSheet>
 
-      <Sheet open={showCreateDialog} onOpenChange={(open) => {
-        setShowCreateDialog(open);
-        if (!open) {
-          setCreateErrors({});
-          setNewUser((prev) => ({
-            ...prev,
-            org_id: [],
-          }));
-        }
-      }}>
-        <SheetContent className="w-[50vw] sm:max-w-[50vw] overflow-y-auto p-4">
-          <SheetHeader className="space-y-0 pb-1">
-            <SheetTitle className="text-base">
-              Create New{" "}
-              {activeTab === "organization" ? "Organization" : "Supplier"} User
-            </SheetTitle>
-            <p className="text-xs text-muted-foreground text-right">
-              * indicates mandatory fields
-            </p>
-          </SheetHeader>
-          <form onSubmit={handleCreateUser} className="space-y-3 mt-2">
+      <FormSheet
+        open={showCreateDialog}
+        onOpenChange={(open) => {
+          setShowCreateDialog(open);
+          if (!open) {
+            setCreateErrors({});
+            setNewUser((prev) => ({
+              ...prev,
+              org_id: [],
+            }));
+          }
+        }}
+        title={`Create New ${activeTab === "organization" ? "Organization" : "Supplier"} User`}
+        widthClassName="sm:max-w-4xl"
+        onCancel={() => {
+          setShowCreateDialog(false);
+          setNewUser((prev) => ({ ...prev, org_id: [] }));
+        }}
+        onSubmit={handleCreateUser}
+        submitLabel="Add"
+        isSubmitting={createUserMutation.isPending}
+      >
+          <p className="text-xs text-muted-foreground mb-4">
+            <span className="text-destructive">*</span> Indicates mandatory fields
+          </p>
+          <div className="space-y-3">
             <div className="space-y-2">
               <Label htmlFor="email">Email ID <span className="text-destructive">*</span></Label>
               <div className="relative">
@@ -1682,29 +1660,8 @@ export default function ManageUsers() {
               </Select>
               {createErrors.role_id && <p className="text-xs text-destructive mt-1">{createErrors.role_id}</p>}
             </div>
-            <div className="flex justify-end gap-3 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => { setShowCreateDialog(false); setNewUser({ ...newUser, org_id: [] }) }}
-                data-testid="button-cancel-create-user"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={createUserMutation.isPending}
-                data-testid="button-submit-create-user"
-              >
-                {createUserMutation.isPending && (
-                  <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
-                )}
-                Add
-              </Button>
-            </div>
-          </form>
-        </SheetContent>
-      </Sheet>
+          </div>
+      </FormSheet>
 
       {/* Reset Password Confirmation Dialog */}
       <AlertDialog

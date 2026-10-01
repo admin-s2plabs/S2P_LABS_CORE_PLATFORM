@@ -1,4 +1,4 @@
-import prokrayaLogoDark from "@/assets/images/prokraya-logo-dark.png";
+import s2pLabsLogo from "@/assets/images/s2plabs_logo.jpeg";
 import { Link } from "wouter";
 
 import { Badge } from "@/components/ui/badge";
@@ -176,7 +176,7 @@ export default function Landing() {
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <div className="flex flex-col">
-            <img src={prokrayaLogoDark} alt="Prokraya" className="h-8 object-contain object-left" />
+            <img src={s2pLabsLogo} alt="S2P Labs" className="h-8 object-contain object-left" />
             <span className="text-[10px] text-primary font-semibold uppercase tracking-wider ml-[38px] bg-primary/10 px-2 py-0.5 rounded">AI-Powered S2P</span>
           </div>
 
@@ -776,7 +776,7 @@ export default function Landing() {
           <div className="grid md:grid-cols-12 gap-6 mb-6">
             <div className="md:col-span-4">
               <div className="flex items-center mb-4">
-                <img src={prokrayaLogoDark} alt="Prokraya" className="h-6 object-contain object-left" />
+                <img src={s2pLabsLogo} alt="S2P Labs" className="h-6 object-contain object-left" />
               </div>
               <p className="text-sm text-muted-foreground">
                 AI-powered Source-to-Pay platform transforming how enterprises manage procurement.

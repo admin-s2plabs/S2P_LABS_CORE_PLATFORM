@@ -1,4 +1,4 @@
-import { ArrowRight, Bell, CheckCircle, Clock, FileText, Search, Shield, TrendingUp } from "lucide-react";
+import { Bell, CheckCircle, Clock, FileText, Search, Shield, TrendingUp } from "lucide-react";
 import { Helmet } from "react-helmet-async";
 import { Link } from "wouter";
 import { CommonShortForm } from "../components/CommonShortForm";
@@ -10,7 +10,7 @@ export function ContractManagementPage() {
     { icon: Clock, title: "Lifecycle Management", description: "Track contracts from creation through renewal or termination", color: "bg-blue-50 text-blue-600" },
     { icon: Bell, title: "Automated Alerts", description: "Proactive notifications for renewals, obligations, and milestones", color: "bg-orange-50 text-orange-600" },
     { icon: Shield, title: "Compliance Tracking", description: "Ensure contracts meet regulatory and company policy requirements", color: "bg-teal-50 text-teal-600" },
-    { icon: Search, title: "AI-Powered Search", description: "Find clauses, terms, and obligations across all contracts instantly", color: "bg-teal-50 text-teal-600" },
+    { icon: Search, title: "Smart Search", description: "Find clauses, terms, and obligations across all contracts instantly", color: "bg-teal-50 text-teal-600" },
     { icon: TrendingUp, title: "Performance Analytics", description: "Monitor contract performance and identify optimization opportunities", color: "bg-indigo-50 text-indigo-600" },
   ];
 
@@ -21,16 +21,16 @@ export function ContractManagementPage() {
           async
           src="https://www.googletagmanager.com/gtag/js?id=G-KDV6R2SDN2"
         ></script>
-        <meta property="og:title" content="Contract Management Software | Prokraya" /> 
-        <meta property="og:description" content="Automate contract management with AI-powered renewals, obligation tracking, compliance monitoring, and intelligent contract search." /> 
+        <meta property="og:title" content="Contract Management Software | S2P Labs" /> 
+        <meta property="og:description" content="Automate contract management with automated renewals, obligation tracking, compliance monitoring, and intelligent contract search." /> 
         <meta property="og:type" content="website" /> 
         <meta property="og:url" content="https://prokraya.ai/contract-management" />
-        <meta property="og:site_name" content="Prokraya" />
+        <meta property="og:site_name" content="S2P Labs" />
         <meta property="og:image" content={LogoBlack} />
         <meta name="twitter:card" content={LogoBlack} />
         <meta name="twitter:site" content="@prokraya" />
-        <title>Contract Management Software | AI-Powered Contract Lifecycle Management | Prokraya</title>
-        <meta name="description" content="Manage contracts from creation to renewal with AI-powered contract lifecycle management software. Automate renewals, track obligations, ensure compliance, and gain complete contract visibility." />
+        <title>Contract Management Software | Contract Lifecycle Management | S2P Labs</title>
+        <meta name="description" content="Manage contracts from creation to renewal with contract lifecycle management software. Automate renewals, track obligations, ensure compliance, and gain complete contract visibility." />
         <meta name="keywords" content="contract management software, contract lifecycle management, CLM software, contract automation software, contract compliance management, contract repository, contract renewal management, procurement contract management" />
       </Helmet>
 
@@ -45,12 +45,9 @@ export function ContractManagementPage() {
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 to-teal-500">Software</span>
             </h1>
             <p className="text-lg text-gray-500 max-w-2xl mx-auto mb-8">
-              Manage your entire contract lifecycle with AI-powered automation. Never miss a renewal, track obligations automatically, and ensure compliance across all agreements.
+              Manage your entire contract lifecycle with intelligent automation. Never miss a renewal, track obligations automatically, and ensure compliance across all agreements.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Link href="/book-demo" className="inline-flex items-center justify-center gap-2 px-7 py-3 bg-violet-600 text-white font-semibold rounded-lg hover:bg-violet-700 transition-colors">
-                Request Demo <ArrowRight className="w-4 h-4" />
-              </Link>
               <Link href="/contact-us" className="inline-flex items-center justify-center px-7 py-3 border border-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors">
                 Contact Sales
               </Link>
@@ -98,7 +95,7 @@ export function ContractManagementPage() {
           </div>
         </section>
 
-        {/* AI Contract Agent */}
+        {/* Contract Agent */}
         <section className="py-20 bg-gray-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid lg:grid-cols-2 gap-12 items-start">
@@ -106,7 +103,7 @@ export function ContractManagementPage() {
                 <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mb-5">
                   <FileText className="w-6 h-6 text-white" />
                 </div>
-                <h3 className="text-xl font-bold mb-3">AI Contract Agent</h3>
+                <h3 className="text-xl font-bold mb-3">Contract Agent</h3>
                 <p className="text-teal-100 mb-5 text-sm">
                   Your intelligent contract assistant that monitors, alerts, and manages your entire contract portfolio.
                 </p>
@@ -139,17 +136,6 @@ export function ContractManagementPage() {
         </section>
 
         <CommonShortForm reactedPage="Contract Management" />
-
-        {/* CTA */}
-        <section className="py-20 bg-gradient-to-br from-slate-900 via-violet-950 to-slate-900 text-white">
-          <div className="max-w-2xl mx-auto px-4 text-center">
-            <h2 className="text-3xl font-bold mb-3">Ready to Master Contract Management?</h2>
-            <p className="text-gray-400 mb-8">Stop worrying about missed renewals and compliance issues</p>
-            <Link href="/book-demo" className="inline-flex items-center gap-2 px-7 py-3 bg-violet-600 text-white font-semibold rounded-lg hover:bg-violet-700 transition-colors">
-              Schedule a Demo <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-        </section>
       </div>
     </>
   );

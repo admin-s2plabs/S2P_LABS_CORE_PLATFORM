@@ -147,7 +147,7 @@ const receiptEndpoint: EndpointConfig = {
   id: "receipt",
   path: "/api/v1/integration/inbound/receipt",
   label: "Create Goods Receipt Note",
-  description: "Creates a Goods Receipt Note (GRN) against an existing Purchase Order in Prokraya. The receipt validates the PO exists, creates the receipt header and line items, and returns the generated receipt number. All inbound requests are automatically logged in the Interface Monitor.",
+  description: "Creates a Goods Receipt Note (GRN) against an existing Purchase Order in S2P Labs. The receipt validates the PO exists, creates the receipt header and line items, and returns the generated receipt number. All inbound requests are automatically logged in the Interface Monitor.",
   headerFields: [
     { name: "po_number", type: "string", required: true, description: "Purchase Order number to receive against" },
     { name: "receipt_number", type: "string", required: true, description: "Supplier's receipt/delivery note number" },
@@ -233,7 +233,7 @@ const prEndpoint: EndpointConfig = {
   id: "pr",
   path: "/api/v1/integration/inbound/purchase-requisition",
   label: "Create Purchase Requisition",
-  description: "Creates a Purchase Requisition (PR) in Prokraya when a PR is approved in the ERP system. The PR is created with status 'Approved' and includes header details and line items. The PR number from the ERP is used as-is to maintain traceability across systems.",
+  description: "Creates a Purchase Requisition (PR) in S2P Labs when a PR is approved in the ERP system. The PR is created with status 'Approved' and includes header details and line items. The PR number from the ERP is used as-is to maintain traceability across systems.",
   headerFields: [
     { name: "pr_number", type: "string", required: true, description: "Purchase Requisition number from the ERP system" },
     { name: "pr_description", type: "string", required: true, description: "Description of the purchase requisition" },
@@ -329,13 +329,13 @@ const poEndpoint: EndpointConfig = {
   id: "po",
   path: "/api/v1/integration/inbound/purchase-order",
   label: "Create Purchase Order",
-  description: "Creates a Purchase Order (PO) in Prokraya when a PO is approved in the ERP system. The PO is created with status 'Approved' and includes supplier details, header information, and line items with pricing and tax details.",
+  description: "Creates a Purchase Order (PO) in S2P Labs when a PO is approved in the ERP system. The PO is created with status 'Approved' and includes supplier details, header information, and line items with pricing and tax details.",
   headerFields: [
     { name: "po_number", type: "string", required: true, description: "Purchase Order number from the ERP system" },
     { name: "po_description", type: "string", required: true, description: "Description of the purchase order" },
     { name: "po_type", type: "string", required: false, description: "PO type (default: STANDARD)" },
     { name: "po_status", type: "string", required: false, description: "PO status (default: Approved)" },
-    { name: "supplier_id", type: "number", required: false, description: "Supplier ID in Prokraya" },
+    { name: "supplier_id", type: "number", required: false, description: "Supplier ID in S2P Labs" },
     { name: "company_name", type: "string", required: true, description: "Supplier/company name" },
     { name: "buyer_name", type: "string", required: false, description: "Name of the buyer" },
     { name: "buyer_email", type: "string", required: false, description: "Email of the buyer" },
@@ -445,9 +445,9 @@ const paymentEndpoint: EndpointConfig = {
   id: "payment",
   path: "/api/v1/integration/inbound/payment",
   label: "Create Payment Details",
-  description: "Records payment details in Prokraya when a payment is made in the ERP system against an existing invoice. Updates the invoice payment status to 'Paid' and creates a payment record with bank/cheque details and TDS information.",
+  description: "Records payment details in S2P Labs when a payment is made in the ERP system against an existing invoice. Updates the invoice payment status to 'Paid' and creates a payment record with bank/cheque details and TDS information.",
   headerFields: [
-    { name: "invoice_number", type: "string", required: true, description: "Invoice number in Prokraya to record payment against" },
+    { name: "invoice_number", type: "string", required: true, description: "Invoice number in S2P Labs to record payment against" },
     { name: "payment_method", type: "string", required: true, description: "Payment method (e.g., Bank Transfer, Cheque, Online)" },
     { name: "payment_date", type: "string", required: true, description: "Payment date in YYYY-MM-DD format" },
     { name: "amount_paid", type: "number", required: true, description: "Amount paid" },
@@ -528,9 +528,9 @@ export default function ApiDocs() {
   return (
     <div className="p-4 space-y-3" data-testid="page-api-docs">
       <div>
-        <h1 className="text-xl font-bold" data-testid="text-page-title">API Documentation</h1>
+        <h1 className="text-xl font-bold text-primary" data-testid="text-page-title">API Documentation</h1>
         <p className="text-sm text-muted-foreground">
-          Reference documentation for the Prokraya Inbound Integration Gateway. Use these endpoints to push data from external systems (ERP, WMS) into Prokraya.
+          Reference documentation for the S2P Labs Inbound Integration Gateway. Use these endpoints to push data from external systems (ERP, WMS) into S2P Labs.
         </p>
       </div>
 
@@ -580,7 +580,7 @@ export default function ApiDocs() {
               </div>
               <CodeBlock code={`{
   "status": "ok",
-  "service": "Prokraya Integration Gateway",
+  "service": "S2P Labs Integration Gateway",
   "version": "1.0",
   "timestamp": "2025-12-15T10:30:00.000Z"
 }`} />
@@ -629,9 +629,9 @@ export default function ApiDocs() {
               <h3 className="text-sm font-medium mb-1">Integration Notes</h3>
               <ul className="text-sm text-muted-foreground space-y-1 list-disc pl-4">
                 <li>All timestamps should be in ISO 8601 format (YYYY-MM-DD for dates).</li>
-                <li>PRs and POs from ERP are created with "Approved" status in Prokraya by default.</li>
-                <li>The PO referenced in a receipt must already exist in Prokraya.</li>
-                <li>The Invoice referenced in a payment must already exist in Prokraya.</li>
+                <li>PRs and POs from ERP are created with "Approved" status in S2P Labs by default.</li>
+                <li>The PO referenced in a receipt must already exist in S2P Labs.</li>
+                <li>The Invoice referenced in a payment must already exist in S2P Labs.</li>
                 <li>Every inbound API call is automatically logged in the Interface Monitor for audit and troubleshooting.</li>
                 <li>API keys can be generated, revoked, and managed from the API Keys page.</li>
                 <li>Rate limiting is not currently enforced but may be introduced in future versions.</li>

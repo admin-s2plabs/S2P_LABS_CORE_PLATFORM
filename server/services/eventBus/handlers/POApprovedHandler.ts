@@ -27,7 +27,7 @@ class PoApprovedHandler extends BaseEmailHandler<POApprovedEvent> {
       poNumber: event.poNumber,
       poDescription: event.poTitle,
       linkUrl: appUrl,
-      orgName: event.orgName || "Prokraya",
+      orgName: event.orgName || "S2P Labs",
       orgLogoPath: event.orgLogoPath || '',
     };
   }

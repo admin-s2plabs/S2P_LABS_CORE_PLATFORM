@@ -1,3 +1,5 @@
+import { Link } from "wouter";
+
 export function CookiePolicy() {
   return (
     <div className="min-h-screen bg-white">
@@ -133,12 +135,8 @@ export function CookiePolicy() {
           <section className="mb-8">
             <h2 className="text-2xl font-semibold text-gray-900 mb-4">10. Contact Us</h2>
             <p className="text-gray-600 mb-4">
-              If you have questions about our use of cookies, please contact us:
+              If you have questions about our use of cookies, please reach out via our <Link href="/contact-us" className="text-violet-600 hover:underline">Contact Us</Link> page.
             </p>
-            <ul className="list-none text-gray-600 mb-4">
-              <li>Email: privacy@prokraya.com</li>
-              <li>Address: Prokraya Inc., 123 Business Street, San Francisco, CA 94105</li>
-            </ul>
           </section>
 
           <section className="mb-8">

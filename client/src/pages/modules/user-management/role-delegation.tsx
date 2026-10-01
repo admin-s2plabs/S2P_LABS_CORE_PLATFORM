@@ -7,6 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { FormSheet } from "@/components/form-sheet";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -16,12 +17,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -46,7 +41,6 @@ import {
   Edit,
   FileDown,
   FileSpreadsheet,
-  Loader2,
   MessageSquare,
   Pencil,
   Plus,
@@ -610,219 +604,195 @@ export default function RoleDelegation() {
         </CardContent>
       </Card>
 
-      {/* Create Delegation Sheet */}
-      <Sheet open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-        <SheetContent className="sm:max-w-[50vw] overflow-y-auto">
-          <SheetHeader className="space-y-0 pb-3">
-            <SheetTitle className="text-base flex items-center gap-2">
-              <ArrowRightLeft className="h-4 w-4" />
-              New Role Delegation
-            </SheetTitle>
-          </SheetHeader>
-
-          <div className="space-y-4 pt-2">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <Label className="text-xs flex items-center gap-1">
-                  <User className="h-3.5 w-3.5" /> From User <span className="text-destructive">*</span>
-                </Label>
-                <Select value={fromUser} onValueChange={setFromUser}>
-                  <SelectTrigger className="h-8 text-sm" data-testid="select-from-user">
-                    <SelectValue placeholder="Select user" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {users.map((u) => (
-                      <SelectItem key={u.id} value={u.email_id}>
-                        {u.name} ({u.email_id})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs flex items-center gap-1">
-                  <User className="h-3.5 w-3.5" /> To User <span className="text-destructive">*</span>
-                </Label>
-                <Select value={toUser} onValueChange={setToUser}>
-                  <SelectTrigger className="h-8 text-sm" data-testid="select-to-user">
-                    <SelectValue placeholder="Select user" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {users.map((u) => (
-                      <SelectItem key={u.id} value={u.email_id}>
-                        {u.name} ({u.email_id})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <Label className="text-xs flex items-center gap-1">
-                  <Calendar className="h-3.5 w-3.5" /> From Date <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  type="date"
-                  value={fromDate}
-                  onChange={(e) => setFromDate(e.target.value)}
-                  className="h-8 text-sm"
-                  data-testid="input-from-date"
-                  min={new Date().toISOString().split("T")[0]}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs flex items-center gap-1">
-                  <Calendar className="h-3.5 w-3.5" /> To Date <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  type="date"
-                  value={toDate}
-                  onChange={(e) => setToDate(e.target.value)}
-                  className="h-8 text-sm"
-                  data-testid="input-to-date"
-                  min={fromDate || new Date().toISOString().split("T")[0]}
-                />
-              </div>
-            </div>
-
+      {/* Create Delegation FormSheet */}
+      <FormSheet
+        open={isCreateOpen}
+        onOpenChange={(open) => (open ? setIsCreateOpen(true) : handleCloseCreate())}
+        title="New Role Delegation"
+        onCancel={handleCloseCreate}
+        onSubmit={handleCreate}
+        submitLabel={createMutation.isPending ? "Creating..." : "Create"}
+        isSubmitting={createMutation.isPending}
+      >
+        <p className="text-xs text-muted-foreground mb-4">
+          <span className="text-destructive">*</span> Indicates mandatory fields
+        </p>
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
               <Label className="text-xs flex items-center gap-1">
-                <MessageSquare className="h-3.5 w-3.5" /> Reason <span className="text-destructive">*</span>
+                <User className="h-3.5 w-3.5" /> From User <span className="text-destructive">*</span>
               </Label>
-              <Textarea
-                value={comments}
-                onChange={(e) => setComments(e.target.value)}
-                placeholder="Enter reason for delegation..."
-                className="text-sm min-h-[60px]"
-                data-testid="input-comments"
-              />
+              <Select value={fromUser} onValueChange={setFromUser}>
+                <SelectTrigger className="h-8 text-sm" data-testid="select-from-user">
+                  <SelectValue placeholder="Select user" />
+                </SelectTrigger>
+                <SelectContent>
+                  {users.map((u) => (
+                    <SelectItem key={u.id} value={u.email_id}>
+                      {u.name} ({u.email_id})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-
-            <div className="flex justify-end gap-3 pt-4">
-              <Button variant="outline" onClick={handleCloseCreate} data-testid="button-cancel">
-                Cancel
-              </Button>
-              <Button
-                onClick={handleCreate}
-                disabled={createMutation.isPending}
-                data-testid="button-save"
-              >
-                {createMutation.isPending && <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />}
-                Create
-              </Button>
-            </div>
-          </div>
-        </SheetContent>
-      </Sheet>
-
-      {/* Edit Delegation Sheet */}
-      <Sheet open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <SheetContent className="sm:max-w-[50vw] overflow-y-auto">
-          <SheetHeader className="space-y-0 pb-3">
-            <SheetTitle className="text-base flex items-center gap-2">
-              <Pencil className="h-4 w-4" />
-              Edit Role Delegation
-            </SheetTitle>
-          </SheetHeader>
-
-          <div className="space-y-4 pt-2">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <Label className="text-xs flex items-center gap-1">
-                  <User className="h-3.5 w-3.5" /> From User <span className="text-destructive">*</span>
-                </Label>
-                <Select value={fromUser} onValueChange={setFromUser}>
-                  <SelectTrigger className="h-8 text-sm" data-testid="edit-select-from-user">
-                    <SelectValue placeholder="Select user" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {users.map((u) => (
-                      <SelectItem key={u.id} value={u.email_id}>
-                        {u.name} ({u.email_id})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs flex items-center gap-1">
-                  <User className="h-3.5 w-3.5" /> To User <span className="text-destructive">*</span>
-                </Label>
-                <Select value={toUser} onValueChange={setToUser}>
-                  <SelectTrigger className="h-8 text-sm" data-testid="edit-select-to-user">
-                    <SelectValue placeholder="Select user" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {users.map((u) => (
-                      <SelectItem key={u.id} value={u.email_id}>
-                        {u.name} ({u.email_id})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <Label className="text-xs flex items-center gap-1">
-                  <Calendar className="h-3.5 w-3.5" /> From Date <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  type="date"
-                  value={fromDate}
-                  onChange={(e) => setFromDate(e.target.value)}
-                  className="h-8 text-sm"
-                  data-testid="edit-input-from-date"
-                  min={new Date().toISOString().split("T")[0]}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs flex items-center gap-1">
-                  <Calendar className="h-3.5 w-3.5" /> To Date <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  type="date"
-                  value={toDate}
-                  onChange={(e) => setToDate(e.target.value)}
-                  className="h-8 text-sm"
-                  data-testid="edit-input-to-date"
-                  min={fromDate || new Date().toISOString().split("T")[0]}
-                />
-              </div>
-            </div>
-
             <div className="space-y-1">
               <Label className="text-xs flex items-center gap-1">
-                <MessageSquare className="h-3.5 w-3.5" /> Reason <span className="text-destructive">*</span>
+                <User className="h-3.5 w-3.5" /> To User <span className="text-destructive">*</span>
               </Label>
-              <Textarea
-                value={comments}
-                onChange={(e) => setComments(e.target.value)}
-                placeholder="Enter reason for delegation..."
-                className="text-sm min-h-[60px]"
-                data-testid="edit-input-comments"
-              />
-            </div>
-
-            <div className="flex justify-end gap-3 pt-4">
-              <Button variant="outline" onClick={handleCloseEdit} data-testid="edit-button-cancel">
-                Cancel
-              </Button>
-              <Button
-                onClick={handleUpdate}
-                disabled={updateMutation.isPending}
-                data-testid="edit-button-save"
-              >
-                {updateMutation.isPending && <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />}
-                Update
-              </Button>
+              <Select value={toUser} onValueChange={setToUser}>
+                <SelectTrigger className="h-8 text-sm" data-testid="select-to-user">
+                  <SelectValue placeholder="Select user" />
+                </SelectTrigger>
+                <SelectContent>
+                  {users.map((u) => (
+                    <SelectItem key={u.id} value={u.email_id}>
+                      {u.name} ({u.email_id})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
-        </SheetContent>
-      </Sheet>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label className="text-xs flex items-center gap-1">
+                <Calendar className="h-3.5 w-3.5" /> From Date <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                type="date"
+                value={fromDate}
+                onChange={(e) => setFromDate(e.target.value)}
+                className="h-8 text-sm"
+                data-testid="input-from-date"
+                min={new Date().toISOString().split("T")[0]}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs flex items-center gap-1">
+                <Calendar className="h-3.5 w-3.5" /> To Date <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                type="date"
+                value={toDate}
+                onChange={(e) => setToDate(e.target.value)}
+                className="h-8 text-sm"
+                data-testid="input-to-date"
+                min={fromDate || new Date().toISOString().split("T")[0]}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <Label className="text-xs flex items-center gap-1">
+              <MessageSquare className="h-3.5 w-3.5" /> Reason <span className="text-destructive">*</span>
+            </Label>
+            <Textarea
+              value={comments}
+              onChange={(e) => setComments(e.target.value)}
+              placeholder="Enter reason for delegation..."
+              className="text-sm min-h-[60px]"
+              data-testid="input-comments"
+            />
+          </div>
+        </div>
+      </FormSheet>
+
+      {/* Edit Delegation FormSheet */}
+      <FormSheet
+        open={isEditOpen}
+        onOpenChange={(open) => (open ? setIsEditOpen(true) : handleCloseEdit())}
+        title="Edit Role Delegation"
+        onCancel={handleCloseEdit}
+        onSubmit={handleUpdate}
+        submitLabel={updateMutation.isPending ? "Updating..." : "Update"}
+        isSubmitting={updateMutation.isPending}
+      >
+        <p className="text-xs text-muted-foreground mb-4">
+          <span className="text-destructive">*</span> Indicates mandatory fields
+        </p>
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label className="text-xs flex items-center gap-1">
+                <User className="h-3.5 w-3.5" /> From User <span className="text-destructive">*</span>
+              </Label>
+              <Select value={fromUser} onValueChange={setFromUser}>
+                <SelectTrigger className="h-8 text-sm" data-testid="edit-select-from-user">
+                  <SelectValue placeholder="Select user" />
+                </SelectTrigger>
+                <SelectContent>
+                  {users.map((u) => (
+                    <SelectItem key={u.id} value={u.email_id}>
+                      {u.name} ({u.email_id})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs flex items-center gap-1">
+                <User className="h-3.5 w-3.5" /> To User <span className="text-destructive">*</span>
+              </Label>
+              <Select value={toUser} onValueChange={setToUser}>
+                <SelectTrigger className="h-8 text-sm" data-testid="edit-select-to-user">
+                  <SelectValue placeholder="Select user" />
+                </SelectTrigger>
+                <SelectContent>
+                  {users.map((u) => (
+                    <SelectItem key={u.id} value={u.email_id}>
+                      {u.name} ({u.email_id})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label className="text-xs flex items-center gap-1">
+                <Calendar className="h-3.5 w-3.5" /> From Date <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                type="date"
+                value={fromDate}
+                onChange={(e) => setFromDate(e.target.value)}
+                className="h-8 text-sm"
+                data-testid="edit-input-from-date"
+                min={new Date().toISOString().split("T")[0]}
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs flex items-center gap-1">
+                <Calendar className="h-3.5 w-3.5" /> To Date <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                type="date"
+                value={toDate}
+                onChange={(e) => setToDate(e.target.value)}
+                className="h-8 text-sm"
+                data-testid="edit-input-to-date"
+                min={fromDate || new Date().toISOString().split("T")[0]}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <Label className="text-xs flex items-center gap-1">
+              <MessageSquare className="h-3.5 w-3.5" /> Reason <span className="text-destructive">*</span>
+            </Label>
+            <Textarea
+              value={comments}
+              onChange={(e) => setComments(e.target.value)}
+              placeholder="Enter reason for delegation..."
+              className="text-sm min-h-[60px]"
+              data-testid="edit-input-comments"
+            />
+          </div>
+        </div>
+      </FormSheet>
     </div>
   );
 }

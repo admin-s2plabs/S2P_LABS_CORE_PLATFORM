@@ -1,5 +1,4 @@
-import prokrayaLogoDark from "@/assets/images/prokraya-logo-dark.png";
-import prokrayaLogoLight from "@/assets/images/prokraya-logo-light.png";
+import s2pLabsLogo from "@/assets/images/s2plabs_logo.jpeg";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -41,7 +40,6 @@ import {
   Info,
   Mail,
   RefreshCw,
-  Sparkles
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -53,7 +51,7 @@ const vendorFeatures = [
   {
     icon: FileCheck,
     title: "Simple Onboarding",
-    description: "AI-guided document upload and verification process",
+    description: "Guided document upload and verification process",
   },
   {
     icon: Clock,
@@ -421,8 +419,8 @@ export default function VendorRegister() {
           <div className="relative z-10 flex flex-col justify-between p-10 text-white w-full">
             <div className="flex flex-col">
               <img
-                src={prokrayaLogoLight}
-                alt="Prokraya"
+                src={s2pLabsLogo}
+                alt="S2P Labs"
                 className="h-10 object-contain object-left"
               />
               <span className="text-xs text-white/90 font-semibold uppercase tracking-wider ml-[48px] mt-1">
@@ -449,8 +447,8 @@ export default function VendorRegister() {
                 <p className="text-sm text-white/70">Categories</p>
               </div>
               <div>
-                <p className="text-2xl font-bold">AI</p>
-                <p className="text-sm text-white/70">Powered Review</p>
+                <p className="text-2xl font-bold">6</p>
+                <p className="text-sm text-white/70">Simple Steps</p>
               </div>
               <div>
                 <p className="text-2xl font-bold">24hr</p>
@@ -464,8 +462,8 @@ export default function VendorRegister() {
           <header className="flex items-center justify-end px-6 py-4 lg:hidden">
             <div className="flex flex-col">
               <img
-                src={prokrayaLogoDark}
-                alt="Prokraya"
+                src={s2pLabsLogo}
+                alt="S2P Labs"
                 className="h-8 object-contain object-left"
               />
             </div>
@@ -489,7 +487,7 @@ export default function VendorRegister() {
                 </p>
                 <div className="p-4 rounded-lg bg-primary/5 border border-primary/20 mb-6">
                   <div className="flex items-center gap-2 justify-center text-sm">
-                    <Sparkles className="h-4 w-4 text-primary" />
+                    <Info className="h-4 w-4 text-primary" />
                     <span className="font-medium">What happens next?</span>
                   </div>
                   <ul className="text-xs text-muted-foreground mt-2 space-y-1 text-left">
@@ -498,7 +496,7 @@ export default function VendorRegister() {
                       2. Log in to complete your profile and upload documents
                     </li>
                     <li>
-                      3. Our AI will validate and guide you through the process
+                      3. Our team will review your details and documents
                     </li>
                     <li>4. Once complete, submit for final approval</li>
                   </ul>
@@ -526,8 +524,8 @@ export default function VendorRegister() {
         <div className="relative z-10 flex flex-col justify-between p-10 text-white w-full">
           <div className="flex flex-col">
             <img
-              src={prokrayaLogoLight}
-              alt="Prokraya"
+              src={s2pLabsLogo}
+              alt="S2P Labs"
               className="h-10 object-contain object-left"
             />
             <span className="text-xs text-white/90 font-semibold uppercase tracking-wider ml-[48px] mt-1">
@@ -572,8 +570,8 @@ export default function VendorRegister() {
               <p className="text-sm text-white/70">Categories</p>
             </div>
             <div>
-              <p className="text-2xl font-bold">AI</p>
-              <p className="text-sm text-white/70">Powered Review</p>
+              <p className="text-2xl font-bold">6</p>
+              <p className="text-sm text-white/70">Simple Steps</p>
             </div>
             <div>
               <p className="text-2xl font-bold">24hr</p>
@@ -597,8 +595,8 @@ export default function VendorRegister() {
             </Link>
             <div className="flex flex-col lg:hidden">
               <img
-                src={prokrayaLogoDark}
-                alt="Prokraya"
+                src={s2pLabsLogo}
+                alt="S2P Labs"
                 className="h-8 object-contain object-left"
               />
             </div>
@@ -1067,7 +1065,7 @@ export default function VendorRegister() {
         </main>
 
         <footer className="px-6 py-3 text-[11px] text-muted-foreground text-center border-t">
-          Copyright &copy; {new Date().getFullYear()} Prokraya Tech Private
+          Copyright &copy; {new Date().getFullYear()} S2P Labs Tech Private
           Limited. All rights reserved.
         </footer>
       </div>

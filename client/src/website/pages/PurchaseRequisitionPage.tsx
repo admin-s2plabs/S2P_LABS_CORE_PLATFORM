@@ -1,4 +1,4 @@
-import { ArrowRight, Clock, DollarSign, FileText, Shield, Users, Zap } from "lucide-react";
+import { Clock, DollarSign, FileText, Shield, Users, Zap } from "lucide-react";
 import { Helmet } from "react-helmet-async";
 import { Link } from "wouter";
 import { CommonShortForm } from "../components/CommonShortForm";
@@ -6,7 +6,7 @@ import { LogoBlack } from "../components/LogoImport";
 
 export function PurchaseRequisitionPage() {
   const features = [
-    { icon: FileText, title: "Smart PR Creation", description: "Create purchase requisitions with AI assistance and auto-fill based on historical data", color: "bg-violet-50 text-violet-600" },
+    { icon: FileText, title: "Smart PR Creation", description: "Create purchase requisitions with guided assistance and auto-fill based on historical data", color: "bg-violet-50 text-violet-600" },
     { icon: Zap, title: "Automated Approvals", description: "Intelligent routing based on amount, category, and department policies", color: "bg-amber-50 text-amber-600" },
     { icon: Users, title: "Collaborative Workflow", description: "Multi-level approvals with comments, attachments, and notifications", color: "bg-blue-50 text-blue-600" },
     { icon: Shield, title: "Policy Compliance", description: "Built-in policy checks ensure every requisition meets company guidelines", color: "bg-teal-50 text-teal-600" },
@@ -21,15 +21,15 @@ export function PurchaseRequisitionPage() {
           async
           src="https://www.googletagmanager.com/gtag/js?id=G-KDV6R2SDN2"
         ></script>
-        <meta property="og:title" content="Purchase Requisition Software | Prokraya" /> 
+        <meta property="og:title" content="Purchase Requisition Software | S2P Labs" /> 
         <meta property="og:description" content="Streamline purchase requests with automated approvals, policy controls, budget validation, and real-time visibility." /> 
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://prokraya.ai/purchase-requisition" />
-        <meta property="og:site_name" content="Prokraya" />
+        <meta property="og:site_name" content="S2P Labs" />
         <meta property="og:image" content={LogoBlack} />
         <meta name="twitter:card" content={LogoBlack} />
         <meta name="twitter:site" content="@prokraya" />
-        <title>Purchase Requisition Software | Procurement Request Automation | Prokraya</title>
+        <title>Purchase Requisition Software | Procurement Request Automation | S2P Labs</title>
         <meta name="description" content="Automate purchase requisitions with intelligent workflows, approval routing, budget controls, and real-time tracking. Reduce approval cycles and improve procurement efficiency." />
         <meta name="keywords" content="purchase requisition software, purchase request management, procurement workflow automation, approval workflow software, procurement request software, PR management software, purchase approval system" />
       </Helmet>
@@ -48,9 +48,6 @@ export function PurchaseRequisitionPage() {
               Streamline purchase requests with intelligent workflows, automated approvals, and real-time tracking. Reduce approval cycles by up to 70% while maintaining complete control.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Link href="/book-demo" className="inline-flex items-center justify-center gap-2 px-7 py-3 bg-violet-600 text-white font-semibold rounded-lg hover:bg-violet-700 transition-colors">
-                Request Demo <ArrowRight className="w-4 h-4" />
-              </Link>
               <Link href="/contact-us" className="inline-flex items-center justify-center px-7 py-3 border border-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors">
                 Contact Sales
               </Link>
@@ -107,7 +104,7 @@ export function PurchaseRequisitionPage() {
             </div>
             <div className="grid md:grid-cols-4 gap-5">
               {[
-                { step: "1", title: "Create Request", description: "AI assists in creating detailed purchase requisitions" },
+                { step: "1", title: "Create Request", description: "Guided assistance for creating detailed purchase requisitions" },
                 { step: "2", title: "Auto Route", description: "Smart routing to appropriate approvers based on rules" },
                 { step: "3", title: "Get Approved", description: "Approvers review and approve with one click" },
                 { step: "4", title: "Convert to PO", description: "Approved PRs automatically convert to purchase orders" },
@@ -125,17 +122,6 @@ export function PurchaseRequisitionPage() {
         </section>
 
         <CommonShortForm reactedPage="Purchase Requisition" />
-
-        {/* CTA */}
-        <section className="py-20 bg-gradient-to-br from-slate-900 via-violet-950 to-slate-900 text-white">
-          <div className="max-w-2xl mx-auto px-4 text-center">
-            <h2 className="text-3xl font-bold mb-3">Ready to Streamline Your Purchase Requests?</h2>
-            <p className="text-gray-400 mb-8">Start saving time and reducing approval cycles today</p>
-            <Link href="/book-demo" className="inline-flex items-center gap-2 px-7 py-3 bg-violet-600 text-white font-semibold rounded-lg hover:bg-violet-700 transition-colors">
-              Schedule a Demo <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-        </section>
       </div>
     </>
   );

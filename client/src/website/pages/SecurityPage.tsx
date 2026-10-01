@@ -1,4 +1,4 @@
-import { AlertTriangle, ArrowRight, CheckCircle, Eye, FileCheck, Lock, Server, Shield, Users } from "lucide-react";
+import { AlertTriangle, CheckCircle, Eye, FileCheck, Lock, Server, Shield, Users } from "lucide-react";
 import { Helmet } from "react-helmet-async";
 import { Link } from "wouter";
 import { LogoBlack } from "../components/LogoImport";
@@ -66,15 +66,14 @@ export function SecurityPage() {
           async
           src="https://www.googletagmanager.com/gtag/js?id=G-KDV6R2SDN2"
         ></script>
-        <meta property="og:title" content="Security & Compliance | Prokraya" />
-        <meta property="og:description" content="Enterprise-grade security, compliance, encryption, and governance built into every layer of the Prokraya platform." />
+        <meta property="og:title" content="Security & Compliance | S2P Labs" />
+        <meta property="og:description" content="Enterprise-grade security, compliance, encryption, and governance built into every layer of the S2P Labs platform." />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://prokraya.ai/security" />
-        <meta property="og:site_name" content="Prokraya" />
+        <meta property="og:site_name" content="S2P Labs" />
         <meta property="og:image" content={LogoBlack} />
         <meta name="twitter:card" content={LogoBlack} />
-        <meta name="twitter:site" content="@prokraya" />
-        <title>Enterprise Procurement Software Security & Compliance | Prokraya</title>
+        <title>Enterprise Procurement Software Security & Compliance | S2P Labs</title>
         <meta name="description" content="Protect procurement data with enterprise-grade security, ISO 27001 compliance, encryption, access controls, continuous monitoring, and secure cloud infrastructure." />
         <meta name="keywords" content="procurement software security, procurement compliance, ISO 27001, enterprise security, SaaS security, procurement data protection, GDPR compliance, secure procurement platform" />
       </Helmet>
@@ -175,7 +174,7 @@ export function SecurityPage() {
               <div className="bg-amber-50 rounded-xl p-5 border border-amber-100">
                 <h3 className="font-semibold text-gray-900 mb-3 text-sm">How to Report</h3>
                 <ul className="space-y-1.5 text-sm text-gray-600 mb-3">
-                  <li>• Email: security@prokraya.com</li>
+                  <li>• Reach out via our <Link href="/contact-us" className="text-violet-600 hover:underline">Contact Us</Link> page</li>
                   <li>• Include a detailed description of the vulnerability</li>
                   <li>• Provide steps to reproduce the issue</li>
                   <li>• Do not publicly disclose the vulnerability before it is patched</li>
@@ -190,11 +189,8 @@ export function SecurityPage() {
         <section className="py-20 bg-gradient-to-br from-slate-900 via-violet-950 to-slate-900 text-white">
           <div className="max-w-2xl mx-auto px-4 text-center">
             <h2 className="text-3xl font-bold mb-3">Ready to Get Started Securely?</h2>
-            <p className="text-gray-400 mb-8">Enterprise-grade security built into every layer of Prokraya</p>
+            <p className="text-gray-400 mb-8">Enterprise-grade security built into every layer of S2P Labs</p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Link href="/book-demo" className="inline-flex items-center justify-center gap-2 px-7 py-3 bg-violet-600 text-white font-semibold rounded-lg hover:bg-violet-700 transition-colors">
-                Request Demo <ArrowRight className="w-4 h-4" />
-              </Link>
               <Link href="/contact-us" className="inline-flex items-center justify-center px-7 py-3 border border-white/20 text-white font-semibold rounded-lg hover:bg-white/10 transition-colors">
                 Contact Sales
               </Link>

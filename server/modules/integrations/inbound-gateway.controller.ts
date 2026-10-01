@@ -31,7 +31,7 @@ async function authenticateApiKey(req: Request, res: Response, next: NextFunctio
 router.get("/api/v1/integration/health", authenticateApiKey, (_req, res) => {
   res.json({
     status: "ok",
-    service: "Prokraya Integration Gateway",
+    service: "S2P Labs Integration Gateway",
     version: "1.0",
     timestamp: new Date().toISOString(),
   });
@@ -691,7 +691,7 @@ router.post("/api/v1/integration/inbound/payment", authenticateApiKey, async (re
 
 router.get("/api/v1/integration/inbound/endpoints", authenticateApiKey, (_req, res) => {
   res.json({
-    service: "Prokraya Integration Gateway",
+    service: "S2P Labs Integration Gateway",
     version: "1.0",
     endpoints: [
       {

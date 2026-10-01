@@ -5,8 +5,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
+import { FormSheet } from "@/components/form-sheet";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
@@ -451,93 +451,83 @@ export default function SetupApprovers() {
         </CardContent>
       </Card>
 
-      <Sheet open={showSheet} onOpenChange={setShowSheet}>
-        <SheetContent className="w-[400px]">
-          <SheetHeader>
-            <SheetTitle>{editing ? "Edit Approver" : "Add Approver"}</SheetTitle>
-          </SheetHeader>
-          <div className="space-y-4 mt-2">
-            <div className="space-y-1.5">
-              <Label className="text-xs">User</Label>
-              <Select value={form.user_id.toString()} onValueChange={handleUserSelect}>
-                <SelectTrigger className="h-9" data-testid="select-user">
-                  <SelectValue placeholder="Select user" />
-                </SelectTrigger>
-                <SelectContent>
-                  {/* Include existing user when editing if not in active users list */}
-                  {editing && form.user_id && !users.find(u => u.id === form.user_id) && (
-                    <SelectItem key={form.user_id} value={form.user_id.toString()}>
-                      {form.user_fullname} (Current)
-                    </SelectItem>
-                  )}
-                  {users.map((user) => (
-                    <SelectItem key={user.id} value={user.id.toString()}>
-                      {user.user_fullname}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label className="text-xs">From Amount</Label>
-              <Input
-                type="number"
-                min="0"
-                value={form.from_amount}
-                onChange={(e) => setForm({ ...form, from_amount: parseFloat(e.target.value) || 0 })}
-                className="h-9"
-                data-testid="input-from-amount"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label className="text-xs">To Amount</Label>
-              <Input
-                type="number"
-                min="0"
-                value={form.to_amount}
-                onChange={(e) => setForm({ ...form, to_amount: parseFloat(e.target.value) || 0 })}
-                className="h-9"
-                data-testid="input-to-amount"
-              />
-              <span className="text-xs text-orange-500">Please enter '0' for unlimited amount.</span>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label className="text-xs">Currency</Label>
-              <Input
-                value={orgCurrency}
-                disabled
-                className="h-9 bg-muted"
-                data-testid="input-currency"
-              />
-              <span className="text-xs text-muted-foreground">Organization default currency</span>
-            </div>
-
-            <div className="flex gap-2 pt-4">
-              <Button
-                className="flex-1"
-                onClick={handleSubmit}
-                disabled={createMutation.isPending || updateMutation.isPending}
-                data-testid="button-submit"
-              >
-                {(createMutation.isPending || updateMutation.isPending) && (
-                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+      <FormSheet
+        open={showSheet}
+        onOpenChange={(open) => {
+          setShowSheet(open);
+          if (!open) {
+            setEditing(null);
+            resetForm();
+          }
+        }}
+        title={editing ? "Edit Approver" : "Add Approver"}
+        onCancel={() => { setShowSheet(false); setEditing(null); resetForm(); }}
+        onSubmit={handleSubmit}
+        submitLabel={editing ? "Update" : "Create"}
+        isSubmitting={createMutation.isPending || updateMutation.isPending}
+        widthClassName="sm:max-w-lg"
+      >
+        <p className="text-xs text-muted-foreground mb-4"><span className="text-destructive">*</span> Indicates mandatory fields</p>
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            <Label className="text-xs">User</Label>
+            <Select value={form.user_id.toString()} onValueChange={handleUserSelect}>
+              <SelectTrigger className="h-9" data-testid="select-user">
+                <SelectValue placeholder="Select user" />
+              </SelectTrigger>
+              <SelectContent>
+                {/* Include existing user when editing if not in active users list */}
+                {editing && form.user_id && !users.find(u => u.id === form.user_id) && (
+                  <SelectItem key={form.user_id} value={form.user_id.toString()}>
+                    {form.user_fullname} (Current)
+                  </SelectItem>
                 )}
-                {editing ? "Update" : "Create"}
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => { setShowSheet(false); setEditing(null); resetForm(); }}
-                data-testid="button-cancel"
-              >
-                Cancel
-              </Button>
-            </div>
+                {users.map((user) => (
+                  <SelectItem key={user.id} value={user.id.toString()}>
+                    {user.user_fullname}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-        </SheetContent>
-      </Sheet>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs">From Amount</Label>
+            <Input
+              type="number"
+              min="0"
+              value={form.from_amount}
+              onChange={(e) => setForm({ ...form, from_amount: parseFloat(e.target.value) || 0 })}
+              className="h-9"
+              data-testid="input-from-amount"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs">To Amount</Label>
+            <Input
+              type="number"
+              min="0"
+              value={form.to_amount}
+              onChange={(e) => setForm({ ...form, to_amount: parseFloat(e.target.value) || 0 })}
+              className="h-9"
+              data-testid="input-to-amount"
+            />
+            <span className="text-xs text-orange-500">Please enter '0' for unlimited amount.</span>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs">Currency</Label>
+            <Input
+              value={orgCurrency}
+              disabled
+              className="h-9 bg-muted"
+              data-testid="input-currency"
+            />
+            <span className="text-xs text-muted-foreground">Organization default currency</span>
+          </div>
+        </div>
+      </FormSheet>
 
       <AlertDialog open={!!deleting} onOpenChange={() => setDeleting(null)}>
         <AlertDialogContent>

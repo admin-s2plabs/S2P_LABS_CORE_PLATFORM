@@ -36,7 +36,7 @@ class InvoiceRejectedNonPOHandler extends BaseEmailHandler<InvoiceRejectedNonPOE
       rejectedDate: event.rejectedDate,
       rejectionReason: event.rejectionReason,
       linkUrl: appUrl,
-      orgName: event.orgName || "Prokraya",
+      orgName: event.orgName || "S2P Labs",
       orgLogoPath: event.orgLogoPath || '',
 
     };

@@ -61,16 +61,6 @@ function extractAllowedUrls(menuData: UserMenuResponse | undefined): { exact: Se
 
 const ROUTE_PARENT_MAP: Record<string, string> = {
   "/app/requisitions": "/app/purchase-requests",
-  "/app/eva-agent": "/app/ai-agents",
-  "/app/ai-sourcing-agent": "/app/ai-agents",
-  "/app/ai-vendor-agent": "/app/ai-agents",
-  "/app/ai-procurement-agent": "/app/ai-agents",
-  "/app/ai-contracting-agent": "/app/ai-agents",
-  "/app/ai-payables-agent": "/app/ai-agents",
-  "/app/ai-compliance-agent": "/app/ai-agents",
-  "/app/ai-negotiation-agent": "/app/ai-intelligence-suite",
-  "/app/ai-cost-intelligence-agent": "/app/ai-intelligence-suite",
-  "/app/ai-spend-agent": "/app/ai-intelligence-suite",
   "/app/workflow-builder": "/app/workflows",
   "/app/workflow-templates": "/app/workflows",
   "/app/workflow-runs": "/app/workflows",

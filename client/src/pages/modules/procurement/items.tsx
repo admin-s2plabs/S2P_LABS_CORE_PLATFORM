@@ -2,34 +2,29 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { FormSheet } from "@/components/form-sheet";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { useAISettings } from "@/hooks/use-ai-settings";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { Category, Item, ItemWithSpecs } from "@shared/schema";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
-  AlertTriangle,
-  Bot,
   CheckCircle2,
   ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
   FileText,
   Layers,
-  Loader2,
   Package,
   Pencil,
   Plus,
   Search,
   Settings,
-  Sparkles,
   Trash2,
   XCircle
 } from "lucide-react";
@@ -108,7 +103,6 @@ export default function Items() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const { toast } = useToast();
-  const { isAIEnabled } = useAISettings();
 
   // Debounce search input
   useEffect(() => {
@@ -161,80 +155,6 @@ export default function Items() {
 
   const commodityCategories = categories.filter(c => c.level === "commodity" || c.level === "family");
 
-  const { data: uncategorizedData } = useQuery<{ count: number }>({
-    queryKey: ["/api/items/stats/uncategorized", { search: debouncedSearch, status: statusFilter }],
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (debouncedSearch) params.set("search", debouncedSearch);
-      if (statusFilter !== "all") params.set("status", statusFilter);
-      const res = await apiRequest("GET", `/api/items/stats/uncategorized?${params}`);
-      if (!res.ok) throw new Error("Failed to fetch uncategorized count");
-      return res.json();
-    },
-    enabled: isAIEnabled('AI_AUTO_CATEGORIZATION'),
-  });
-  const uncategorizedCount = uncategorizedData?.count || 0;
-
-  const { data: missingSkuData } = useQuery<{ count: number }>({
-    queryKey: ["/api/items/stats/missing-sku", { search: debouncedSearch, status: statusFilter }],
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (debouncedSearch) params.set("search", debouncedSearch);
-      if (statusFilter !== "all") params.set("status", statusFilter);
-      const res = await apiRequest("GET", `/api/items/stats/missing-sku?${params}`);
-      if (!res.ok) throw new Error("Failed to fetch missing SKUs count");
-      return res.json();
-    },
-    enabled: isAIEnabled('AI_SKU_GENERATION'),
-  });
-  const missingSkuCount = missingSkuData?.count || 0;
-
-  const categorizeMutation = useMutation({
-    mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/items/ai/categorize-all");
-      return res.json();
-    },
-    onSuccess: (data: any) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/items"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/items/stats/uncategorized"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/items/stats/categories"] });
-      toast({
-        title: "AI Categorization Complete",
-        description: data.message || `Categorized ${data.processed} items successfully.`,
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Categorization Failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  const skuMutation = useMutation({
-    mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/items/ai/generate-sku-all");
-      return res.json();
-    },
-    onSuccess: (data: any) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/items"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/items/stats/missing-sku"] });
-      toast({
-        title: "AI SKU Generation Complete",
-        description: data.message || `Generated ${data.processed} SKUs successfully.`,
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "SKU Generation Failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Selected item effect removed as the side details panel is no longer displayed.
 
   const defaultValues: ItemFormValues = {
     itemCode: "",
@@ -451,56 +371,12 @@ export default function Items() {
     <div className="p-4 space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold" data-testid="page-title">Item Master</h1>
+          <h1 className="text-2xl font-semibold text-primary" data-testid="page-title">Item Master</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Manage your product catalog with {totalItems.toLocaleString()} items
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {isAIEnabled('AI_AUTO_CATEGORIZATION') && uncategorizedCount > 0 && (
-            <Badge variant="outline" className="gap-1.5 border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-400" data-testid="badge-uncategorized">
-              <AlertTriangle className="h-3 w-3" />
-              {uncategorizedCount.toLocaleString()} uncategorized
-            </Badge>
-          )}
-          {isAIEnabled('AI_AUTO_CATEGORIZATION') && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => categorizeMutation.mutate()}
-              disabled={categorizeMutation.isPending || uncategorizedCount === 0}
-              data-testid="button-ai-categorize"
-            >
-              {categorizeMutation.isPending ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Sparkles className="h-4 w-4 mr-2" />
-              )}
-              {categorizeMutation.isPending ? "Categorizing..." : "AI Auto Categorize"}
-            </Button>
-          )}
-          {isAIEnabled('AI_SKU_GENERATION') && missingSkuCount > 0 && (
-            <Badge variant="outline" className="gap-1.5 border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-700 dark:bg-blue-950/30 dark:text-blue-400" data-testid="badge-missing-sku">
-              <Package className="h-3 w-3" />
-              {missingSkuCount.toLocaleString()} missing SKU
-            </Badge>
-          )}
-          {isAIEnabled('AI_SKU_GENERATION') && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => skuMutation.mutate()}
-              disabled={skuMutation.isPending || missingSkuCount === 0}
-              data-testid="button-ai-generate-sku"
-            >
-              {skuMutation.isPending ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Bot className="h-4 w-4 mr-2" />
-              )}
-              {skuMutation.isPending ? "Generating..." : "AI Generate SKU"}
-            </Button>
-          )}
           <Button
             size="sm"
             onClick={() => {
@@ -515,7 +391,7 @@ export default function Items() {
           </Button>
         </div>
 
-        <Sheet
+        <FormSheet
           open={isAddDialogOpen}
           onOpenChange={(open) => {
             setIsAddDialogOpen(open);
@@ -524,15 +400,21 @@ export default function Items() {
               form.reset(defaultValues);
             }
           }}
+          title={isEditDialogOpen ? "Edit Item Detail" : "Add New Item"}
+          onSubmit={form.handleSubmit(onSubmit)}
+          submitLabel={
+            isEditDialogOpen
+              ? (updateItemMutation.isPending ? "Updating..." : "Save Changes")
+              : (createItemMutation.isPending ? "Creating..." : "Create Item")
+          }
+          isSubmitting={createItemMutation.isPending || updateItemMutation.isPending}
+          submitDisabled={createItemMutation.isPending || updateItemMutation.isPending}
         >
-          <SheetContent className="w-[50vw] sm:max-w-[50vw] overflow-y-auto">
-            <SheetHeader>
-              <SheetTitle className="text-lg">
-                {isEditDialogOpen ? "Edit Item Detail" : "Add New Item"}
-              </SheetTitle>
-            </SheetHeader>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 mt-6">
+          <p className="text-xs text-muted-foreground mb-4">
+            <span className="text-destructive">*</span> Indicates mandatory fields
+          </p>
+          <Form {...form}>
+              <div className="space-y-6">
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
@@ -704,25 +586,9 @@ export default function Items() {
                   </div>
                 )}
 
-                <div className="flex justify-end gap-2 pt-4">
-                  <Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    disabled={createItemMutation.isPending || updateItemMutation.isPending}
-                    data-testid="button-submit-item"
-                  >
-                    {isEditDialogOpen
-                      ? (updateItemMutation.isPending ? "Updating..." : "Save Changes")
-                      : (createItemMutation.isPending ? "Creating..." : "Create Item")
-                    }
-                  </Button>
-                </div>
-              </form>
-            </Form>
-          </SheetContent>
-        </Sheet>
+              </div>
+          </Form>
+        </FormSheet>
       </div>
 
 

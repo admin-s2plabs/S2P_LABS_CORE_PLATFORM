@@ -1,17 +1,11 @@
-import { Button } from "@/components/ui/button";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import {
-  Sheet, SheetContent,
-  SheetDescription,
-  SheetHeader, SheetTitle,
-} from "@/components/ui/sheet";
+import { FormSheet } from "@/components/form-sheet";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { BidHeaderFormFields } from "./bid-header-form-fields";
@@ -219,57 +213,48 @@ export default function BidFormSheet({ open, onOpenChange, editBidId, initialDat
   };
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-[50vw] sm:max-w-[50vw] overflow-y-auto">
-        <SheetHeader>
-          <SheetTitle>{isEdit ? "Edit Bid" : "Create New Bid"}</SheetTitle>
-          <SheetDescription>
-            <span className="text-destructive">*</span> Indicates mandatory fields.{!isEdit && " Bid number will be auto-generated."}
-          </SheetDescription>
-        </SheetHeader>
-        <div className="mt-4 space-y-5">
-          <BidHeaderFormFields
-            formData={formData}
-            onChange={setFormData}
-            fromPr={!!prNumber}
-            publishedEdit={publishedEdit}
-            variant="sheet"
-          />
+    <FormSheet
+      open={open}
+      onOpenChange={onOpenChange}
+      title={isEdit ? "Edit Bid" : "Create New Bid"}
+      description={`Indicates mandatory fields.${!isEdit ? " Bid number will be auto-generated." : ""}`}
+      onSubmit={handleSubmit}
+      submitLabel={isEdit ? "Save Changes" : "Create Bid"}
+      isSubmitting={mutation.isPending}
+      submitDisabled={!formData.bid_title.trim()}
+      widthClassName="sm:max-w-3xl"
+    >
+      <p className="text-xs text-muted-foreground mb-4">
+        <span className="text-destructive">*</span> Indicates mandatory fields.{!isEdit && " Bid number will be auto-generated."}
+      </p>
+      <div className="space-y-5">
+        <BidHeaderFormFields
+          formData={formData}
+          onChange={setFormData}
+          fromPr={!!prNumber}
+          publishedEdit={publishedEdit}
+          variant="sheet"
+        />
 
-          {!isEdit && (
-            <div>
-              <p className="text-sm font-semibold mb-1">Do you want to Create Bid from a Template ?</p>
-              <div className="space-y-2">
-                <Label>Copy From Template</Label>
-                <Select value={formData.template_name || ""} onValueChange={(v) => setFormData({ ...formData, template_name: v })}>
-                  <SelectTrigger data-testid="select-bid-template"><SelectValue placeholder="Select Copy From Template" /></SelectTrigger>
-                  <SelectContent>
-                    {(bids || [])
-                      .filter((b: any) => b.templateName && b.templateName.trim() !== "")
-                      .map((b: any) => (
-                        <SelectItem key={b.id} value={String(b.id)}>{b.templateName}</SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-              </div>
+        {!isEdit && (
+          <div>
+            <p className="text-sm font-semibold mb-1">Do you want to Create Bid from a Template ?</p>
+            <div className="space-y-2">
+              <Label>Copy From Template</Label>
+              <Select value={formData.template_name || ""} onValueChange={(v) => setFormData({ ...formData, template_name: v })}>
+                <SelectTrigger data-testid="select-bid-template"><SelectValue placeholder="Select Copy From Template" /></SelectTrigger>
+                <SelectContent>
+                  {(bids || [])
+                    .filter((b: any) => b.templateName && b.templateName.trim() !== "")
+                    .map((b: any) => (
+                      <SelectItem key={b.id} value={String(b.id)}>{b.templateName}</SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
             </div>
-          )}
-
-          <div className="flex justify-end gap-2 pt-4">
-            <Button variant="outline" onClick={() => onOpenChange(false)} data-testid="button-cancel-bid">
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSubmit}
-              disabled={mutation.isPending || !formData.bid_title.trim()}
-              data-testid="button-save-bid"
-            >
-              {mutation.isPending && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
-              {isEdit ? "Save Changes" : "Create Bid"}
-            </Button>
           </div>
-        </div>
-      </SheetContent>
-    </Sheet>
+        )}
+      </div>
+    </FormSheet>
   );
 }

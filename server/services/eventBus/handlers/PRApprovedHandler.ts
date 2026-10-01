@@ -27,7 +27,7 @@ class PrApprovedHandler extends BaseEmailHandler<PRApprovedEvent> {
       prNumber: event.prNumber,
       prDescription: event.prDescription,
       linkUrl: appUrl,
-      orgName: event.orgName || "Prokraya",
+      orgName: event.orgName || "S2P Labs",
       orgLogoPath: event.orgLogoPath || '',
     };
   }

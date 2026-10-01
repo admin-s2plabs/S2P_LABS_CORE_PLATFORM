@@ -13,6 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { FormSheet } from "@/components/form-sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -20,7 +21,6 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { useAISettings } from "@/hooks/use-ai-settings";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency, formatDate } from "@/lib/common-functions";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -29,9 +29,6 @@ import {
   AlertCircle,
   ArrowLeft,
   Award,
-  BarChart3,
-  Bot,
-  Brain,
   Building2,
   Calendar,
   Check,
@@ -48,9 +45,7 @@ import {
   File,
   FileText,
   Gavel,
-  HandCoins,
   History,
-  Lightbulb,
   Loader2,
   Mail,
   MapPin,
@@ -59,12 +54,6 @@ import {
   Scale,
   Send,
   Shield,
-  Sparkles,
-  Star,
-  Target,
-  ThumbsDown,
-  ThumbsUp,
-  TrendingUp,
   Trophy,
   User,
   Users,
@@ -311,7 +300,6 @@ interface BudgetLine {
 export default function BidEvaluate({ id }: { id?: string }) {
   const [, params] = useRoute("/app/bids/:id/evaluate");
   const bidId = id || params?.id;
-  const { isAIEnabled } = useAISettings();
   const { data, isLoading, error } = useQuery<any>({
     queryKey: [`/api/dbo/bids/${bidId}/evaluate`],
     enabled: !!bidId,
@@ -360,12 +348,6 @@ export default function BidEvaluate({ id }: { id?: string }) {
   const [compareOpen, setCompareOpen] = useState(false);
   const [negotiationOpen, setNegotiationOpen] = useState(false);
   const { toast } = useToast();
-  const [aiMarketData, setAiMarketData] = useState<any>(null);
-  const [aiMarketLoading, setAiMarketLoading] = useState(false);
-  const [aiQualityData, setAiQualityData] = useState<any>(null);
-  const [aiQualityLoading, setAiQualityLoading] = useState(false);
-  const [aiNegotiationData, setAiNegotiationData] = useState<any>(null);
-  const [aiNegotiationLoading, setAiNegotiationLoading] = useState(false);
   const [creatingPOForAward, setCreatingPOForAward] = useState<number | null>(null);
   const [bidToPOData, setBidtoPOData] = useState<any>(null);
   const [createPODialogOpen, setCreatePODialogOpen] = useState(false);
@@ -526,45 +508,6 @@ export default function BidEvaluate({ id }: { id?: string }) {
     );
   }
 
-  const fetchAIMarketIntelligence = async () => {
-    setAiMarketLoading(true);
-    try {
-      const res = await apiRequest("GET", `/api/dbo/bids/${data.bid.id}/ai/market-intelligence`);
-      const result = await res.json();
-      setAiMarketData(result);
-    } catch (e: any) {
-      toast({ title: "AI Error", description: e.message || "Could not generate market intelligence.", variant: "destructive" });
-    } finally {
-      setAiMarketLoading(false);
-    }
-  };
-
-  const fetchAIQualityScores = async () => {
-    setAiQualityLoading(true);
-    try {
-      const res = await apiRequest("GET", `/api/dbo/bids/${data.bid.id}/ai/response-quality`);
-      const result = await res.json();
-      setAiQualityData(result);
-    } catch (e: any) {
-      toast({ title: "AI Error", description: e.message || "Could not generate quality scores.", variant: "destructive" });
-    } finally {
-      setAiQualityLoading(false);
-    }
-  };
-
-  const fetchAINegotiation = async () => {
-    setAiNegotiationLoading(true);
-    try {
-      const res = await apiRequest("GET", `/api/dbo/bids/${data.bid.id}/ai/negotiation-suggestions`);
-      const result = await res.json();
-      setAiNegotiationData(result);
-    } catch (e: any) {
-      toast({ title: "AI Error", description: e.message || "Could not generate negotiation suggestions.", variant: "destructive" });
-    } finally {
-      setAiNegotiationLoading(false);
-    }
-  };
-
   const { bid, responses, lines: allLines, requirements: allRequirements, scores: allScores, awards = [], allLinesHavePo, awardLines } = data;
 
   const bidBudgetLines = budgetLinesData?.filter(
@@ -709,12 +652,6 @@ export default function BidEvaluate({ id }: { id?: string }) {
         <TabsList data-testid="tabs-evaluate">
           <TabsTrigger value="responses" data-testid="tab-responses">Responses</TabsTrigger>
           <TabsTrigger value="awards" data-testid="tab-awards">Awards</TabsTrigger>
-          {isAIEnabled('AI_MARKET_INTELLIGENCE') && (
-            <TabsTrigger value="ai-analysis" data-testid="tab-ai-analysis">
-              <Bot className="h-3.5 w-3.5 mr-1" />
-              AI Analysis
-            </TabsTrigger>
-          )}
         </TabsList>
 
         <TabsContent value="responses" className="mt-3 space-y-3">
@@ -969,361 +906,6 @@ export default function BidEvaluate({ id }: { id?: string }) {
           </Card>
         </TabsContent>
 
-        {isAIEnabled('AI_MARKET_INTELLIGENCE') && (
-          <TabsContent value="ai-analysis" className="mt-3 space-y-4">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <Card>
-                <CardHeader className="p-4 pb-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="flex h-8 w-8 items-center justify-center rounded bg-emerald-100 dark:bg-emerald-900/30">
-                        <BarChart3 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold">Market Price Intelligence</p>
-                        <p className="text-xs text-muted-foreground">Compare pricing against PO history & previous bids</p>
-                      </div>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={fetchAIMarketIntelligence}
-                      disabled={aiMarketLoading}
-                      data-testid="button-ai-market-intel"
-                    >
-                      {aiMarketLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Sparkles className="h-3.5 w-3.5 mr-1" />}
-                      {aiMarketLoading ? "Analyzing..." : aiMarketData ? "Refresh" : "Analyze Prices"}
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent className="p-4 pt-2">
-                  {!aiMarketData && !aiMarketLoading && (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <TrendingUp className="h-10 w-10 mx-auto mb-2 opacity-30" />
-                      <p className="text-sm">Click "Analyze Prices" to get AI-powered market price intelligence for this bid's line items.</p>
-                    </div>
-                  )}
-                  {aiMarketLoading && (
-                    <div className="text-center py-8">
-                      <Loader2 className="h-8 w-8 mx-auto animate-spin text-primary mb-2" />
-                      <p className="text-sm text-muted-foreground">Analyzing pricing data across historical bids...</p>
-                    </div>
-                  )}
-                  {aiMarketData && !aiMarketLoading && (
-                    <div className="space-y-3">
-                      <div className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/20 dark:to-teal-950/20 rounded-lg p-3 border border-emerald-200/50 dark:border-emerald-800/30">
-                        <p className="text-sm font-medium text-emerald-800 dark:text-emerald-300">{aiMarketData.overallInsight}</p>
-                        {aiMarketData.savingsOpportunity && (
-                          <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1">
-                            <DollarSign className="h-3 w-3" />
-                            {aiMarketData.savingsOpportunity}
-                          </p>
-                        )}
-                      </div>
-                      <div className="space-y-2 max-h-[300px] overflow-y-auto">
-                        {aiMarketData.lineAnalysis?.map((line: any, idx: number) => (
-                          <div key={idx} className="border rounded-lg p-3" data-testid={`market-line-${idx}`}>
-                            <div className="flex items-center justify-between mb-1.5">
-                              <p className="text-sm font-medium truncate max-w-[60%]">{line.description}</p>
-                              <Badge variant="outline" className={`text-xs ${line.marketPosition === "below" ? "border-emerald-300 text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30" : line.marketPosition === "above" ? "border-red-300 text-red-600 bg-red-50 dark:bg-red-950/30" : "border-amber-300 text-amber-600 bg-amber-50 dark:bg-amber-950/30"}`}>
-                                {line.marketPosition === "below" ? "Below Market" : line.marketPosition === "above" ? "Above Market" : "At Market"}
-                                {line.deviation !== 0 && ` (${line.deviation > 0 ? "+" : ""}${line.deviation}%)`}
-                              </Badge>
-                            </div>
-                            <div className="grid grid-cols-5 gap-2 text-xs">
-                              <div>
-                                <span className="text-muted-foreground">Current</span>
-                                <p className="font-medium">{line.currentPrice || "N/A"}</p>
-                              </div>
-                              <div>
-                                <span className="text-muted-foreground">PO Avg</span>
-                                <p className="font-medium">{line.poAvg || "N/A"}</p>
-                                {line.poCount > 0 && <p className="text-[10px] text-muted-foreground">{line.poCount} POs</p>}
-                              </div>
-                              <div>
-                                <span className="text-muted-foreground">Bid Avg</span>
-                                <p className="font-medium">{line.bidHistAvg || "N/A"}</p>
-                                {line.bidHistCount > 0 && <p className="text-[10px] text-muted-foreground">{line.bidHistCount} bids</p>}
-                              </div>
-                              <div>
-                                <span className="text-muted-foreground">Min</span>
-                                <p className="font-medium">{line.historicalMin || "N/A"}</p>
-                              </div>
-                              <div>
-                                <span className="text-muted-foreground">Max</span>
-                                <p className="font-medium">{line.historicalMax || "N/A"}</p>
-                              </div>
-                            </div>
-                            {line.submittedPrices?.length > 0 && (
-                              <div className="mt-1.5 pt-1.5 border-t">
-                                <span className="text-xs text-muted-foreground">Supplier Prices: </span>
-                                <span className="text-xs font-medium">{line.submittedPrices.join(", ")}</span>
-                              </div>
-                            )}
-                            <p className="text-xs text-muted-foreground mt-1 italic">{line.insight}</p>
-                          </div>
-                        ))}
-                      </div>
-                      {aiMarketData.recommendations?.length > 0 && (
-                        <div className="border-t pt-2">
-                          <p className="text-sm font-medium mb-1 flex items-center gap-1"><Lightbulb className="h-3.5 w-3.5 text-amber-500" /> Recommendations</p>
-                          <ul className="space-y-1">
-                            {aiMarketData.recommendations.map((rec: string, i: number) => (
-                              <li key={i} className="text-xs text-muted-foreground flex items-start gap-1.5">
-                                <span className="text-primary mt-0.5">•</span>
-                                {rec}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {isAIEnabled('AI_TECH_EVALUATION') && (
-                <Card>
-                  <CardHeader className="p-4 pb-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="flex h-8 w-8 items-center justify-center rounded bg-violet-100 dark:bg-violet-900/30">
-                          <Award className="h-4 w-4 text-violet-600 dark:text-violet-400" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-semibold">Response Quality Scores</p>
-                          <p className="text-xs text-muted-foreground">AI-powered scoring of supplier responses</p>
-                        </div>
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={fetchAIQualityScores}
-                        disabled={aiQualityLoading}
-                        data-testid="button-ai-quality-score"
-                      >
-                        {aiQualityLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Sparkles className="h-3.5 w-3.5 mr-1" />}
-                        {aiQualityLoading ? "Scoring..." : aiQualityData ? "Refresh" : "Score Responses"}
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="p-4 pt-2">
-                    {!aiQualityData && !aiQualityLoading && (
-                      <div className="text-center py-8 text-muted-foreground">
-                        <Award className="h-10 w-10 mx-auto mb-2 opacity-30" />
-                        <p className="text-sm">Click "Score Responses" to auto-evaluate supplier submissions for completeness and quality.</p>
-                      </div>
-                    )}
-                    {aiQualityLoading && (
-                      <div className="text-center py-8">
-                        <Loader2 className="h-8 w-8 mx-auto animate-spin text-primary mb-2" />
-                        <p className="text-sm text-muted-foreground">Evaluating supplier responses...</p>
-                      </div>
-                    )}
-                    {aiQualityData && !aiQualityLoading && (
-                      <div className="space-y-3">
-                        {aiQualityData.topRecommendation && (
-                          <div className="bg-gradient-to-r from-violet-50 to-indigo-50 dark:from-violet-950/20 dark:to-indigo-950/20 rounded-lg p-3 border border-violet-200/50 dark:border-violet-800/30">
-                            <p className="text-sm font-medium text-violet-800 dark:text-violet-300 flex items-center gap-1">
-                              <Star className="h-3.5 w-3.5" /> Top Recommendation
-                            </p>
-                            <p className="text-xs text-violet-600 dark:text-violet-400 mt-0.5">{aiQualityData.topRecommendation}</p>
-                          </div>
-                        )}
-                        <div className="space-y-2 max-h-[350px] overflow-y-auto">
-                          {aiQualityData.responses?.map((resp: any, idx: number) => (
-                            <div key={idx} className="border rounded-lg p-3" data-testid={`quality-vendor-${idx}`}>
-                              <div className="flex items-center justify-between mb-2">
-                                <p className="text-sm font-semibold">{resp.supplierName}</p>
-                                <div className="flex items-center gap-1">
-                                  <div className={`h-9 w-9 rounded-full flex items-center justify-center text-sm font-bold ${resp.overallScore >= 75 ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400" : resp.overallScore >= 50 ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400" : "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400"}`}>
-                                    {resp.overallScore}
-                                  </div>
-                                </div>
-                              </div>
-                              <div className="grid grid-cols-4 gap-1.5 mb-2">
-                                {[
-                                  { label: "Completeness", score: resp.completenessScore },
-                                  { label: "Technical", score: resp.technicalScore },
-                                  { label: "Financial", score: resp.financialScore },
-                                  { label: "Timeliness", score: resp.timelinessScore },
-                                ].map((item, i) => (
-                                  <div key={i} className="text-center">
-                                    <div className="h-1.5 bg-muted rounded-full overflow-hidden mb-0.5">
-                                      <div className={`h-full rounded-full ${item.score >= 75 ? "bg-emerald-500" : item.score >= 50 ? "bg-amber-500" : "bg-red-500"}`} style={{ width: `${item.score}%` }} />
-                                    </div>
-                                    <p className="text-[11px] text-muted-foreground">{item.label}</p>
-                                    <p className="text-xs font-medium">{item.score}</p>
-                                  </div>
-                                ))}
-                              </div>
-                              {resp.strengths?.length > 0 && (
-                                <div className="mb-1">
-                                  <div className="flex flex-wrap gap-1">
-                                    {resp.strengths.map((s: string, i: number) => (
-                                      <span key={i} className="inline-flex items-center gap-0.5 text-xs text-emerald-600 dark:text-emerald-400">
-                                        <ThumbsUp className="h-3 w-3" /> {s}
-                                        {i < resp.strengths.length - 1 && <span className="text-muted-foreground mx-0.5">|</span>}
-                                      </span>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-                              {resp.weaknesses?.length > 0 && (
-                                <div>
-                                  <div className="flex flex-wrap gap-1">
-                                    {resp.weaknesses.map((w: string, i: number) => (
-                                      <span key={i} className="inline-flex items-center gap-0.5 text-xs text-red-500 dark:text-red-400">
-                                        <ThumbsDown className="h-3 w-3" /> {w}
-                                        {i < resp.weaknesses.length - 1 && <span className="text-muted-foreground mx-0.5">|</span>}
-                                      </span>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-                              <p className="text-xs text-muted-foreground mt-1 italic">{resp.summary}</p>
-                            </div>
-                          ))}
-                        </div>
-                        {aiQualityData.comparativeSummary && (
-                          <div className="border-t pt-2">
-                            <p className="text-sm font-medium mb-1 flex items-center gap-1"><Brain className="h-3.5 w-3.5 text-violet-500" /> Comparative Summary</p>
-                            <p className="text-xs text-muted-foreground">{aiQualityData.comparativeSummary}</p>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-
-
-            {isAIEnabled('AI_NEGOTIATION_SUGGESTIONS') && (
-              <Card>
-                <CardHeader className="p-4 pb-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="flex h-8 w-8 items-center justify-center rounded bg-amber-100 dark:bg-amber-900/30">
-                        <HandCoins className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold">AI Negotiation Suggestions</p>
-                        <p className="text-xs text-muted-foreground">Supplier-by-supplier negotiation actions with target prices</p>
-                      </div>
-                    </div>
-                    <Button size="sm" variant="outline" onClick={fetchAINegotiation} disabled={aiNegotiationLoading} data-testid="button-ai-negotiation">
-                      {aiNegotiationLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <HandCoins className="h-3.5 w-3.5 mr-1" />}
-                      {aiNegotiationLoading ? "Analyzing..." : aiNegotiationData ? "Refresh" : "Get Suggestions"}
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent className="p-4 pt-2">
-                  {!aiNegotiationData && !aiNegotiationLoading && (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <HandCoins className="h-10 w-10 mx-auto mb-2 opacity-30" />
-                      <p className="text-sm">Click "Get Suggestions" to get clear, supplier-specific negotiation instructions with target prices.</p>
-                    </div>
-                  )}
-                  {aiNegotiationLoading && (
-                    <div className="text-center py-8">
-                      <Loader2 className="h-8 w-8 mx-auto animate-spin text-primary mb-2" />
-                      <p className="text-sm text-muted-foreground">Analyzing supplier quotes and preparing negotiation plan...</p>
-                    </div>
-                  )}
-                  {aiNegotiationData && !aiNegotiationLoading && (
-                    <div className="space-y-3">
-                      <div className="bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-950/20 dark:to-yellow-950/20 rounded-lg p-3 border border-amber-200/50 dark:border-amber-800/30">
-                        <p className="text-sm font-medium text-amber-800 dark:text-amber-300">{aiNegotiationData.summary}</p>
-                        {aiNegotiationData.estimatedTotalSavings && (
-                          <p className="text-xs text-amber-600 dark:text-amber-400 mt-1 flex items-center gap-1">
-                            <Target className="h-3 w-3" /> Estimated Total Savings: {formatCurrency(aiNegotiationData.currency, aiNegotiationData.estimatedTotalSavings)}
-                          </p>
-                        )}
-                      </div>
-
-                      {(!aiNegotiationData.vendorActions || aiNegotiationData.vendorActions.length === 0) && (
-                        <div className="text-center py-4 text-muted-foreground">
-                          <p className="text-sm">No supplier-specific suggestions could be generated. Ensure suppliers have submitted pricing for line items.</p>
-                        </div>
-                      )}
-
-                      <div className="space-y-3">
-                        {aiNegotiationData.vendorActions?.map((vendor: any, idx: number) => (
-                          <div key={idx} className="border rounded-lg overflow-hidden" data-testid={`negotiation-vendor-${idx}`}>
-                            <div className={`px-3 py-2.5 flex items-center justify-between ${vendor.priority === "high" ? "bg-red-50 dark:bg-red-950/20 border-b border-red-200/50 dark:border-red-800/30" : vendor.priority === "low" ? "bg-emerald-50 dark:bg-emerald-950/20 border-b border-emerald-200/50 dark:border-emerald-800/30" : "bg-amber-50 dark:bg-amber-950/20 border-b border-amber-200/50 dark:border-amber-800/30"}`}>
-                              <div className="flex items-center gap-2">
-                                <Badge variant="outline" className={`text-[10px] ${vendor.priority === "high" ? "border-red-300 text-red-600 bg-white dark:bg-red-950/30" : vendor.priority === "low" ? "border-emerald-300 text-emerald-600 bg-white dark:bg-emerald-950/30" : "border-amber-300 text-amber-600 bg-white dark:bg-amber-950/30"}`}>
-                                  {vendor.priority} priority
-                                </Badge>
-                                <p className="text-sm font-semibold">{vendor.vendorName}</p>
-                              </div>
-                              {vendor.totalSavings > 0 && (
-                                <span className="text-xs font-semibold text-emerald-600">Save {formatCurrency(vendor.currency, vendor.totalSavings)}</span>
-                              )}
-                            </div>
-
-                            <div className="p-3 space-y-2.5">
-                              <div className={`rounded-md px-3 py-2 text-sm font-medium ${vendor.priority === "high" ? "bg-red-50 text-red-800 dark:bg-red-950/20 dark:text-red-300" : vendor.priority === "low" ? "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/20 dark:text-emerald-300" : "bg-amber-50 text-amber-800 dark:bg-amber-950/20 dark:text-amber-300"}`}>
-                                {vendor.action}
-                              </div>
-
-                              {vendor.items?.length > 0 && (
-                                <div className="border rounded-md overflow-x-auto">
-                                  <Table>
-                                    <TableHeader>
-                                      <TableRow>
-                                        <TableHead className="text-xs">Item</TableHead>
-                                        <TableHead className="text-xs text-right">Current Price</TableHead>
-                                        <TableHead className="text-xs text-right">Target Price</TableHead>
-                                        <TableHead className="text-xs text-right">Savings</TableHead>
-                                        <TableHead className="text-xs">Why</TableHead>
-                                      </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                      {vendor.items.map((item: any, ii: number) => (
-                                        <TableRow key={ii}>
-                                          <TableCell className="text-xs font-medium max-w-[180px] truncate">{item.description}</TableCell>
-                                          <TableCell className="text-xs text-right">{formatCurrency(item.currency, item.vendorPrice)}</TableCell>
-                                          <TableCell className="text-xs text-right font-semibold text-primary">{formatCurrency(item.currency, item.targetPrice)}</TableCell>
-                                          <TableCell className="text-xs text-right">
-                                            {item.savingsPercent > 0 ? (
-                                              <span className="text-emerald-600 font-medium">-{item.savingsPercent}%</span>
-                                            ) : (
-                                              <span className="text-muted-foreground">-</span>
-                                            )}
-                                          </TableCell>
-                                          <TableCell className="text-xs text-muted-foreground max-w-[200px]">{item.reason}</TableCell>
-                                        </TableRow>
-                                      ))}
-                                    </TableBody>
-                                  </Table>
-                                </div>
-                              )}
-
-                              {vendor.keyArguments?.length > 0 && (
-                                <div className="bg-muted/30 rounded-md p-2.5">
-                                  <p className="text-xs font-medium mb-1 flex items-center gap-1"><Lightbulb className="h-3 w-3 text-amber-500" /> What to say to this supplier:</p>
-                                  <ul className="space-y-0.5">
-                                    {vendor.keyArguments.map((arg: string, ai: number) => (
-                                      <li key={ai} className="text-xs text-muted-foreground flex items-start gap-1.5">
-                                        <span className="text-primary mt-0.5">•</span> {arg}
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
-        )}
       </Tabs>
 
       <Card>
@@ -1432,19 +1014,26 @@ export default function BidEvaluate({ id }: { id?: string }) {
         responses={responses}
       />
 
-      <Sheet
-        open={createPODialogOpen} 
+      <FormSheet
+        open={createPODialogOpen}
         onOpenChange={() => {
           setCreatePODialogOpen(false);
           setCreatingPOForAward(null);
         }}
+        title="Create PO from Award Bid"
+        onCancel={() => {
+          setCreatePODialogOpen(false);
+          setCreatingPOForAward(null);
+        }}
+        onSubmit={submitBidToPOModal}
+        submitLabel="Create PO"
+        isSubmitting={createPOMutation.isPending}
+        widthClassName="sm:max-w-5xl"
       >
-        <SheetContent className="w-[55vw] sm:max-w-[55vw] overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle>Create PO from Award Bid</SheetTitle>
-          </SheetHeader>
-
-          <div className="mt-4 space-y-4">
+        <p className="text-xs text-muted-foreground mb-4">
+          <span className="text-destructive">*</span> Indicates mandatory fields.
+        </p>
+        <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="pr-budget">
@@ -1752,34 +1341,8 @@ export default function BidEvaluate({ id }: { id?: string }) {
                 </TableBody>
               </Table>
             </div>
-
-            <div className="flex justify-end gap-2 pt-4 border-t">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setCreatePODialogOpen(false);
-                  setCreatingPOForAward(null);
-                }}
-                data-testid="button-cancel-po-from-pr"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={submitBidToPOModal}
-                disabled={
-                  createPOMutation.isPending
-                }
-                data-testid="button-create-po-from-pr"
-              >
-                {createPOMutation.isPending && (
-                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                )}
-                Create PO
-              </Button>
-            </div>
-          </div>
-        </SheetContent>
-      </Sheet>
+        </div>
+      </FormSheet>
     </div>
   );
 }
@@ -2215,7 +1778,6 @@ export function CompareBidsPanel({
   onSaveEvaluationComplete?: () => void;
 }) {
   const [, setLocation] = useLocation();
-  const { isAIEnabled } = useAISettings();
   const [activeTab, setActiveTab] = useState("technical");
   const [recommendedSupplier, setRecommendedSupplier] = useState<string>("");
   const [evalComments, setEvalComments] = useState<Record<string, string>>({});
@@ -2227,8 +1789,6 @@ export function CompareBidsPanel({
   const [awardComments, setAwardComments] = useState("");
   const [awardSelectedLines, setAwardSelectedLines] = useState<Set<number>>(new Set());
   const [awardQty, setAwardQty] = useState<Record<number, string>>({});
-  const [aiAwardData, setAiAwardData] = useState<any>(null);
-  const [aiAwardLoading, setAiAwardLoading] = useState(false);
   const { toast } = useToast();
 
   const downloadTemplate = async () => {
@@ -2416,39 +1976,6 @@ export function CompareBidsPanel({
       setActiveTab("financial");
     }
   }, [bid]);
-
-  const aiAwardEnabled = isAIEnabled("AI_AWARD_RECOMMENDATION");
-
-  useEffect(() => {
-    // Auto-run only in the Sourcing Agent (embedded). Standalone Compare Bids keeps the manual button.
-    if (!embedded || !active || !aiAwardEnabled || !bid?.id || supplierCount === 0) {
-      if (!active) {
-        setAiAwardData(null);
-        setAiAwardLoading(false);
-      }
-      return;
-    }
-    let cancelled = false;
-    setAiAwardLoading(true);
-    setAiAwardData(null);
-    (async () => {
-      try {
-        const resp = await apiRequest("GET", `/api/dbo/bids/${bid.id}/ai/award-recommendation`);
-        if (!resp.ok) throw new Error((await resp.json()).error || "Failed");
-        const data = await resp.json();
-        if (!cancelled) setAiAwardData(data);
-      } catch (err: any) {
-        if (!cancelled) {
-          toast({ title: "AI Error", description: err.message, variant: "destructive" });
-        }
-      } finally {
-        if (!cancelled) setAiAwardLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [embedded, active, aiAwardEnabled, bid?.id, supplierCount]);
 
   const panelHeader = (
     <div className={embedded ? "space-y-3" : "px-4 pt-4 pb-0 sticky top-0 z-10 bg-background"}>
@@ -2976,224 +2503,6 @@ export function CompareBidsPanel({
                   Please provide appropriate selection comments for review and approval process.
                 </p>
 
-                {aiAwardEnabled && (
-                  <div className="border rounded-lg overflow-hidden">
-                    <div className="bg-gradient-to-r from-violet-50 to-purple-50 dark:from-violet-950/20 dark:to-purple-950/20 px-3 py-2.5 flex items-center justify-between border-b">
-                      <div className="flex items-center gap-2">
-                        <div className="flex h-6 w-6 items-center justify-center rounded-md bg-violet-100 dark:bg-violet-900/40">
-                          <Sparkles className="h-3.5 w-3.5 text-violet-600 dark:text-violet-400" />
-                        </div>
-                        <div>
-                          <h4 className="text-sm font-semibold">AI Award Recommendation</h4>
-                          <p className="text-[11px] text-muted-foreground">AI analyzes scores, pricing, and evaluations to recommend optimal award</p>
-                        </div>
-                      </div>
-                      {!embedded && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="text-xs h-7 gap-1"
-                          disabled={aiAwardLoading}
-                          onClick={async () => {
-                            setAiAwardLoading(true);
-                            setAiAwardData(null);
-                            try {
-                              const resp = await apiRequest("GET", `/api/dbo/bids/${bid.id}/ai/award-recommendation`);
-                              if (!resp.ok) throw new Error((await resp.json()).error || "Failed");
-                              setAiAwardData(await resp.json());
-                            } catch (err: any) {
-                              toast({ title: "AI Error", description: err.message, variant: "destructive" });
-                            } finally {
-                              setAiAwardLoading(false);
-                            }
-                          }}
-                          data-testid="button-ai-award-recommend"
-                        >
-                          {aiAwardLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Brain className="h-3 w-3" />}
-                          {aiAwardLoading ? "Analyzing..." : aiAwardData ? "Re-analyze" : "Get AI Recommendation"}
-                        </Button>
-                      )}
-                    </div>
-
-                    <div className="p-3">
-                      {aiAwardLoading && (
-                        <div className="text-center py-6" data-testid="ai-award-loading">
-                          <Loader2 className="h-7 w-7 mx-auto animate-spin text-violet-500 mb-2" />
-                          <p className="text-sm text-muted-foreground">Analyzing supplier scores, pricing, and evaluations...</p>
-                        </div>
-                      )}
-                      {!aiAwardData && !aiAwardLoading && (
-                        <div className="text-center py-4 text-muted-foreground">
-                          <Bot className="h-6 w-6 mx-auto mb-1.5 opacity-40" />
-                          <p className="text-xs">
-                            {embedded
-                              ? "Unable to generate an award recommendation right now."
-                              : 'Click "Get AI Recommendation" to analyze all supplier responses and get an optimal award suggestion.'}
-                          </p>
-                        </div>
-                      )}
-                      {aiAwardData && !aiAwardLoading && (
-                        <div className="space-y-3">
-                          <div className="bg-muted/30 rounded-md p-2.5 border">
-                            <p className="text-sm font-medium">{aiAwardData.summary}</p>
-                            {aiAwardData.strategyReason && (
-                              <p className="text-xs text-muted-foreground mt-1">{aiAwardData.strategyReason}</p>
-                            )}
-                            {aiAwardData.estimatedSavings && (
-                              <Badge variant="outline" className="text-xs border-blue-300 text-blue-700 bg-blue-50 dark:bg-blue-950/30 dark:text-blue-400 mt-2">
-                                <TrendingUp className="h-3 w-3 mr-1" /> Savings: {aiAwardData.estimatedSavings}
-                              </Badge>
-                            )}
-                          </div>
-
-                          {aiAwardData.strategyAnalysis && (
-                            <div>
-                              <p className="text-xs font-semibold text-muted-foreground mb-1.5">Strategy Comparison</p>
-                              <div className="grid grid-cols-1 gap-2">
-                                {([
-                                  { key: 'single' as const, label: 'Single Vendor', icon: '1', recBorder: 'border-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/20 dark:border-emerald-700', recCircle: 'bg-emerald-600 text-white', recBadge: 'bg-emerald-600 hover:bg-emerald-700' },
-                                  { key: 'split_by_item' as const, label: 'Split by Item', icon: '2', recBorder: 'border-amber-400 bg-amber-50/50 dark:bg-amber-950/20 dark:border-amber-700', recCircle: 'bg-amber-600 text-white', recBadge: 'bg-amber-600 hover:bg-amber-700' },
-                                  { key: 'split_by_quantity' as const, label: 'Split by Quantity', icon: '3', recBorder: 'border-violet-400 bg-violet-50/50 dark:bg-violet-950/20 dark:border-violet-700', recCircle: 'bg-violet-600 text-white', recBadge: 'bg-violet-600 hover:bg-violet-700' },
-                                ]).map(({ key, label, icon, recBorder, recCircle, recBadge }) => {
-                                  const detail = aiAwardData.strategyAnalysis?.[key];
-                                  if (!detail || !detail.explanation || detail.explanation === 'Not analyzed') return null;
-                                  const isRecommended = aiAwardData.recommendedStrategy === key || aiAwardData.strategy === key;
-                                  return (
-                                    <div key={key} className={`border rounded-lg p-2.5 text-xs ${isRecommended ? recBorder : 'bg-muted/20'}`} data-testid={`strategy-${key}`}>
-                                      <div className="flex items-center justify-between mb-1">
-                                        <div className="flex items-center gap-1.5">
-                                          <span className={`flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-bold ${isRecommended ? recCircle : 'bg-muted text-muted-foreground'}`}>{icon}</span>
-                                          <span className="font-semibold">{label}</span>
-                                          {isRecommended && <Badge className={`text-[9px] h-4 ${recBadge}`}>Recommended</Badge>}
-                                        </div>
-                                        {detail.totalCost > 0 && (
-                                          <span className="font-mono font-bold">{Number(detail.totalCost).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                                        )}
-                                      </div>
-                                      <p className="text-muted-foreground leading-relaxed mb-1">{detail.explanation}</p>
-                                      <div className="flex flex-col gap-0.5 mt-1">
-                                        {detail.pros && <span className="text-emerald-600 dark:text-emerald-400">+ {detail.pros}</span>}
-                                        {detail.cons && <span className="text-red-600 dark:text-red-400">- {detail.cons}</span>}
-                                      </div>
-                                      {detail.savingsVsSingle && <p className="text-blue-600 dark:text-blue-400 mt-0.5">Savings vs single: {detail.savingsVsSingle}</p>}
-                                      {detail.savingsVsItemSplit && <p className="text-blue-600 dark:text-blue-400">Savings vs item split: {detail.savingsVsItemSplit}</p>}
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          )}
-
-                          <div className="space-y-2.5">
-                            <p className="text-xs font-semibold text-muted-foreground">Supplier Ranking & Item Allocation (based on recommended strategy)</p>
-                            {aiAwardData.recommendations?.map((rec: any, idx: number) => {
-                              const isTopPick = idx === 0;
-                              return (
-                                <div key={idx} className={`border rounded-lg overflow-hidden ${isTopPick ? 'border-emerald-300 dark:border-emerald-700' : ''}`} data-testid={`award-rec-vendor-${idx}`}>
-                                  <div className={`px-3 py-2 flex items-center justify-between ${isTopPick ? 'bg-emerald-50 dark:bg-emerald-950/20' : 'bg-muted/20'}`}>
-                                    <div className="flex items-center gap-2">
-                                      <div className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold ${isTopPick ? 'bg-emerald-600 text-white' : 'bg-muted text-muted-foreground'}`}>
-                                        {rec.rank || idx + 1}
-                                      </div>
-                                      <span className="text-sm font-semibold">{rec.vendorName}</span>
-                                      {isTopPick && <Badge className="text-[10px] bg-emerald-600 hover:bg-emerald-700">Recommended</Badge>}
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-xs text-muted-foreground">{aiAwardData.scoringBasis === 'price' ? 'Price Score:' : 'Score:'}</span>
-                                      <span className={`text-sm font-bold ${rec.overallScore >= 75 ? 'text-emerald-600' : rec.overallScore >= 50 ? 'text-amber-600' : 'text-red-600'}`}>
-                                        {rec.overallScore}/100
-                                      </span>
-                                    </div>
-                                  </div>
-                                  <div className="p-2.5 space-y-2">
-                                    {rec.awardedItems && rec.awardedItems.length > 0 && (
-                                      <div>
-                                        <p className="text-xs font-medium text-muted-foreground mb-1">
-                                          {aiAwardData.strategy === 'split_by_quantity' ? 'Awarded Items & Quantities' : 'Recommended Items to Award'}
-                                        </p>
-                                        <table className="w-full text-xs border rounded-sm overflow-hidden">
-                                          <thead>
-                                            <tr className="bg-muted/50">
-                                              <th className="px-2 py-1 text-left font-medium">Item</th>
-                                              <th className="px-2 py-1 text-right font-medium">Qty</th>
-                                              <th className="px-2 py-1 text-right font-medium">Unit Price</th>
-                                              <th className="px-2 py-1 text-right font-medium">Total</th>
-                                              <th className="px-2 py-1 text-left font-medium">Reason</th>
-                                            </tr>
-                                          </thead>
-                                          <tbody>
-                                            {rec.awardedItems.map((item: any, iIdx: number) => (
-                                              <tr key={iIdx} className="border-t">
-                                                <td className="px-2 py-1">{item.description}</td>
-                                                <td className="px-2 py-1 text-right font-mono">{item.quantity}</td>
-                                                <td className="px-2 py-1 text-right font-mono">{Number(item.unitPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                                                <td className="px-2 py-1 text-right font-mono font-medium">{Number(item.totalValue).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                                                <td className="px-2 py-1 text-muted-foreground">{item.reason}</td>
-                                              </tr>
-                                            ))}
-                                          </tbody>
-                                          <tfoot>
-                                            <tr className="border-t bg-muted/30">
-                                              <td colSpan={3} className="px-2 py-1 font-medium text-right">Total Award Value:</td>
-                                              <td className="px-2 py-1 text-right font-mono font-bold text-primary">{Number(rec.totalAwardValue).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                                              <td></td>
-                                            </tr>
-                                          </tfoot>
-                                        </table>
-                                      </div>
-                                    )}
-                                    <div className="flex gap-3">
-                                      {rec.strengths && rec.strengths.length > 0 && (
-                                        <div className="flex-1">
-                                          <p className="text-xs font-medium text-emerald-600 dark:text-emerald-400 mb-0.5 flex items-center gap-1"><ThumbsUp className="h-3 w-3" /> Strengths</p>
-                                          <ul className="text-xs space-y-0.5">
-                                            {rec.strengths.map((s: string, sIdx: number) => (
-                                              <li key={sIdx} className="flex items-start gap-1"><span className="text-emerald-500 mt-0.5">+</span> {s}</li>
-                                            ))}
-                                          </ul>
-                                        </div>
-                                      )}
-                                      {rec.risks && rec.risks.length > 0 && (
-                                        <div className="flex-1">
-                                          <p className="text-xs font-medium text-red-600 dark:text-red-400 mb-0.5 flex items-center gap-1"><ThumbsDown className="h-3 w-3" /> Risks</p>
-                                          <ul className="text-xs space-y-0.5">
-                                            {rec.risks.map((r: string, rIdx: number) => (
-                                              <li key={rIdx} className="flex items-start gap-1"><span className="text-red-500 mt-0.5">-</span> {r}</li>
-                                            ))}
-                                          </ul>
-                                        </div>
-                                      )}
-                                    </div>
-                                    {(isTopPick || aiAwardData.strategy !== 'single') && rec.awardedItems?.length > 0 && (
-                                      <Button
-                                        size="sm"
-                                        variant="outline"
-                                        className="text-xs h-7 gap-1 mt-1"
-                                        onClick={() => {
-                                          setAwardSupplier(String(rec.responseId));
-                                          const strategyLabel = aiAwardData.strategy === 'single' ? '' : aiAwardData.strategy === 'split_by_quantity' ? 'Quantity split — ' : 'Split award — ';
-                                          const itemsText = rec.awardedItems.map((i: any) => `${i.description} (Qty: ${i.quantity})`).join(', ');
-                                          const scoreLabel = aiAwardData.scoringBasis === 'price' ? 'Price Score' : 'Score';
-                                          const recText = `[AI Recommendation] ${strategyLabel}Award to ${rec.vendorName} (${scoreLabel}: ${rec.overallScore}/100). Items: ${itemsText}. ${rec.strengths?.[0] ? `Strength: ${rec.strengths[0]}.` : ''} ${aiAwardData.estimatedSavings ? `Est. savings: ${aiAwardData.estimatedSavings}` : ''}`.trim();
-                                          setAwardComments(recText);
-                                          toast({ title: "Supplier selected", description: `${rec.vendorName} selected for award. Review comments and click "Award Bid" to confirm.` });
-                                        }}
-                                        data-testid={`button-apply-ai-award-${idx}`}
-                                      >
-                                        <Award className="h-3 w-3" /> Select This Supplier
-                                      </Button>
-                                    )}
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
                 <div className="border rounded-md overflow-x-auto">
                   <div className="min-w-[600px]">
                     <div className="grid border-b" style={{ gridTemplateColumns: gridCols }}>
@@ -3446,50 +2755,49 @@ function AddMemberSheet({ open, onOpenChange, bidId }: { open: boolean; onOpenCh
   });
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right">
-        <SheetHeader>
-          <SheetTitle>Add Team Member</SheetTitle>
-          <SheetDescription>Select a team type and user to add to the evaluation team.</SheetDescription>
-        </SheetHeader>
-        <div className="mt-6 space-y-5">
-          <div className="space-y-2">
-            <Label>Team Type</Label>
-            <Select value={teamType} onValueChange={setTeamType}>
-              <SelectTrigger data-testid="select-team-type">
-                <SelectValue placeholder="Select team type" />
-              </SelectTrigger>
-              <SelectContent>
-                {TEAM_TYPES.map((t) => (
-                  <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label>User</Label>
-            <Select value={selectedUser} onValueChange={setSelectedUser}>
-              <SelectTrigger data-testid="select-user">
-                <SelectValue placeholder="Select user" />
-              </SelectTrigger>
-              <SelectContent>
-                {users.map((u: any) => (
-                  <SelectItem key={u.id} value={String(u.id)}>{u.name || u.email_id}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <Button
-            className="w-full"
-            disabled={!teamType || !selectedUser || addMember.isPending}
-            onClick={() => addMember.mutate()}
-            data-testid="button-add-member-submit"
-          >
-            {addMember.isPending ? "Adding..." : "Add Member"}
-          </Button>
+    <FormSheet
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Add Team Member"
+      description="Select a team type and user to add to the evaluation team."
+      onSubmit={() => addMember.mutate()}
+      submitLabel={addMember.isPending ? "Adding..." : "Add Member"}
+      isSubmitting={addMember.isPending}
+      submitDisabled={!teamType || !selectedUser}
+      widthClassName="sm:max-w-lg"
+    >
+      <p className="text-xs text-muted-foreground mb-4">
+        <span className="text-destructive">*</span> Indicates mandatory fields.
+      </p>
+      <div className="space-y-5">
+        <div className="space-y-2">
+          <Label>Team Type <span className="text-destructive">*</span></Label>
+          <Select value={teamType} onValueChange={setTeamType}>
+            <SelectTrigger data-testid="select-team-type">
+              <SelectValue placeholder="Select team type" />
+            </SelectTrigger>
+            <SelectContent>
+              {TEAM_TYPES.map((t) => (
+                <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-      </SheetContent>
-    </Sheet>
+        <div className="space-y-2">
+          <Label>User <span className="text-destructive">*</span></Label>
+          <Select value={selectedUser} onValueChange={setSelectedUser}>
+            <SelectTrigger data-testid="select-user">
+              <SelectValue placeholder="Select user" />
+            </SelectTrigger>
+            <SelectContent>
+              {users.map((u: any) => (
+                <SelectItem key={u.id} value={String(u.id)}>{u.name || u.email_id}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+    </FormSheet>
   );
 }
 
@@ -3593,19 +2901,20 @@ function NegotiationSheet({ open, onOpenChange, bid, responses }: { open: boolea
   const canSend = selectedSuppliers.length > 0 && closeDate && comments.trim() && !dateError;
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-[600px] sm:max-w-[600px] overflow-y-auto" data-testid="sheet-negotiation">
-        <SheetHeader>
-          <SheetTitle className="flex items-center gap-2">
-            <ClipboardCheck className="h-5 w-5" />
-            Request for Negotiation Details
-          </SheetTitle>
-          <SheetDescription>
-            <span className="text-destructive text-xs">*Indicates mandatory fields.</span>
-          </SheetDescription>
-        </SheetHeader>
-
-        <div className="space-y-6 pt-2 pb-6">
+    <FormSheet
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Request for Negotiation Details"
+      onSubmit={() => sendNegotiation.mutate()}
+      submitLabel={sendNegotiation.isPending ? "Sending..." : "Send"}
+      isSubmitting={sendNegotiation.isPending}
+      submitDisabled={!canSend}
+      widthClassName="sm:max-w-2xl"
+    >
+      <p className="text-xs text-muted-foreground mb-4">
+        <span className="text-destructive">*</span> Indicates mandatory fields.
+      </p>
+      <div className="space-y-6">
           <div className="space-y-4">
             <div className="space-y-2">
               <Label className="text-sm font-medium">Supplier <span className="text-destructive">*</span></Label>
@@ -3702,25 +3011,8 @@ function NegotiationSheet({ open, onOpenChange, bid, responses }: { open: boolea
               />
             </div>
           </div>
-
-          <Separator />
-
-          <div className="flex items-center justify-end gap-3">
-            <Button variant="outline" onClick={() => onOpenChange(false)} data-testid="button-negotiation-cancel">
-              Cancel
-            </Button>
-            <Button
-              disabled={!canSend || sendNegotiation.isPending}
-              onClick={() => sendNegotiation.mutate()}
-              data-testid="button-negotiation-send"
-            >
-              <Send className="h-3.5 w-3.5 mr-1.5" />
-              {sendNegotiation.isPending ? "Sending..." : "Send"}
-            </Button>
-          </div>
-        </div>
-      </SheetContent>
-    </Sheet>
+      </div>
+    </FormSheet>
   );
 }
 

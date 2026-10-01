@@ -104,7 +104,7 @@ export default function EmailNotifications() {
     <div className="flex flex-col h-full p-6">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h1 className="text-xl font-semibold" data-testid="text-page-title">
+          <h1 className="text-xl font-semibold text-primary" data-testid="text-page-title">
             My Notifications
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">

@@ -24,7 +24,7 @@ class RegistrationSubmitHandler extends BaseEmailHandler<RegistrationSubmitEvent
     return {
       user: event.userName,
       linkUrl: appUrl,
-      orgName: event.orgName || "Prokraya",
+      orgName: event.orgName || "S2P Labs",
       orgLogoPath: event.orgLogoPath || '',
     };
   }

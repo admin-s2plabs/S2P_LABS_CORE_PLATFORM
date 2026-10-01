@@ -158,7 +158,7 @@ export default function MyTasks() {
   return (
     <div className="p-4 space-y-4">
       <div>
-        <h1 className="text-xl font-bold" data-testid="text-page-title">My Tasks</h1>
+        <h1 className="text-xl font-bold text-primary" data-testid="text-page-title">My Tasks</h1>
         <p className="text-sm text-muted-foreground">List of Pending Approval Tasks!</p>
       </div>
 

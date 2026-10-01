@@ -6,14 +6,14 @@ export function HelpCenterPage() {
   const [question, setQuestion] = useState("");
 
   const faqs = [
-    { question: "What is Prokraya?", answer: "Prokraya is an AI-powered Source-to-Pay platform that automates your entire procurement lifecycle with intelligent agents and workflows." },
-    { question: "How do AI agents work?", answer: "Our AI agents autonomously monitor triggers and events in your procurement process, automatically executing actions like RFQ creation, bid analysis, contract renewals, and supplier risk assessments." },
-    { question: "What integrations are supported?", answer: "Prokraya integrates with major ERP systems including SAP, Oracle, Microsoft Dynamics, NetSuite, QuickBooks, Workday, and supports custom API integrations." },
+    { question: "What is S2P Labs?", answer: "S2P Labs is a Source-to-Pay platform that automates your entire procurement lifecycle with intelligent agents and workflows." },
+    { question: "How do agents work?", answer: "Our agents autonomously monitor triggers and events in your procurement process, automatically executing actions like RFQ creation, bid analysis, contract renewals, and supplier risk assessments." },
+    { question: "What integrations are supported?", answer: "S2P Labs integrates with major ERP systems including SAP, Oracle, Microsoft Dynamics, NetSuite, QuickBooks, Workday, and supports custom API integrations." },
     { question: "Is my data secure?", answer: "Yes, we are ISO 27001 certified and GDPR compliant. We use enterprise-grade security measures including encryption at rest and in transit, regular security audits, and role-based access controls." },
     { question: "How long does implementation take?", answer: "Implementation typically takes 4-8 weeks depending on your requirements and existing systems. Our team provides full support throughout the onboarding process." },
     { question: "Do you offer training?", answer: "Yes, we provide comprehensive training for your team including live sessions, video tutorials, and detailed documentation to ensure successful adoption." },
     { question: "What support options are available?", answer: "We offer 24/7 customer support via email, chat, and phone. Enterprise customers also get dedicated account managers and priority support." },
-    { question: "Can I try Prokraya before purchasing?", answer: "Yes, we offer a free trial and demo sessions. Contact our sales team to schedule a personalized demo of the platform." },
+    { question: "Can I try S2P Labs before purchasing?", answer: "Yes, we offer a free trial and demo sessions. Contact our sales team to schedule a personalized demo of the platform." },
   ];
 
   const handleSubmitQuestion = (e: React.FormEvent) => {

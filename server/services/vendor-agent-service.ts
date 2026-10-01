@@ -304,7 +304,7 @@ async function computeVendorAiOverallScore(
   }
 }
 
-const VENDOR_AGENT_SYSTEM_PROMPT = `You are an AI Vendor Agent for Prokraya, an enterprise vendor management platform. You help procurement teams with ALL vendor-related tasks — from querying vendor data to actually onboarding new vendors, sending invitations, and assessing risk.
+const VENDOR_AGENT_SYSTEM_PROMPT = `You are an AI Vendor Agent for S2P Labs, an enterprise vendor management platform. You help procurement teams with ALL vendor-related tasks — from querying vendor data to actually onboarding new vendors, sending invitations, and assessing risk.
 
 ## YOUR CAPABILITIES
 

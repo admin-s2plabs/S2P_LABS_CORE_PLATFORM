@@ -109,7 +109,7 @@ export interface BlogPost {
 export const BlogPosts: BlogPost[] = [
   {
     img: blogImage100,
-    text: "Integrating AI into Your Procurement Platform",
+    text: "Integrating Decision Intelligence into Your Procurement Platform",
     subheading: "What enterprise procurement leaders need to get right",
     pathname: "/blog-details/Integrating-AI-into-Your-Procurement-Platform",
   },
@@ -131,9 +131,9 @@ export const BlogPosts: BlogPost[] = [
   },
   {
     img: blogImage97,
-    text: "AI in Procurement 2025: Driving Efficiency with Smart Metrics",
+    text: "Procurement in 2025: Driving Efficiency with Smart Metrics",
     subheading:
-      "Learn how AI streamlines processes, manages suppliers, & reduces risks.",
+      "Learn how automation streamlines processes, manages suppliers, & reduces risks.",
     pathname:
       "/blog-details/The-Future-of-Procurement-AI-Driven-Efficiency-Metrics-for-2025",
   },
@@ -149,7 +149,7 @@ export const BlogPosts: BlogPost[] = [
     img: blogImage95,
     text: "Invoice Automation Software 2025: A Complete Guide to Choosing the Right Solution",
     subheading:
-      "This guide covers key features, AI integration, benefits, and best practices.",
+      "This guide covers key features, integrations, benefits, and best practices.",
     pathname:
       "/blog-details/A-2025-Guide-to-Choosing-the-Right-Invoice-Automation-Software",
   },
@@ -213,7 +213,7 @@ export const BlogPosts: BlogPost[] = [
     img: blogImage87,
     text: "Negotiating Smarter, Not Harder: The Rise of Autonomous Negotiation",
     subheading:
-      "Learn how AI-driven solutions streamline processes, reduce costs.",
+      "Learn how automated solutions streamline processes, reduce costs.",
     pathname:
       "/blog-details/Negotiating-Smarter-Not-Harder-The-Rise-of-Autonomous-Negotiation",
   },
@@ -227,7 +227,7 @@ export const BlogPosts: BlogPost[] = [
   },
   {
     img: blogImage85,
-    text: "A New Era in Procurement: The Role of Generative AI and What Lies Ahead",
+    text: "A New Era in Procurement: The Role of Automation and What Lies Ahead",
     subheading:
       "Learn key applications, benefits, and future trends shaping the next era of procurement.",
     pathname:
@@ -259,9 +259,9 @@ export const BlogPosts: BlogPost[] = [
   },
   {
     img: blogImage81,
-    text: "Leveraging Generative AI to Future-Proof Spend Analysis Management",
+    text: "Leveraging Automation to Future-Proof Spend Analysis Management",
     subheading:
-      "Discover how generative AI transforms spend analysis management, enhancing accuracy, efficiency, and future-proofing strategies.",
+      "Discover how automation transforms spend analysis management, enhancing accuracy, efficiency, and future-proofing strategies.",
     pathname:
       "/blog-details/Leveraging-Generative-AI-to-Future-Proof-Spend-Analysis-Management",
   },
@@ -394,9 +394,9 @@ export const BlogPosts: BlogPost[] = [
   },
   {
     img: blogImage64,
-    text: "Navigating Tomorrow: Generative AI's Role in Shaping Sourcing Landscape",
+    text: "Navigating Tomorrow: Automation's Role in Shaping Sourcing Landscape",
     subheading:
-      "Generative AI, a powerful branch of artificial intelligence, is emerging as a game-changer",
+      "Automation is emerging as a game-changer in sourcing",
     pathname:
       "/blog-details/Navigating-Tomorrow-Generative-AIs-Role-in-Shaping-Sourcing-Landscape",
   },
@@ -426,9 +426,9 @@ export const BlogPosts: BlogPost[] = [
   },
   {
     img: blogImage60,
-    text: "The Future of Vendor Collaboration: How AI and Automation are Reshaping Procurement",
+    text: "The Future of Vendor Collaboration: How Automation and Analytics are Reshaping Procurement",
     subheading:
-      "Artificial Intelligence (AI) and automation are revolutionizing business processes",
+      "Automation and analytics are revolutionizing business processes",
     pathname:
       "/blog-details/The-Future-of-Vendor-Collaboration-How-AI-and-Automation-are-Reshaping-Procurement",
   },
@@ -613,7 +613,7 @@ export const BlogPosts: BlogPost[] = [
   },
   {
     img: blogImage36,
-    text: "Harnessing the Potential of Generative AI: The Future of Procurement",
+    text: "Harnessing the Potential of Automation: The Future of Procurement",
     subheading:
       "Explore limitless possibilities and stay ahead in the evolving landscape.",
     pathname:
@@ -845,7 +845,7 @@ export const BlogPosts: BlogPost[] = [
     img: blogImage7,
     text: "Strategic Sourcing: What It Is and How It Can Benefit Your Business",
     subheading:
-      "At Prokraya, we believe that strategic sourcing is a critical part of any successful procurement process.",
+      "At S2P Labs, we believe that strategic sourcing is a critical part of any successful procurement process.",
     pathname:
       "/blog-details/strategic-sourcing-what-it-is-and-how-it-can-benefit-your-business",
   },

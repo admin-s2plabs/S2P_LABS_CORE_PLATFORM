@@ -35,7 +35,7 @@ class InvoiceApprovedNonPOHandler extends BaseEmailHandler<InvoiceApprovedNonPOE
       supplierName: event.supplierName,
       approvedDate: event.approvedDate,
       linkUrl: appUrl,
-      orgName: event.orgName || "Prokraya",
+      orgName: event.orgName || "S2P Labs",
       orgLogoPath: event.orgLogoPath || '',
     };
   }

@@ -230,10 +230,10 @@ export default function Workflows() {
         <div>
           <h1 className="text-xl font-semibold tracking-tight flex items-center gap-2">
             <Workflow className="h-5 w-5 text-primary" />
-            AI Workbench
+            Workflow Workbench
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Automate procurement processes by chaining AI agents together
+            Automate procurement processes by chaining automated steps together
           </p>
         </div>
         <div className="flex items-center gap-2">

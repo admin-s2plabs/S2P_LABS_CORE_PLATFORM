@@ -18,6 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { FormSheet } from "@/components/form-sheet";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -253,65 +254,58 @@ export default function ApiKeys() {
         </CardContent>
       </Card>
 
-      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Generate API Key</DialogTitle>
-            <DialogDescription>
-              Create a new API key for an external system to integrate with Prokraya.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
-              <Label htmlFor="key-name">Key Name <span className="text-destructive">*</span></Label>
-              <Input
-                id="key-name"
-                placeholder="e.g., SAP ERP Production"
-                value={newKeyName}
-                onChange={e => setNewKeyName(e.target.value)}
-                data-testid="input-key-name"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="key-description">Description</Label>
-              <Textarea
-                id="key-description"
-                placeholder="What system will use this key?"
-                value={newKeyDescription}
-                onChange={e => setNewKeyDescription(e.target.value)}
-                className="resize-none"
-                data-testid="input-key-description"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="key-expiry">Expiry Date (optional)</Label>
-              <Input
-                id="key-expiry"
-                type="date"
-                value={newKeyExpiry}
-                onChange={e => setNewKeyExpiry(e.target.value)}
-                data-testid="input-key-expiry"
-              />
-            </div>
+      <FormSheet
+        open={showCreateDialog}
+        onOpenChange={setShowCreateDialog}
+        title="Generate API Key"
+        description="Create a new API key for an external system to integrate with Prokraya."
+        onSubmit={() => createMutation.mutate({
+          key_name: newKeyName,
+          description: newKeyDescription || undefined,
+          expires_at: newKeyExpiry || undefined,
+        })}
+        submitLabel={createMutation.isPending ? "Generating..." : "Generate Key"}
+        isSubmitting={createMutation.isPending}
+        submitDisabled={!newKeyName.trim()}
+        widthClassName="sm:max-w-lg"
+      >
+        <p className="text-xs text-muted-foreground mb-4">
+          <span className="text-destructive">*</span> Indicates mandatory fields
+        </p>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="key-name">Key Name <span className="text-destructive">*</span></Label>
+            <Input
+              id="key-name"
+              placeholder="e.g., SAP ERP Production"
+              value={newKeyName}
+              onChange={e => setNewKeyName(e.target.value)}
+              data-testid="input-key-name"
+            />
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCreateDialog(false)} data-testid="button-cancel-create">
-              Cancel
-            </Button>
-            <Button
-              onClick={() => createMutation.mutate({
-                key_name: newKeyName,
-                description: newKeyDescription || undefined,
-                expires_at: newKeyExpiry || undefined,
-              })}
-              disabled={!newKeyName.trim() || createMutation.isPending}
-              data-testid="button-confirm-create"
-            >
-              {createMutation.isPending ? "Generating..." : "Generate Key"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          <div className="space-y-2">
+            <Label htmlFor="key-description">Description</Label>
+            <Textarea
+              id="key-description"
+              placeholder="What system will use this key?"
+              value={newKeyDescription}
+              onChange={e => setNewKeyDescription(e.target.value)}
+              className="resize-none"
+              data-testid="input-key-description"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="key-expiry">Expiry Date (optional)</Label>
+            <Input
+              id="key-expiry"
+              type="date"
+              value={newKeyExpiry}
+              onChange={e => setNewKeyExpiry(e.target.value)}
+              data-testid="input-key-expiry"
+            />
+          </div>
+        </div>
+      </FormSheet>
 
       <Dialog open={showCreatedKeyDialog} onOpenChange={(open) => {
         if (!open) {

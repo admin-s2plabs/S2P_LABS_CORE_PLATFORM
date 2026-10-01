@@ -16,7 +16,7 @@ class PasswordResetHandler extends BaseEmailHandler<PasswordResetEvent> {
       userName: event.loginUserName,  // User Name: ${userName}
       password: event.newPassword,    // Password: ${password}
       linkUrl: event.resetLinkUrl || event.loginUrl,  // Go To Link: ${linkUrl}
-      orgName: event.orgName || 'Prokraya',
+      orgName: event.orgName || 'S2P Labs',
       orgLogoPath: event.orgLogoPath || '',
     };
   }

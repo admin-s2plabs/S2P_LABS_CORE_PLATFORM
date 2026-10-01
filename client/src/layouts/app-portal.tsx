@@ -10,34 +10,18 @@ import {
 } from "@/components/ui/popover";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { UserMenu } from "@/components/user-menu";
-import { useAISettings } from "@/hooks/use-ai-settings";
-import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
-import { Bell, Bot, Mail, Sparkles } from "lucide-react";  // ai try assistence button add in registration page
+import { Bell, Mail } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 import { Link, Redirect, Route, Switch, useLocation } from "wouter";
 
 
-import AIModelConfig from "@/pages/modules/administration/ai-model-config";
-import AIServiceSettings from "@/pages/modules/administration/ai-service-settings";
 import ApprovalWorkflow from "@/pages/modules/administration/approval-workflow";
 import AuditLogs from "@/pages/modules/administration/audit-logs";
 import BasicSettings from "@/pages/modules/administration/basic-settings";
 import CostCenterSetup from "@/pages/modules/administration/cost-center-setup";
 import SetupApprovers from "@/pages/modules/administration/setup-approvers";
 import SetupNotifications from "@/pages/modules/administration/setup-notifications";
-import AIAgents from "@/pages/modules/ai-console/ai-agents";
-import AIComplianceAgent from "@/pages/modules/ai-console/ai-compliance-agent";
-import AIContractingAgent from "@/pages/modules/ai-console/ai-contracting-agent";
-import AICostIntelligenceAgent from "@/pages/modules/ai-console/ai-cost-intelligence-agent";
-import AIEvaAgent from "@/pages/modules/ai-console/ai-eva-agent";
-import AIIntelligenceSuite from "@/pages/modules/ai-console/ai-intelligence-suite";
-import AINegotiationAgent from "@/pages/modules/ai-console/ai-negotiation-agent";
-import AIPayablesAgent from "@/pages/modules/ai-console/ai-payables-agent";
-import AIProcurementAgent from "@/pages/modules/ai-console/ai-procurement-agent";
-import AISourcingAgent from "@/pages/modules/ai-console/ai-sourcing-agent";
-import AISpendAgent from "@/pages/modules/ai-console/ai-spend-agent";
-import AIVendorAgent from "@/pages/modules/ai-console/ai-vendor-agent";
 import BidAwardDetail from "@/pages/modules/bids/bid-award-dtl";
 import BidCommScore from "@/pages/modules/bids/bid-comm-score";
 import BidDetail from "@/pages/modules/bids/bid-detail";
@@ -56,8 +40,6 @@ import EmailNotifications from "@/pages/modules/common/email-notifications";
 import Feedback from "@/pages/modules/common/feedback";
 import Profile from "@/pages/modules/common/profile";
 import ContractDetail from "@/pages/modules/contracts/contract-detail";
-import ContractExtractClauses from "@/pages/modules/contracts/contract-extract-clauses";
-import ContractInitializeLibrary from "@/pages/modules/contracts/contract-initialize-library";
 import ContractPerformance from "@/pages/modules/contracts/contract-performance";
 import ContractSections from "@/pages/modules/contracts/contract-sections";
 import ContractTemplateDetail from "@/pages/modules/contracts/contract-template-detail";
@@ -94,7 +76,6 @@ import TatOverview from "@/pages/modules/tat/tat-overview";
 import RoleDelegation from "@/pages/modules/user-management/role-delegation";
 import ManageRoles from "@/pages/modules/user-management/roles";
 import ManageUsers from "@/pages/modules/user-management/users";
-import VendorAIChat from "@/pages/modules/vendor-registration/vendor-ai-chat";
 import VendorBanking from "@/pages/modules/vendor-registration/vendor-banking";
 import VendorCertificates from "@/pages/modules/vendor-registration/vendor-certificates";
 import VendorCompanyDetails from "@/pages/modules/vendor-registration/vendor-company-details";
@@ -127,7 +108,6 @@ import SupplierAuctionWorkbench from "@/pages/modules/auctions/supplier-auction-
 import { VendorRegistrationWizardActionBar } from "@/layouts/vendor-registration-wizard-action-bar";
 import Evaluation from "@/pages/modules/evaluation/evaluation";
 import EvaluationPreview from "@/pages/modules/evaluation/evaluation-preview";
-import ChatWidget from "@/components/chatbot/ChatWidget";
 
 interface MenuItem {
   id: number;
@@ -308,7 +288,7 @@ export default function AppPortal({ onLogout }: AppPortalProps) {
   };
 
   const sidebarStyle = {
-    "--sidebar-width": "14.5rem",
+    "--sidebar-width": "6rem",
     "--sidebar-width-icon": "3rem",
   };
 
@@ -317,7 +297,6 @@ export default function AppPortal({ onLogout }: AppPortalProps) {
   const parsedAuth = authData ? JSON.parse(authData) : null;
   const userId = parsedAuth?.userId || null;
   const storedUserName = parsedAuth?.userName || null;
-  const chatBotDetails = JSON.parse(localStorage.getItem("orgDetails") || "{}");
   // Fetch current user profile
   const { data: currentUser } = useQuery<UserProfile>({
     queryKey: ["/api/profile", userId],
@@ -413,42 +392,21 @@ export default function AppPortal({ onLogout }: AppPortalProps) {
   const emailCount = unreadCount?.count || 0;
   const emails = latestEmails || [];
 
-  const isEvaPage = location === "/app/eva-agent";
-  const isAISettingsPage = location === "/app/ai-service-settings";
-  const isAIModelConfigPage = location === "/app/ai-model-config";
-  const isAgentPage = location.includes("/app/ai-") && location.includes("-agent");
-  const isVendorAiChatPage = location.startsWith("/vendor/register/ai-chat");
   const isVendorRegisterWizardPage =
     location.startsWith("/vendor/register/") &&
-    !isVendorAiChatPage &&
     location !== "/vendor/register" &&
     location !== "/vendor/register/";
-  const { isLoading: aiSettingsLoading, isAIEnabled } = useAISettings();
-  const showAiVendorAutofill = !aiSettingsLoading && isAIEnabled("AI_VENDOR_AUTOFILL");
-  const isFullScreenPage = isEvaPage || isAISettingsPage || isAIModelConfigPage;
-  const isInternalScrollingPage = isAgentPage || isEvaPage || isVendorAiChatPage;
 
   return (
     <>
       <VendorRegistrationDraftProvider>
       <SidebarProvider style={sidebarStyle as React.CSSProperties}>
         <div className="flex h-screen w-full overflow-hidden">
-          {!isFullScreenPage && <AppSidebar />}
+          <AppSidebar />
           <div className="flex flex-col flex-1 min-w-0">
             <header className="sticky top-0 flex items-center justify-between gap-2 h-14 px-4 border-b bg-background shrink-0 z-40">
               <div className="flex items-center gap-3">
-                {!isFullScreenPage && <SidebarTrigger data-testid="button-sidebar-toggle" />}
-                {orgDetails?.org_logo_path && (
-                  <img
-                    src={orgDetails.org_logo_path}
-                    alt="Organization Logo"
-                    className="h-8 w-auto object-contain bg-[#f3f4f5] rounded-[4px] p-[3px]"
-                    data-testid="img-header-org-logo"
-                  />
-                )}
-                <span className="text-sm font-medium text-muted-foreground" data-testid="text-org-legal-name">
-                  {orgDetails?.org_legal_name || "Procurement Portal"}
-                </span>
+                <SidebarTrigger data-testid="button-sidebar-toggle" />
               </div>
               <div className="flex items-center gap-2">
                 <Popover open={emailOpen} onOpenChange={setEmailOpen}>
@@ -576,30 +534,13 @@ export default function AppPortal({ onLogout }: AppPortalProps) {
                   userEmail={currentUser?.user_name || ""}
                   userInitials={currentUser?.name ? currentUser.name.split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase() : storedUserName ? storedUserName.split(" ").map((n: string) => n[0]).join("").substring(0, 2).toUpperCase() : "U"}
                   userPhoto={currentUser?.photo_path || undefined}
+                  userRole={currentUser?.roleName}
                   onLogout={onLogout}
                 />
               </div>
             </header>
             <main className="flex-1 bg-muted/30 overflow-hidden flex flex-col min-h-0">
-              <div className={cn("relative flex-1 min-h-0", isInternalScrollingPage ? "overflow-hidden flex flex-col" : "overflow-auto")}>
-                {parsedAuth?.role === "vendor" &&
-                  isVendorRegisterWizardPage &&
-                  showAiVendorAutofill && (
-                    <div className="absolute top-4 right-4 z-10">
-                      <Link href="/vendor/register/ai-chat">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="gap-1.5"
-                          data-testid="button-switch-to-ai"
-                        >
-                          <Bot className="h-3.5 w-3.5" />
-                          <span className="hidden sm:inline">Try AI Assistant</span>
-                          <Sparkles className="h-3 w-3 text-cyan-500" />
-                        </Button>
-                      </Link>
-                    </div>
-                  )}
+              <div className="relative flex-1 min-h-0 overflow-auto">
                 <Switch>
                   <Route path="/app/dashboard" component={AppDashboard} />
                   <Route path="/app/profile" component={Profile} />
@@ -614,7 +555,6 @@ export default function AppPortal({ onLogout }: AppPortalProps) {
                   <Route path="/vendor/register/scope-of-supply" component={VendorScopeOfSupply} />
                   <Route path="/vendor/register/certificates" component={VendorCertificates} />
                   <Route path="/vendor/register/review" component={VendorRegistrationReview} />
-                  <Route path="/vendor/register/ai-chat" component={VendorAIChat} />
 
                   <Route path="/app/vendors">{() => <ProtectedRoute component={VendorReview} />}</Route>
                   <Route path="/app/vendors/:id">{(params) => <ProtectedRoute component={VendorDetail} componentProps={params} />}</Route>
@@ -641,17 +581,6 @@ export default function AppPortal({ onLogout }: AppPortalProps) {
                   <Route path="/app/categories">{() => <ProtectedRoute component={DynamicCategories} />}</Route>
                   <Route path="/app/categories-old">{() => <ProtectedRoute component={CategoriesOld} />}</Route>
                   <Route path="/app/items">{() => <ProtectedRoute component={Items} />}</Route>
-                  <Route path="/app/eva-agent">{() => <ProtectedRoute component={AIEvaAgent} />}</Route>
-                  <Route path="/app/ai-agents">{() => <ProtectedRoute component={AIAgents} />}</Route>
-                  <Route path="/app/ai-intelligence-suite">{() => <ProtectedRoute component={AIIntelligenceSuite} />}</Route>
-                  <Route path="/app/ai-sourcing-agent">{() => <ProtectedRoute component={AISourcingAgent} />}</Route>
-                  <Route path="/app/ai-vendor-agent">{() => <ProtectedRoute component={AIVendorAgent} />}</Route>
-                  <Route path="/app/ai-negotiation-agent">{() => <ProtectedRoute component={AINegotiationAgent} />}</Route>
-                  <Route path="/app/ai-cost-intelligence-agent">{() => <ProtectedRoute component={AICostIntelligenceAgent} />}</Route>
-                  <Route path="/app/ai-procurement-agent">{() => <ProtectedRoute component={AIProcurementAgent} />}</Route>
-                  <Route path="/app/ai-contracting-agent">{() => <ProtectedRoute component={AIContractingAgent} />}</Route>
-                  <Route path="/app/ai-payables-agent">{() => <ProtectedRoute component={AIPayablesAgent} />}</Route>
-                  <Route path="/app/ai-spend-agent">{() => <ProtectedRoute component={AISpendAgent} />}</Route>
                   <Route path="/app/reports/:rest*">{(params) => <ProtectedRoute component={Reports} componentProps={params} />}</Route>
                   <Route path="/app/reports">{() => <ProtectedRoute component={Reports} />}</Route>
                   <Route path="/app/rfi">{() => <ProtectedRoute component={RfiCampaigns} />}</Route>
@@ -666,12 +595,9 @@ export default function AppPortal({ onLogout }: AppPortalProps) {
                   <Route path="/app/contract-sections">{() => <ProtectedRoute component={ContractSections} />}</Route>
                   <Route path="/app/contract-terms">{() => <ProtectedRoute component={ContractTerms} />}</Route>
                   <Route path="/app/contract-performance">{() => <ProtectedRoute component={ContractPerformance} />}</Route>
-                  <Route path="/app/contract-sections/extract">{() => <ProtectedRoute component={ContractExtractClauses} />}</Route>
-                  <Route path="/app/contract-sections/initialize">{() => <ProtectedRoute component={ContractInitializeLibrary} />}</Route>
                   <Route path="/app/supp-contracts">{() => <ProtectedRoute component={SupplierContracts} />}</Route>
                   <Route path="/app/supp-contract-details/:id">{(params) => <ProtectedRoute component={SupplierContractDetail} componentProps={params} />}</Route>
                   <Route path="/app/spend-analysis">{() => <ProtectedRoute component={SpendAnalysis} />}</Route>
-                  <Route path="/app/ai-compliance-agent">{() => <ProtectedRoute component={AIComplianceAgent} />}</Route>
                   <Route path="/app/workflows">{() => <ProtectedRoute component={Workflows} />}</Route>
                   <Route path="/app/workflow-builder">{() => <ProtectedRoute component={WorkflowBuilder} />}</Route>
                   <Route path="/app/workflow-templates">{() => <ProtectedRoute component={WorkflowTemplates} />}</Route>
@@ -687,8 +613,6 @@ export default function AppPortal({ onLogout }: AppPortalProps) {
                   <Route path="/app/audit-logs">{() => <ProtectedRoute component={AuditLogs} />}</Route>
                   <Route path="/app/tat">{() => <ProtectedRoute component={TatManagement} />}</Route>
                   <Route path="/app/tat-overview">{() => <ProtectedRoute component={TatOverview} />}</Route>
-                  <Route path="/app/ai-service-settings">{() => <ProtectedRoute component={AIServiceSettings} />}</Route>
-                  <Route path="/app/ai-model-config">{() => <ProtectedRoute component={AIModelConfig} />}</Route>
                   <Route path="/app/master-data">{() => <ProtectedRoute component={ManageMasterData} />}</Route>
                   <Route path="/app/master-data/config/:entityKey">{(params) => <ProtectedRoute component={EntityConfigDetail} componentProps={params} />}</Route>
                   <Route path="/app/master-data/:entityName">{(params) => <ProtectedRoute component={MasterDataDetail} componentProps={params} />}</Route>
@@ -732,7 +656,6 @@ export default function AppPortal({ onLogout }: AppPortalProps) {
           </div>
         </div>
       </SidebarProvider>
-      {chatBotDetails?.attribute_10 === "Y" && <ChatWidget /> }
       </VendorRegistrationDraftProvider>
     </>
   );

@@ -30,7 +30,7 @@ class BudgetRejectedHandler extends BaseEmailHandler<BudgetRejectedEvent> {
       budgetName: event.budgetName,
       budgetId: event.budgetId,
       linkUrl: appUrl,
-      orgName: event.orgName || "Prokraya",
+      orgName: event.orgName || "S2P Labs",
       rejectComments: event.rejectComments,
       orgLogoPath: event.orgLogoPath || '',
     };

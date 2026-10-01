@@ -1,2 +1,2 @@
-export { default as LogoBlack } from "../../assets/images/Prokraya_Logo_main_black.png";
+export { default as LogoBlack } from "../../assets/images/s2plabs_logo.jpeg";
 

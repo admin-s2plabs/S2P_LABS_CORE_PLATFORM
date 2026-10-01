@@ -1,49 +1,34 @@
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useAISettings } from "@/hooks/use-ai-settings";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useQuery } from "@tanstack/react-query";
 import {
-  Activity,
   AlertTriangle,
-  ArrowRight,
   ArrowUpRight,
   BarChart3,
-  Brain,
   Building2,
   CalendarClock,
   CheckCircle2,
-  ChevronRight,
-  CircleDollarSign,
   Clock,
   CreditCard,
-  DollarSign,
-  FileCheck,
   FileText,
   Gavel,
-  GitPullRequest,
   IndianRupee,
-  Lightbulb,
-  Loader2,
   Package,
   PieChart as PieChartIcon,
   Receipt,
   RefreshCw,
   Shield,
-  ShieldAlert,
   ShoppingCart,
-  Sparkles, Target,
   Timer,
   TrendingDown,
   TrendingUp,
-  Truck,
-  UserCheck, UserPlus,
+  UserCheck,
+  UserPlus,
   Users,
-  Zap
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -195,7 +180,6 @@ function SectionHeader({ title }: { title: string }) {
 
 export default function SpendAnalysis() {
   const { toast } = useToast();
-  const { isAIEnabled } = useAISettings();
   const [year, setYear] = useState<string>("all");
   const [entity, setEntity] = useState<string>("all");
   const [baseCurrency, setBaseCurrency] = useState<string>("");
@@ -452,7 +436,7 @@ export default function SpendAnalysis() {
       <div className="space-y-0">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold" data-testid="text-page-title">
+            <h1 className="text-xl font-bold text-primary" data-testid="text-page-title">
               Procurement Performance Analysis
             </h1>
             <p className="text-sm text-muted-foreground">
@@ -492,19 +476,6 @@ export default function SpendAnalysis() {
           >
             Strategic Insights
           </button>
-          {isAIEnabled('AI_SPEND_INSIGHTS') && (
-            <button
-              onClick={() => setActiveTab("ai-insights")}
-              className={`px-4 py-1.5 text-sm font-medium border-b-2 -mb-px transition-colors flex items-center gap-1.5 ${activeTab === "ai-insights"
-                ? "border-primary text-primary"
-                : "border-transparent text-muted-foreground hover:text-foreground"
-                }`}
-              data-testid="tab-ai-insights"
-            >
-              <Sparkles className="h-3.5 w-3.5" />
-              AI Insights
-            </button>
-          )}
         </div>
       </div>
 
@@ -1304,10 +1275,6 @@ export default function SpendAnalysis() {
 
       {activeTab === "strategic" && (
         <StrategicInsightsTab entity={entity} year={year} curr={curr} />
-      )}
-
-      {activeTab === "ai-insights" && isAIEnabled('AI_SPEND_INSIGHTS') && (
-        <AIInsightsTab entity={entity} year={year} curr={curr} />
       )}
     </div>
   );
@@ -2386,441 +2353,5 @@ function ContractIntelligenceSection({ curr }: { curr: string }) {
         </div>
       </div>
     </>
-  );
-}
-
-const severityConfig: Record<string, { bg: string; text: string; border: string }> = {
-  high: { bg: "bg-red-500/10", text: "text-red-700 dark:text-red-400", border: "border-red-200 dark:border-red-800" },
-  medium: { bg: "bg-amber-500/10", text: "text-amber-700 dark:text-amber-400", border: "border-amber-200 dark:border-amber-800" },
-  low: { bg: "bg-blue-500/10", text: "text-blue-700 dark:text-blue-400", border: "border-blue-200 dark:border-blue-800" },
-  critical: { bg: "bg-red-600/15", text: "text-red-700 dark:text-red-400", border: "border-red-300 dark:border-red-700" },
-};
-
-const priorityConfig: Record<string, { bg: string; text: string }> = {
-  immediate: { bg: "bg-red-500/10", text: "text-red-700 dark:text-red-400" },
-  "short-term": { bg: "bg-amber-500/10", text: "text-amber-700 dark:text-amber-400" },
-  "long-term": { bg: "bg-blue-500/10", text: "text-blue-700 dark:text-blue-400" },
-};
-
-const effortConfig: Record<string, { bg: string; text: string }> = {
-  low: { bg: "bg-green-500/10", text: "text-green-700 dark:text-green-400" },
-  medium: { bg: "bg-amber-500/10", text: "text-amber-700 dark:text-amber-400" },
-  high: { bg: "bg-red-500/10", text: "text-red-700 dark:text-red-400" },
-};
-
-function HealthScoreRing({ score, label, size = "sm" }: { score: number; label: string; size?: "sm" | "lg" }) {
-  const strokeColor = score >= 80 ? "#22c55e" : score >= 60 ? "#f59e0b" : "#ef4444";
-  const textColor = score >= 80 ? "text-green-600" : score >= 60 ? "text-amber-600" : "text-red-600";
-  const dim = size === "lg" ? 96 : 56;
-  const strokeW = size === "lg" ? 6 : 4;
-  const r = (dim - strokeW) / 2;
-  const circ = 2 * Math.PI * r;
-  const offset = circ - (score / 100) * circ;
-  const fontSize = size === "lg" ? "text-2xl" : "text-sm";
-
-  return (
-    <div className="flex flex-col items-center gap-1.5">
-      <div className="relative" style={{ width: dim, height: dim }}>
-        <svg width={dim} height={dim} className="transform -rotate-90">
-          <circle cx={dim / 2} cy={dim / 2} r={r} stroke="currentColor" strokeWidth={strokeW} fill="none" className="text-muted/20" />
-          <circle cx={dim / 2} cy={dim / 2} r={r} stroke={strokeColor} strokeWidth={strokeW} fill="none"
-            strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round"
-            style={{ transition: "stroke-dashoffset 1s ease-in-out" }} />
-        </svg>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span className={`${fontSize} font-bold ${textColor}`}>{score}</span>
-        </div>
-      </div>
-      <span className="text-xs text-muted-foreground text-center leading-tight">{label}</span>
-    </div>
-  );
-}
-
-function MetricPill({ icon: Icon, value, label, color }: { icon: any; value: string | number; label: string; color: string }) {
-  return (
-    <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg border bg-card" data-testid={`metric-pill-${label.toLowerCase().replace(/\s+/g, '-')}`}>
-      <div className={`p-1.5 rounded-md ${color}`}>
-        <Icon className="h-3.5 w-3.5 text-white" />
-      </div>
-      <div>
-        <p className="text-sm font-bold leading-none">{value}</p>
-        <p className="text-[11px] text-muted-foreground mt-0.5">{label}</p>
-      </div>
-    </div>
-  );
-}
-
-function AIInsightsTab({ entity, year, curr }: { entity: string; year: string; curr: string }) {
-  const params = new URLSearchParams();
-  if (year !== "all") params.set("year", year);
-  if (entity !== "all") params.set("orgId", entity);
-  params.set("currency", curr);
-  const qp = `?${params.toString()}`;
-
-  const { data: insights, isLoading, error, refetch, isFetching } = useQuery<any>({
-    queryKey: ["/api/spend-analysis/ai-insights", year, entity, curr],
-    queryFn: async () => {
-      const res = await apiRequest("GET", `/api/spend-analysis/ai-insights${qp}`);
-      if (!res.ok) throw new Error("Failed to fetch AI insights");
-      return res.json();
-    },
-    staleTime: 15 * 60 * 1000,
-    retry: 1,
-  });
-
-  if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20 gap-4">
-        <div className="relative">
-          <div className="w-16 h-16 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
-          <Brain className="h-6 w-6 text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
-        </div>
-        <div className="text-center">
-          <p className="font-semibold text-base">Analyzing procurement data...</p>
-          <p className="text-sm text-muted-foreground mt-1">AI is reviewing spend patterns, risks, and opportunities</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20 gap-4">
-        <AlertTriangle className="h-10 w-10 text-amber-500" />
-        <div className="text-center">
-          <p className="font-semibold text-sm">Unable to generate insights</p>
-          <p className="text-xs text-muted-foreground mt-1">{(error as Error).message}</p>
-        </div>
-        <Button variant="outline" size="sm" onClick={() => refetch()} data-testid="btn-retry-insights">
-          <RefreshCw className="h-3.5 w-3.5 mr-1.5" /> Try Again
-        </Button>
-      </div>
-    );
-  }
-
-  if (!insights) return null;
-
-  const hs = insights.healthScore || {};
-
-  const dc = insights.dataContext || {};
-  const pulseMetrics = [
-    { icon: GitPullRequest, value: `${dc.prConversionRate ?? 0}%`, label: "PR-to-PO Rate", color: "bg-violet-600" },
-    { icon: FileCheck, value: `${dc.invoiceMatchRate ?? 0}%`, label: "Invoice Match", color: "bg-blue-600" },
-    { icon: Truck, value: `${dc.grnRejectionRate ?? 0}%`, label: "GRN Rejection", color: dc.grnRejectionRate > 5 ? "bg-red-600" : "bg-emerald-600" },
-    { icon: Clock, value: `${dc.avgPaymentCycleDays ?? 0}d`, label: "Payment Cycle", color: "bg-amber-600" },
-    { icon: CircleDollarSign, value: formatCurrency(dc.totalSpend || 0, curr), label: "Total Spend", color: "bg-indigo-600" },
-    { icon: Activity, value: `${dc.sourcingSavingsPercent ?? 0}%`, label: "Sourcing Savings", color: dc.sourcingSavingsPercent > 0 ? "bg-emerald-600" : "bg-red-600" },
-  ];
-
-  return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Brain className="h-5 w-5 text-primary" />
-          <p className="text-sm text-muted-foreground">
-            AI-powered analysis of your procurement data. Insights are generated from real transactional data.
-          </p>
-        </div>
-        <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching} data-testid="btn-refresh-insights">
-          {isFetching ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : <RefreshCw className="h-3.5 w-3.5 mr-1.5" />}
-          Refresh
-        </Button>
-      </div>
-
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2" data-testid="procurement-pulse">
-        {pulseMetrics.map((m) => (
-          <MetricPill key={m.label} icon={m.icon} value={m.value} label={m.label} color={m.color} />
-        ))}
-      </div>
-
-      <div className="grid grid-cols-12 gap-2.5">
-        <div className="col-span-12 md:col-span-8">
-          <Card data-testid="card-executive-summary">
-            <CardHeader className="px-4 py-3 pb-1.5">
-              <CardTitle className="text-base font-semibold flex items-center gap-2">
-                <Sparkles className="h-4.5 w-4.5 text-primary" />
-                Executive Summary
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="px-4 pb-4 pt-0">
-              {insights.organizationProfile && (
-                <div className="p-3 rounded-md bg-primary/5 border border-primary/10 mb-3" data-testid="org-profile-insight">
-                  <div className="flex items-center gap-1.5 mb-1.5">
-                    <Building2 className="h-4 w-4 text-primary" />
-                    <span className="text-sm font-semibold text-primary">Organization Profile</span>
-                  </div>
-                  <p className="text-xs leading-relaxed text-muted-foreground">{insights.organizationProfile}</p>
-                </div>
-              )}
-              <p className="text-sm leading-relaxed text-muted-foreground">{insights.executiveSummary}</p>
-              {dc.poCount != null && (
-                <div className="flex flex-wrap gap-4 mt-3 pt-3 border-t">
-                  <div className="text-xs">
-                    <span className="text-muted-foreground">POs: </span>
-                    <span className="font-semibold">{formatNumber(dc.poCount)}</span>
-                  </div>
-                  <div className="text-xs">
-                    <span className="text-muted-foreground">Suppliers: </span>
-                    <span className="font-semibold">{dc.supplierCount}</span>
-                  </div>
-                  <div className="text-xs">
-                    <span className="text-muted-foreground">Invoices: </span>
-                    <span className="font-semibold">{formatNumber(dc.invoiceCount)}</span>
-                  </div>
-                  <div className="text-xs">
-                    <span className="text-muted-foreground">PRs: </span>
-                    <span className="font-semibold">{formatNumber(dc.prCount || 0)}</span>
-                  </div>
-                  {dc.totalBids > 0 && (
-                    <div className="text-xs">
-                      <span className="text-muted-foreground">Bids: </span>
-                      <span className="font-semibold">{formatNumber(dc.totalBids)}</span>
-                    </div>
-                  )}
-                  <div className="text-xs">
-                    <span className="text-muted-foreground">GRN Lines: </span>
-                    <span className="font-semibold">{formatNumber(dc.grnLines || 0)}</span>
-                  </div>
-                  {dc.activeContracts > 0 && (
-                    <div className="text-xs">
-                      <span className="text-muted-foreground">Active Contracts: </span>
-                      <span className="font-semibold">{formatNumber(dc.activeContracts)}</span>
-                    </div>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="col-span-12 md:col-span-4">
-          <Card data-testid="card-health-score">
-            <CardHeader className="px-4 py-3 pb-1.5">
-              <CardTitle className="text-base font-semibold flex items-center gap-2">
-                <Target className="h-4.5 w-4.5 text-primary" />
-                Procurement Health
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="px-3 pb-3 pt-0">
-              <div className="flex items-center justify-center mb-3">
-                <HealthScoreRing score={hs.overall || 0} label="Overall Score" size="lg" />
-              </div>
-              <div className="grid grid-cols-5 gap-1">
-                <HealthScoreRing score={hs.spending || 0} label="Spend" />
-                <HealthScoreRing score={hs.supplierRisk || 0} label="Supplier" />
-                <HealthScoreRing score={hs.paymentDiscipline || 0} label="Payments" />
-                <HealthScoreRing score={hs.budgetCompliance || 0} label="Budget" />
-                <HealthScoreRing score={hs.sourcingEfficiency || 0} label="Sourcing" />
-                <HealthScoreRing score={hs.contractCompliance || 0} label="Contracts" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-12 gap-2.5">
-        <div className="col-span-12 md:col-span-6">
-          <Card data-testid="card-spend-anomalies">
-            <CardHeader className="px-4 py-3 pb-1.5">
-              <CardTitle className="text-base font-semibold flex items-center gap-2">
-                <AlertTriangle className="h-4.5 w-4.5 text-amber-600" />
-                Spend Anomalies
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="px-4 pb-4 pt-0">
-              <div className="space-y-2.5">
-                {(insights.spendAnomalies || []).map((a: any, i: number) => {
-                  const sev = severityConfig[a.severity] || severityConfig.medium;
-                  return (
-                    <div key={i} className={`p-3 rounded-lg border ${sev.border} ${sev.bg}`} data-testid={`anomaly-${i}`}>
-                      <div className="flex items-start gap-3">
-                        {a.keyMetric && (
-                          <div className="flex flex-col items-center justify-center min-w-[60px] py-1">
-                            <span className={`text-xl font-bold ${sev.text} leading-none`}>{a.keyMetric.value}</span>
-                            <span className="text-[11px] text-muted-foreground mt-1 text-center leading-tight">{a.keyMetric.label}</span>
-                          </div>
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-2 mb-1">
-                            <h4 className="text-sm font-semibold">{a.title}</h4>
-                            <Badge variant="outline" className={`text-[11px] px-1.5 py-0 ${sev.text} border-current shrink-0`}>
-                              {a.severity}
-                            </Badge>
-                          </div>
-                          <p className="text-xs text-muted-foreground mb-1.5">{a.description}</p>
-                          {a.impact && (
-                            <p className="text-[11px] font-medium mb-1">
-                              <span className="text-muted-foreground">Impact: </span>{a.impact}
-                            </p>
-                          )}
-                          <div className="flex items-start gap-1.5 mt-2 pt-2 border-t border-current/10">
-                            <ChevronRight className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" />
-                            <p className="text-[11px] text-primary font-medium">{a.recommendation}</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="col-span-12 md:col-span-6">
-          <Card data-testid="card-savings-opportunities">
-            <CardHeader className="px-4 py-3 pb-1.5">
-              <CardTitle className="text-base font-semibold flex items-center gap-2">
-                <DollarSign className="h-4.5 w-4.5 text-green-600" />
-                Savings Opportunities
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="px-4 pb-4 pt-0">
-              <div className="space-y-2.5">
-                {(insights.savingsOpportunities || []).map((s: any, i: number) => {
-                  const eff = effortConfig[s.effort] || effortConfig.medium;
-                  return (
-                    <div key={i} className="p-3 rounded-lg border border-green-200 dark:border-green-800 bg-green-500/5" data-testid={`saving-${i}`}>
-                      <div className="flex items-start gap-3">
-                        {s.keyMetric && (
-                          <div className="flex flex-col items-center justify-center min-w-[60px] py-1">
-                            <span className="text-xl font-bold text-green-700 dark:text-green-400 leading-none">{s.keyMetric.value}</span>
-                            <span className="text-[11px] text-muted-foreground mt-1 text-center leading-tight">{s.keyMetric.label}</span>
-                          </div>
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-2 mb-1">
-                            <h4 className="text-sm font-semibold">{s.title}</h4>
-                            <Badge variant="outline" className={`text-[11px] px-1.5 py-0 ${eff.text} border-current shrink-0`}>
-                              {s.effort} effort
-                            </Badge>
-                          </div>
-                          <p className="text-xs text-muted-foreground mb-1.5">{s.description}</p>
-                          {s.estimatedSavings && (
-                            <p className="text-[11px] font-semibold text-green-700 dark:text-green-400 mb-1">
-                              Potential Savings: {s.estimatedSavings}
-                            </p>
-                          )}
-                          <div className="flex items-start gap-1.5 mt-2 pt-2 border-t border-green-200/50 dark:border-green-800/50">
-                            <ChevronRight className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" />
-                            <p className="text-[11px] text-primary font-medium">{s.recommendation}</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-12 gap-2.5">
-        <div className="col-span-12 md:col-span-6">
-          <Card data-testid="card-risk-alerts">
-            <CardHeader className="px-4 py-3 pb-1.5">
-              <CardTitle className="text-base font-semibold flex items-center gap-2">
-                <ShieldAlert className="h-4.5 w-4.5 text-red-600" />
-                Risk Alerts
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="px-4 pb-4 pt-0">
-              <div className="space-y-2.5">
-                {(insights.riskAlerts || []).map((r: any, i: number) => {
-                  const sev = severityConfig[r.riskLevel] || severityConfig.medium;
-                  const catIcons: Record<string, any> = {
-                    concentration: Building2,
-                    compliance: Shield,
-                    financial: DollarSign,
-                    operational: Package,
-                    sourcing: Gavel,
-                  };
-                  const CatIcon = catIcons[r.category] || Shield;
-                  return (
-                    <div key={i} className={`p-3 rounded-lg border ${sev.border} ${sev.bg}`} data-testid={`risk-${i}`}>
-                      <div className="flex items-start gap-3">
-                        {r.keyMetric && (
-                          <div className="flex flex-col items-center justify-center min-w-[60px] py-1">
-                            <span className={`text-xl font-bold ${sev.text} leading-none`}>{r.keyMetric.value}</span>
-                            <span className="text-[11px] text-muted-foreground mt-1 text-center leading-tight">{r.keyMetric.label}</span>
-                          </div>
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-2 mb-1">
-                            <div className="flex items-center gap-1.5">
-                              <CatIcon className={`h-4 w-4 ${sev.text}`} />
-                              <h4 className="text-sm font-semibold">{r.title}</h4>
-                            </div>
-                            <Badge variant="outline" className={`text-[11px] px-1.5 py-0 ${sev.text} border-current shrink-0`}>
-                              {r.riskLevel}
-                            </Badge>
-                          </div>
-                          <p className="text-xs text-muted-foreground mb-1.5">{r.description}</p>
-                          <div className="flex items-start gap-1.5 mt-2 pt-2 border-t border-current/10">
-                            <Zap className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" />
-                            <p className="text-[11px] text-primary font-medium">{r.mitigation}</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="col-span-12 md:col-span-6">
-          <Card data-testid="card-strategic-recommendations">
-            <CardHeader className="px-4 py-3 pb-1.5">
-              <CardTitle className="text-base font-semibold flex items-center gap-2">
-                <Lightbulb className="h-4.5 w-4.5 text-amber-500" />
-                Strategic Recommendations
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="px-4 pb-4 pt-0">
-              <div className="space-y-2.5">
-                {(insights.strategicRecommendations || []).map((r: any, i: number) => {
-                  const pr = priorityConfig[r.priority] || priorityConfig["short-term"];
-                  return (
-                    <div key={i} className="p-3 rounded-lg border bg-card" data-testid={`recommendation-${i}`}>
-                      <div className="flex items-start gap-3">
-                        {r.keyMetric && (
-                          <div className="flex flex-col items-center justify-center min-w-[60px] py-1">
-                            <span className="text-xl font-bold text-primary leading-none">{r.keyMetric.value}</span>
-                            <span className="text-[11px] text-muted-foreground mt-1 text-center leading-tight">{r.keyMetric.label}</span>
-                          </div>
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-2 mb-1">
-                            <h4 className="text-sm font-semibold">{r.title}</h4>
-                            <Badge variant="outline" className={`text-[11px] px-1.5 py-0 ${pr.text} border-current shrink-0`}>
-                              {r.priority}
-                            </Badge>
-                          </div>
-                          <p className="text-xs text-muted-foreground mb-1.5">{r.description}</p>
-                          <div className="flex items-start gap-1.5 mt-2 pt-2 border-t">
-                            <ArrowRight className="h-3.5 w-3.5 text-green-600 mt-0.5 shrink-0" />
-                            <p className="text-[11px] text-green-700 dark:text-green-400 font-medium">{r.expectedOutcome}</p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      {insights.generatedAt && (
-        <div className="flex items-center justify-center gap-2 py-2 text-xs text-muted-foreground">
-          <Sparkles className="h-3.5 w-3.5" />
-          Analysis generated {new Date(insights.generatedAt).toLocaleString()} using AI (GPT-4o-mini). Results are cached for 15 minutes.
-        </div>
-      )}
-    </div>
   );
 }

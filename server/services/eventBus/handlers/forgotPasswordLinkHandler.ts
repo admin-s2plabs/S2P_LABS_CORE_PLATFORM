@@ -15,7 +15,7 @@ class ForgotPasswordLinkHandler extends BaseEmailHandler<ForgotPasswordLinkEvent
       user: event.userName,
       userName: event.loginUserName,
       linkUrl: event.resetLinkUrl,
-      orgName: event.orgName || 'Prokraya',
+      orgName: event.orgName || 'S2P Labs',
       orgLogoPath: event.orgLogoPath || '',
     };
   }

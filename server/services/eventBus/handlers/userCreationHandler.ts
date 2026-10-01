@@ -15,7 +15,7 @@ class UserCreationHandler extends BaseEmailHandler<UserCreationEvent> {
       user: event.userName,
       userName: event.loginUserName,
       linkUrl: event.resetLinkUrl,
-      orgName: event.orgName || 'Prokraya',
+      orgName: event.orgName || 'S2P Labs',
       orgLogoPath: event.orgLogoPath || '',
     };
   }

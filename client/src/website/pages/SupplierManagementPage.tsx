@@ -1,4 +1,4 @@
-import { ArrowRight, CheckCircle, Clock, FileText, Shield, TrendingUp, Users } from "lucide-react";
+import { CheckCircle, Clock, FileText, Shield, TrendingUp, Users } from "lucide-react";
 import { Helmet } from "react-helmet-async";
 import { Link } from "wouter";
 import { CommonShortForm } from "../components/CommonShortForm";
@@ -30,16 +30,16 @@ export function SupplierManagementPage() {
           async
           src="https://www.googletagmanager.com/gtag/js?id=G-KDV6R2SDN2"
         ></script>
-        <meta property="og:title" content="Supplier Management Software | Prokraya" />
-        <meta property="og:description" content="Automate supplier onboarding, compliance, risk monitoring, and performance management with AI-powered supplier management software." />
+        <meta property="og:title" content="Supplier Management Software | S2P Labs" />
+        <meta property="og:description" content="Automate supplier onboarding, compliance, risk monitoring, and performance management with supplier management software." />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://prokraya.ai/supplier-management" />
-        <meta property="og:site_name" content="Prokraya" />
+        <meta property="og:site_name" content="S2P Labs" />
         <meta property="og:image" content={LogoBlack} />
         <meta name="twitter:card" content={LogoBlack} />
         <meta name="twitter:site" content="@prokraya" />
-        <title>Supplier Management Software | AI-Powered Vendor Management | Prokraya</title>
-        <meta name="description" content="Manage supplier onboarding, compliance, performance, and risk from a single platform. AI-powered supplier management software with automated workflows and real-time visibility." />
+        <title>Supplier Management Software | Vendor Management | S2P Labs</title>
+        <meta name="description" content="Manage supplier onboarding, compliance, performance, and risk from a single platform. Supplier management software with automated workflows and real-time visibility." />
         <meta name="keywords" content="supplier management software, supplier relationship management, vendor management software, supplier onboarding software, supplier risk management, SRM software, vendor compliance management, supplier performance management" />
       </Helmet>
 
@@ -56,12 +56,9 @@ export function SupplierManagementPage() {
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-600 to-violet-500">Management</span>
                 </h1>
                 <p className="text-lg text-gray-500 max-w-2xl mx-auto mb-8">
-                  Transform vendor management with AI-powered onboarding, risk monitoring, and performance analytics. Build stronger supplier relationships while maintaining compliance.
+                  Transform vendor management with automated onboarding, risk monitoring, and performance analytics. Build stronger supplier relationships while maintaining compliance.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-3">
-                  <Link href="/book-demo" className="inline-flex items-center justify-center gap-2 px-7 py-3 bg-teal-600 text-white font-semibold rounded-lg hover:bg-teal-700 transition-colors">
-                    Request Demo <ArrowRight className="w-4 h-4" />
-                  </Link>
                   <Link href="/contact-us" className="inline-flex items-center justify-center px-7 py-3 border border-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors">
                     Contact Sales
                   </Link>
@@ -104,12 +101,12 @@ export function SupplierManagementPage() {
           </div>
         </section>
 
-        {/* Benefits + AI Insights */}
+        {/* Benefits + Insights */}
         <section className="py-20 bg-gray-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid lg:grid-cols-2 gap-12 items-start">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">Why Choose Prokraya for Supplier Management?</h2>
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">Why Choose S2P Labs for Supplier Management?</h2>
                 <div className="space-y-3">
                   {benefits.map((benefit, index) => (
                     <div key={index} className="flex items-start gap-3">
@@ -120,8 +117,8 @@ export function SupplierManagementPage() {
                 </div>
               </div>
               <div className="bg-white border border-gray-100 rounded-2xl p-7 shadow-sm">
-                <h3 className="font-bold text-gray-900 mb-2">AI-Powered Insights</h3>
-                <p className="text-sm text-gray-600 mb-5">Our AI Vendor Agent continuously analyzes supplier data to provide actionable insights:</p>
+                <h3 className="font-bold text-gray-900 mb-2">Actionable Insights</h3>
+                <p className="text-sm text-gray-600 mb-5">Our Vendor Agent continuously analyzes supplier data to provide actionable insights:</p>
                 <div className="space-y-3">
                   <div className="bg-red-50 border border-red-100 rounded-xl p-4">
                     <p className="font-semibold text-red-800 text-sm">Risk Alert: 3 vendors have expiring certifications</p>
@@ -142,17 +139,6 @@ export function SupplierManagementPage() {
         </section>
 
         <CommonShortForm reactedPage="Supplier Management" />
-
-        {/* CTA */}
-        <section className="py-20 bg-gradient-to-br from-slate-900 via-violet-950 to-slate-900 text-white">
-          <div className="max-w-2xl mx-auto px-4 text-center">
-            <h2 className="text-3xl font-bold mb-3">Ready to Transform Your Supplier Management?</h2>
-            <p className="text-gray-400 mb-8">Join hundreds of organizations optimizing their vendor relationships</p>
-            <Link href="/book-demo" className="inline-flex items-center gap-2 px-7 py-3 bg-teal-600 text-white font-semibold rounded-lg hover:bg-teal-700 transition-colors">
-              Schedule a Demo <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-        </section>
       </div>
     </>
   );

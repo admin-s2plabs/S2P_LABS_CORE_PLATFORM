@@ -2,7 +2,7 @@
  * Condensed Prokraya sales corpus – used to ground /api/chatbot/ask responses.
  * Keep in sync with reference-data.js if that changes materially.
  */
-export const CONDENSED_CORPUS = `PROKRAYA – CONDENSED REFERENCE (grounding for Ask Prokraya)
+export const CONDENSED_CORPUS = `S2P LABS – CONDENSED REFERENCE (grounding for Ask S2P Labs)
 
 WHAT IT IS: AI-native Source-to-Pay (S2P) platform covering the full procurement lifecycle – supplier onboarding through invoice payment – on a single unified platform with a free supplier portal. It sits on top of the ERP (does not replace it); the ERP stays the system of record. It can also run fully standalone.
 
@@ -10,9 +10,9 @@ MODULES (9): Supplier/Vendor Management; Purchase Requisition; Sourcing & RFQ (R
 
 AI LAYER: EVA autonomous agent (65+ tools); AI Invoice Fraud Detection; AI Three-Way Match (Vision OCR); AI Vendor Risk & Intelligence; AI PO Anomaly Detection; AI Clause Generation; AI Item Suggestions; AI Smart Auto-Fill; AI Spend Insights; 37 embedded AI features across all modules. AI agents are an add-on (annual recurring); embedded AI features sit within the platform. Accuracy: functional from day one, below ~80% confidence until trained on ~3 months of the client's historical data, then above ~90%. Genuinely-live agents: vendor onboarding and vendor evaluation; others (sourcing, procurement-ops, payables, workbench/voice) are roadmap – do NOT present roadmap agents as live. "60–80% automation" and "95% accuracy" are headline benchmarks, not hard guarantees.
 
-INTEGRATION / CONNECTORS: SAP EBS & S/4HANA, Oracle EBS & Fusion Cloud, JD Edwards, MS Dynamics 365 & Business Central, NetSuite, Workday, QuickBooks – 50+ pre-built bi-directional connectors, sub-second sync. API / web-services integration with tokenised authentication; each touchpoint (vendors, GL, categories, PR, bid award, PO, GRN, invoice) configured independently, one-directional or bidirectional, synced on schedule, on-trigger (within seconds), or one-time load. Master data (vendors, GL, categories, items) is owned by the ERP and loaded into Prokraya; supplier self-registration can originate in Prokraya and sync back to the ERP.
+INTEGRATION / CONNECTORS: SAP EBS & S/4HANA, Oracle EBS & Fusion Cloud, JD Edwards, MS Dynamics 365 & Business Central, NetSuite, Workday, QuickBooks – 50+ pre-built bi-directional connectors, sub-second sync. API / web-services integration with tokenised authentication; each touchpoint (vendors, GL, categories, PR, bid award, PO, GRN, invoice) configured independently, one-directional or bidirectional, synced on schedule, on-trigger (within seconds), or one-time load. Master data (vendors, GL, categories, items) is owned by the ERP and loaded into S2P Labs; supplier self-registration can originate in S2P Labs and sync back to the ERP.
 
-DEPLOYMENT: (1) on-premise on the client's server (e.g. Government of India) – Prokraya has no data access; (2) public/region cloud on Azure with DR; (3) private cloud on the client's managed AWS/Azure (e.g. Almoyad). LLM choice: OpenAI GPT-4o, Azure OpenAI (client's tenant), or AWS Bedrock (Llama/Mistral) – data sovereignty configurable.
+DEPLOYMENT: (1) on-premise on the client's server (e.g. Government of India) – S2P Labs has no data access; (2) public/region cloud on Azure with DR; (3) private cloud on the client's managed AWS/Azure (e.g. Almoyad). LLM choice: OpenAI GPT-4o, Azure OpenAI (client's tenant), or AWS Bedrock (Llama/Mistral) – data sovereignty configurable.
 
 SECURITY & COMPLIANCE: ISO 27001 and GDPR; Azure/AWS platform certifications per chosen region. Every action is auditable (timestamped logs across all modules, exportable CSV/PDF). Multi-tenant SaaS with strict tenant isolation; on-prem and private-cloud single-tenant options exist.
 
@@ -28,7 +28,7 @@ REGIONS: India; GCC (UAE, Qatar, Bahrain, KSA, Oman); SEA (Malaysia, Philippines
 
 FIVE UNIVERSAL DIFFERENTIATORS:
 1. Suppliers always free – no per-supplier, per-invoice, per-transaction, or per-document charge; you pay only for internal users.
-2. ERP-agnostic & portable – 50+ bi-directional connectors; if you change ERP, Prokraya travels with you.
+2. ERP-agnostic & portable – 50+ bi-directional connectors; if you change ERP, S2P Labs travels with you.
 3. Deployment sovereignty – on-prem, private cloud, or public cloud, your choice.
 4. Modern LLM-native AI – EVA (65+ tools) on OpenAI / Azure OpenAI / AWS Bedrock, embedded across all modules.
 5. Speed & low TCO – standard SaaS in 3–6 weeks, no change-request billing, per-user pricing, no transaction fees.
@@ -41,7 +41,7 @@ COMPETITOR POSITIONING:
 - GEP SMART: WIN – pure software, speed, fits $20M–$500M. LEAD – strategic-sourcing suite; supply-chain risk intelligence.
 - Ivalua: WIN – 3–6 weeks vs 6–24 months, transparent per-user pricing, modern LLM-native AI. LEAD – most configurable large S2P; very strong CLM.
 - Zycus: WIN – LLM-native EVA vs Zycus older Merlin AI, more ERP connectors, faster deploy, true on-prem. LEAD – deep India penetration; established iComply.
-- Microsoft Dynamics 365: Prokraya EXTENDS it – adds external supplier portal, full RFx + auctions, AI three-way match, native CLM.
+- Microsoft Dynamics 365: S2P Labs EXTENDS it – adds external supplier portal, full RFx + auctions, AI three-way match, native CLM.
 - Basware: WIN – full upstream S2P, native CLM, on-prem/private cloud, free supplier portal. LEAD – market-leading e-invoicing.
 - SME tools (Tradogram/Procurify/Kissflow): WIN – full S2P vs PR/PO + basic reporting; enterprise governance. LEAD – much cheaper at small scale.
 

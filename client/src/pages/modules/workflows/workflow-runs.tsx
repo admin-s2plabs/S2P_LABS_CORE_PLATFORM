@@ -196,7 +196,7 @@ export default function WorkflowRunsPage() {
       <div className="flex-1 p-4 space-y-4">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <h1 className="text-xl font-semibold" data-testid="text-page-title">Workflow Runs</h1>
+            <h1 className="text-xl font-semibold text-primary" data-testid="text-page-title">Workflow Runs</h1>
             <p className="text-sm text-muted-foreground">
               Monitor workflow executions and view detailed logs
               <Badge variant="outline" className="ml-2 text-xs">Sample Data</Badge>
