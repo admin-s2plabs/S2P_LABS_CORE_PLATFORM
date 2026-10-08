@@ -1,0 +1,64 @@
+# Render Blueprint — https://render.com/docs/blueprint-spec
+# Create the service once via Render Dashboard → New → Blueprint → select this repo.
+# After that, every push to `main` rebuilds the Docker image and redeploys automatically.
+# See RENDER_DEPLOY.md for the full setup walkthrough.
+services:
+  - type: web
+    name: s2p            # also becomes the tenant subdomain: s2p.onrender.com → am_tenant_mst.domain_name = 's2p'
+    runtime: docker
+    plan: free
+    region: singapore
+    branch: main
+    autoDeployTrigger: commit  # deploy on every push to `main`
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /healthz
+    envVars:
+      # ---- Required ----
+      - key: DATABASE_URL        # master DB (e.g. Neon) — tenant DBs must live on the same server
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: APP_URL             # e.g. https://s2p.onrender.com
+        sync: false
+      - key: JWT_PRIVATE_KEY     # RS256 PKCS8 PEM, newlines escaped as \n
+        sync: false
+      - key: JWT_PUBLIC_KEY      # RS256 SPKI PEM, newlines escaped as \n
+        sync: false
+      - key: NODE_ENV
+        value: production
+      # Keep the V8 heap under the free plan's 512 MB limit
+      - key: NODE_OPTIONS
+        value: --max-old-space-size=384
+
+      # ---- Optional (leave blank to skip the feature) ----
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: SMTP_FROM
+        sync: false
+      - key: AZURE_STORAGE_CONNECTION_STRING
+        sync: false
+      - key: AZURE_STORAGE_CONTAINER_NAME
+        sync: false
+      - key: AI_INTEGRATIONS_OPENAI_API_KEY
+        sync: false
+      - key: AI_INTEGRATIONS_OPENAI_BASE_URL
+        sync: false
+      - key: OGD_INDIA_API_KEY
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: MICROSOFT_CLIENT_ID
+        sync: false
+      - key: MICROSOFT_CLIENT_SECRET
+        sync: false
+      - key: MICROSOFT_TENANT_ID
+        value: common

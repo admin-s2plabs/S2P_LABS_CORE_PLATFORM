@@ -20,6 +20,12 @@ const app = express();
 app.set("trust proxy", 1);
 const httpServer = createServer(app);
 
+// Liveness probe for the hosting platform (Render healthCheckPath). Registered before
+// session/tenant middleware so it never touches the database or creates a session.
+app.get("/healthz", (_req, res) => {
+  res.status(200).json({ status: "ok" });
+});
+
 declare module "http" {
   interface IncomingMessage {
     rawBody: unknown;
