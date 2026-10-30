@@ -591,10 +591,11 @@ export async function getUserMenuFunctions(userId: string) {
 }
 
 export async function getUserCounts() {
+  // Active + inactive partition the users, so the two always add up to the card's total.
   const breakdown = (typeFilter: string) => getPool().query(`
     SELECT
       COUNT(*) FILTER (WHERE user_status = 1) as active,
-      COUNT(*) FILTER (WHERE creation_date >= now() - interval '30 days') as new
+      COUNT(*) FILTER (WHERE user_status IS DISTINCT FROM 1) as inactive
     FROM dbo.um_user_dtls
     WHERE 1=1 ${typeFilter}
   `);
@@ -607,11 +608,11 @@ export async function getUserCounts() {
 
   return {
     totalUsers: parseInt(total.rows[0]?.active || '0'),
-    totalUsersNew: parseInt(total.rows[0]?.new || '0'),
+    totalUsersInactive: parseInt(total.rows[0]?.inactive || '0'),
     organizationUsers: parseInt(org.rows[0]?.active || '0'),
-    organizationUsersNew: parseInt(org.rows[0]?.new || '0'),
+    organizationUsersInactive: parseInt(org.rows[0]?.inactive || '0'),
     supplierUsers: parseInt(supplier.rows[0]?.active || '0'),
-    supplierUsersNew: parseInt(supplier.rows[0]?.new || '0'),
+    supplierUsersInactive: parseInt(supplier.rows[0]?.inactive || '0'),
   };
 }
 

@@ -42,11 +42,11 @@ import { cn } from "@/lib/utils";
 
 interface UserCounts {
   totalUsers: number;
-  totalUsersNew: number;
+  totalUsersInactive: number;
   organizationUsers: number;
-  organizationUsersNew: number;
+  organizationUsersInactive: number;
   supplierUsers: number;
-  supplierUsersNew: number;
+  supplierUsersInactive: number;
 }
 
 interface SupplierSpendRow {
@@ -103,7 +103,7 @@ interface PendingApprovalCounts {
 function StatCard({
   title,
   value,
-  newValue,
+  inactiveValue,
   icon: Icon,
   bgColor,
   textColor,
@@ -111,8 +111,9 @@ function StatCard({
   onClick,
 }: {
   title: string;
+  /** Active count when `inactiveValue` is given; the card's total is value + inactiveValue. */
   value: number;
-  newValue?: number;
+  inactiveValue?: number;
   icon: typeof Users;
   bgColor: string;
   textColor: string;
@@ -132,11 +133,11 @@ function StatCard({
         <div className="flex-1 min-w-0">
           <p className="text-xs font-bold uppercase tracking-wide text-primary flex items-center gap-1.5">
             <span className="truncate">{title}</span>
-            {newValue !== undefined && (
-              <span className="text-sm normal-case shrink-0">· {value + newValue}</span>
+            {inactiveValue !== undefined && (
+              <span className="text-sm normal-case shrink-0">· {value + inactiveValue}</span>
             )}
           </p>
-          {newValue === undefined ? (
+          {inactiveValue === undefined ? (
             <p
               className="text-xl font-bold text-primary"
               data-testid={`stat-value-${title.toLowerCase().replace(/\s+/g, "-")}`}
@@ -152,8 +153,8 @@ function StatCard({
                 <p className="text-[10px] uppercase text-muted-foreground">Active</p>
               </div>
               <div>
-                <p className="text-lg font-bold text-primary">{newValue}</p>
-                <p className="text-[10px] uppercase text-muted-foreground">New</p>
+                <p className="text-lg font-bold text-primary">{inactiveValue}</p>
+                <p className="text-[10px] uppercase text-muted-foreground">Inactive</p>
               </div>
             </div>
           )}
@@ -880,7 +881,7 @@ function AppDashboardContent() {
                   <StatCard
                     title="Total Users"
                     value={userCounts?.totalUsers || 0}
-                    newValue={userCounts?.totalUsersNew || 0}
+                    inactiveValue={userCounts?.totalUsersInactive || 0}
                     icon={Users}
                     bgColor="bg-primary/10"
                     textColor="text-primary"
@@ -890,7 +891,7 @@ function AppDashboardContent() {
                   <StatCard
                     title="Organization Users"
                     value={userCounts?.organizationUsers || 0}
-                    newValue={userCounts?.organizationUsersNew || 0}
+                    inactiveValue={userCounts?.organizationUsersInactive || 0}
                     icon={Building2}
                     bgColor="bg-primary/10"
                     textColor="text-primary"
@@ -902,7 +903,7 @@ function AppDashboardContent() {
                   <StatCard
                     title="Supplier Users"
                     value={userCounts?.supplierUsers || 0}
-                    newValue={userCounts?.supplierUsersNew || 0}
+                    inactiveValue={userCounts?.supplierUsersInactive || 0}
                     icon={Users}
                     bgColor="bg-primary/10"
                     textColor="text-primary"
