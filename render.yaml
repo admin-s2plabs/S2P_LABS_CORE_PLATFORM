@@ -42,6 +42,8 @@ services:
         sync: false
       - key: SMTP_FROM
         sync: false
+      - key: SUPPORT_EMAIL       # receives contact-us / enquiry emails (falls back to SMTP_FROM)
+        value: s2pteam@gmail.com
       - key: AZURE_STORAGE_CONNECTION_STRING
         sync: false
       - key: AZURE_STORAGE_CONTAINER_NAME

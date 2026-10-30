@@ -630,7 +630,7 @@ export async function processRegistrationApprovalStep(supplierId: number, body: 
     try {
       const supplierName = supplier.company_name || String(supplierId);
       // Determine receiver (the first approver from the new/next task instances)
-      let receiverEmail = "procurement@prokraya.com"; // fallback
+      let receiverEmail = process.env.SUPPORT_EMAIL || process.env.SMTP_FROM || ""; // fallback
       if (ntaskId || taskId) {
         const targetTaskId = ntaskId || taskId;
         const targetWfStepInstances = await workflowService.findByTaskId(targetTaskId);

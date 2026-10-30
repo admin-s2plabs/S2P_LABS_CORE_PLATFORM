@@ -967,7 +967,7 @@ export class CommonService
       eventType: event,
       timestamp: new Date(),
       emailId:  email,
-      userName: "prokrayateam@gmail.com",
+      userName: process.env.SUPPORT_EMAIL || process.env.SMTP_FROM || "",
       fullName: Firstname + " " + lastName,
       companyName: companyName,
       mobileNumber: mobile,
@@ -990,7 +990,7 @@ export class CommonService
     emailId: params.email,
     mobileNumber: params.mobile,
     message: params.message,
-    userName: "prokrayateam@gmail.com",
+    userName: process.env.SUPPORT_EMAIL || process.env.SMTP_FROM || "",
     loginUserName: "S2P Labs Team",
     user: params.user,
     };
@@ -1005,7 +1005,7 @@ export class CommonService
     emailId: params.email,
     mobileNumber: params.mobile,
     message: params.message,
-    userName: "prokrayateam@gmail.com",
+    userName: process.env.SUPPORT_EMAIL || process.env.SMTP_FROM || "",
     loginUserName: "S2P Labs Team",
     user: params.user,
     };
