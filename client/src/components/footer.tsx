@@ -1,6 +1,4 @@
 import { formatDate } from "@/lib/common-functions";
-import TermsConditions from "@/pages/modules/common/terms-conditions";
-import PrivacyPolicy from "@/pages/modules/common/privacy-policy";
 
 interface FooterProps {
   lastLoginDate?: string | null;
@@ -18,10 +16,6 @@ export function Footer({ lastLoginDate }: FooterProps) {
       <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-muted-foreground">
         <div className="flex items-center gap-1 flex-wrap justify-center sm:justify-start">
           <span>Copyright © 2026 S2P Labs Tech Private Limited, All rights reserved.</span>
-          <span className="hidden sm:inline">|</span>
-          <PrivacyPolicy className="hover:underline" dataTestId="link-privacy-policy" />
-          <span>|</span>
-          <TermsConditions type="Footer" className="hover:underline" dataTestId="link-terms" />
         </div>
         <div>
           Last Login: {formatLastLogin(lastLoginDate)}

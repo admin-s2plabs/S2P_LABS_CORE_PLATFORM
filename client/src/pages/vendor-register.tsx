@@ -1,7 +1,8 @@
 import s2pLabsLogo from "@/assets/images/s2plabs_logo.jpeg";
+import { AuthFooter } from "@/components/auth-footer";
+import { AuthSideArt } from "@/components/auth-illustrations";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -29,14 +30,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   AlertCircle,
-  ArrowLeft,
-  Briefcase,
   CheckCircle,
-  Clock,
   Eye,
   EyeOff,
-  FileCheck,
-  Globe,
   Info,
   Mail,
   RefreshCw,
@@ -45,30 +41,6 @@ import { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link } from "wouter";
 import { z } from "zod";
-import TermsConditions from "./modules/common/terms-conditions";
-
-const vendorFeatures = [
-  {
-    icon: FileCheck,
-    title: "Simple Onboarding",
-    description: "Guided document upload and verification process",
-  },
-  {
-    icon: Clock,
-    title: "Fast Approval",
-    description: "Streamlined review workflow with real-time status updates",
-  },
-  {
-    icon: Globe,
-    title: "Business Opportunities",
-    description: "Access RFQs, tenders, and purchase orders from enterprises",
-  },
-  {
-    icon: Briefcase,
-    title: "Invoice & Payment Tracking",
-    description: "Upload invoices and track payment status in real-time",
-  },
-];
 
 const generateCaptcha = () => {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
@@ -141,9 +113,6 @@ const registerSchema = z
     }),
     confirmPassword: z.string(),
     captchaValue: z.string().min(1, "Please enter captcha value"),
-    acceptTerms: z
-      .boolean()
-      .refine((val) => val === true, "You must accept the terms"),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Password and Confirm Password did not match",
@@ -188,7 +157,6 @@ export default function VendorRegister() {
       password: "",
       confirmPassword: "",
       captchaValue: "",
-      acceptTerms: false,
     },
   });
 
@@ -410,68 +378,14 @@ export default function VendorRegister() {
 
   if (isComplete) {
     return (
-      <div className="min-h-screen flex">
-        <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-violet-600 via-purple-600 to-fuchsia-600 relative overflow-hidden">
-          <div className="absolute top-10 left-10 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
-          <div className="absolute bottom-20 right-10 w-80 h-80 bg-white/10 rounded-full blur-3xl" />
-          <div className="absolute top-1/2 left-1/4 w-40 h-40 bg-white/5 rounded-full blur-2xl" />
-
-          <div className="relative z-10 flex flex-col justify-between p-10 text-white w-full">
-            <div className="flex flex-col">
-              <img
-                src={s2pLabsLogo}
-                alt="S2P Labs"
-                className="h-10 object-contain object-left"
-              />
-              <span className="text-xs text-white/90 font-semibold uppercase tracking-wider ml-[48px] mt-1">
-                Supplier Portal
-              </span>
-            </div>
-
-            <div className="flex-1 flex flex-col justify-center max-w-md">
-              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white/20 mx-auto mb-6">
-                <CheckCircle className="h-10 w-10" />
-              </div>
-              <h1 className="text-3xl font-bold mb-4 text-center">
-                Registration Complete!
-              </h1>
-              <p className="text-lg text-white/80 text-center">
-                Congratulations! Your account has been created successfully.
-                Please check your email to activate it.
-              </p>
-            </div>
-
-            <div className="flex items-center gap-8 pt-6 border-t border-white/20">
-              <div>
-                <p className="text-2xl font-bold">100+</p>
-                <p className="text-sm text-white/70">Categories</p>
-              </div>
-              <div>
-                <p className="text-2xl font-bold">6</p>
-                <p className="text-sm text-white/70">Simple Steps</p>
-              </div>
-              <div>
-                <p className="text-2xl font-bold">24hr</p>
-                <p className="text-sm text-white/70">Fast Approval</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="w-full lg:w-1/2 flex flex-col bg-background">
-          <header className="flex items-center justify-end px-6 py-4 lg:hidden">
-            <div className="flex flex-col">
-              <img
-                src={s2pLabsLogo}
-                alt="S2P Labs"
-                className="h-8 object-contain object-left"
-              />
-            </div>
-          </header>
-
-          <main className="flex-1 flex items-center justify-center p-6">
-            <Card className="w-full max-w-md text-center">
+      <div className="min-h-screen flex flex-col s2p-auth s2p-auth-surface">
+          <main className="flex-1 flex items-center justify-center gap-10 2xl:gap-16 px-4 py-4">
+            <AuthSideArt side="left" />
+            <Card className="w-full max-w-md text-center rounded-2xl shadow-xl shadow-violet-900/5">
               <CardContent className="pt-8 pb-8">
+              <div className="flex justify-center mb-3">
+                <img src={s2pLabsLogo} alt="S2P Labs" className="h-10 object-contain" />
+              </div>
                 <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10 mx-auto mb-6">
                   <CheckCircle className="h-8 w-8 text-emerald-500" />
                 </div>
@@ -508,122 +422,33 @@ export default function VendorRegister() {
                 </Link>
               </CardContent>
             </Card>
+            <AuthSideArt side="right" />
           </main>
-        </div>
+          <AuthFooter />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex">
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-violet-600 via-purple-600 to-fuchsia-600 relative overflow-hidden">
-        <div className="absolute top-10 left-10 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 right-10 w-80 h-80 bg-white/10 rounded-full blur-3xl" />
-        <div className="absolute top-1/2 left-1/4 w-40 h-40 bg-white/5 rounded-full blur-2xl" />
-
-        <div className="relative z-10 flex flex-col justify-between p-10 text-white w-full">
-          <div className="flex flex-col">
-            <img
-              src={s2pLabsLogo}
-              alt="S2P Labs"
-              className="h-10 object-contain object-left"
-            />
-            <span className="text-xs text-white/90 font-semibold uppercase tracking-wider ml-[48px] mt-1">
-              Supplier Portal
-            </span>
-          </div>
-
-          <div className="flex-1 flex flex-col justify-center max-w-md mt-[-40px]">
-            <div className="mb-8">
-              <h1 className="text-4xl font-bold mb-4 leading-tight">
-                Join Our Supplier Network
-              </h1>
-              <p className="text-lg text-white/80">
-                Register to access procurement opportunities from leading
-                enterprises.
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              {vendorFeatures.map((feature, i) => (
-                <div
-                  key={i}
-                  className="flex items-start gap-4 p-4 rounded-xl bg-white/10 backdrop-blur"
-                >
-                  <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
-                    <feature.icon className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold mb-1">{feature.title}</h3>
-                    <p className="text-sm text-white/70">
-                      {feature.description}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex items-center gap-8 pt-6 border-t border-white/20">
-            <div>
-              <p className="text-2xl font-bold">100+</p>
-              <p className="text-sm text-white/70">Categories</p>
-            </div>
-            <div>
-              <p className="text-2xl font-bold">6</p>
-              <p className="text-sm text-white/70">Simple Steps</p>
-            </div>
-            <div>
-              <p className="text-2xl font-bold">24hr</p>
-              <p className="text-sm text-white/70">Fast Approval</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="w-full lg:w-1/2 flex flex-col bg-background">
-        <header className="flex items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-3">
-            <Link href="/login">
-              <Button
-                variant="ghost"
-                size="icon"
-                data-testid="button-back-to-login"
-              >
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-            </Link>
-            <div className="flex flex-col lg:hidden">
-              <img
-                src={s2pLabsLogo}
-                alt="S2P Labs"
-                className="h-8 object-contain object-left"
-              />
-            </div>
-          </div>
-          <Link
-            href="/login"
-            className="text-sm text-muted-foreground hover:text-foreground"
-          >
-            Already a member?{" "}
-            <span className="text-primary font-medium">Sign In</span>
-          </Link>
-        </header>
-
-        <main className="flex-1 flex items-start justify-center p-6 overflow-y-auto">
-          <div className="w-full max-w-lg">
-            <div className="mb-6">
+    <div className="min-h-screen flex flex-col s2p-auth s2p-auth-surface">
+        <main className="flex-1 flex items-center justify-center gap-10 2xl:gap-16 px-4 py-4">
+          <AuthSideArt side="left" />
+          <div className="w-full max-w-lg rounded-2xl border bg-card px-6 py-5 sm:px-8 sm:py-6 shadow-xl shadow-violet-900/5">
+              <div className="flex justify-center mb-3">
+                <img src={s2pLabsLogo} alt="S2P Labs" className="h-10 object-contain" />
+              </div>
+            <div className="mb-4 text-center">
               <h1
-                className="text-2xl font-bold text-primary mb-1"
+                className="text-2xl font-bold tracking-tight mb-1"
                 data-testid="text-register-title"
               >
                 Sign Up
               </h1>
-              {invitationId && (
-                <p className="text-sm text-muted-foreground">
-                  You've been invited to register. Some fields are pre-filled.
-                </p>
-              )}
+              <p className="text-sm text-muted-foreground">
+                {invitationId
+                  ? "You've been invited to register. Some fields are pre-filled."
+                  : "Register your company as a supplier"}
+              </p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -1028,25 +853,8 @@ export default function VendorRegister() {
                 </div>
               </div>
 
-              {/* Terms & Submit */}
-              <div className="flex items-center justify-between gap-4 flex-wrap pt-2">
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    id="acceptTerms"
-                    checked={form.watch("acceptTerms")}
-                    onCheckedChange={(checked) =>
-                      form.setValue("acceptTerms", checked as boolean)
-                    }
-                    data-testid="checkbox-terms"
-                  />
-                  <Label
-                    htmlFor="acceptTerms"
-                    className="text-sm cursor-pointer"
-                  >
-                    I accept{" "}
-                    <TermsConditions type="Signup" dataTestId="signup-link-terms" />
-                  </Label>
-                </div>
+              {/* Submit */}
+              <div className="flex justify-end pt-2">
                 <Button
                   type="submit"
                   disabled={registerMutation.isPending}
@@ -1055,20 +863,19 @@ export default function VendorRegister() {
                   {registerMutation.isPending ? "Signing Up..." : "Sign Up"}
                 </Button>
               </div>
-              {form.formState.errors.acceptTerms && (
-                <p className="text-xs text-destructive">
-                  {form.formState.errors.acceptTerms.message}
-                </p>
-              )}
             </form>
+
+            <p className="mt-6 text-center text-sm text-muted-foreground">
+              Already a member?{" "}
+              <Link href="/login" className="text-primary font-medium hover:underline" data-testid="button-back-to-login">
+                Sign In
+              </Link>
+            </p>
           </div>
+          <AuthSideArt side="right" />
         </main>
 
-        <footer className="px-6 py-3 text-[11px] text-muted-foreground text-center border-t">
-          Copyright &copy; {new Date().getFullYear()} S2P Labs Tech Private
-          Limited. All rights reserved.
-        </footer>
-      </div>
+      <AuthFooter />
     </div>
   );
 }

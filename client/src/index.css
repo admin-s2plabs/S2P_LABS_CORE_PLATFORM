@@ -574,3 +574,41 @@
 .sourcing-activation-card p.text-\[11px\].text-muted-foreground.flex > svg {
   flex-shrink: 0;
 }
+
+/* S2P brand theme for the public auth pages (sign in / supplier sign up), taken from
+   the S2P Labs logo: navy "S"/"P", violet "2" + arrow + "labs", blue highlight.
+   Scoped to the page root so the in-app accent colours are untouched. Values derived
+   from --primary at :root (border, gradient, swatches) are re-declared here, otherwise
+   they would keep the :root colour. */
+.s2p-auth,
+.dark .s2p-auth {
+  --primary: 262 83% 58%; /* #7C3AED */
+  --primary-foreground: 0 0% 100%;
+  --ring: 262 83% 58%;
+  --primary-border: hsl(262 83% 50%);
+  --primary-gradient: linear-gradient(90deg, hsl(var(--primary)), hsl(var(--primary)));
+  --swatch-1: hsl(var(--primary) / 1);
+  --swatch-2: hsl(var(--primary) / 0.8);
+  --swatch-3: hsl(var(--primary) / 0.6);
+}
+
+.s2p-auth-hero {
+  background:
+    radial-gradient(circle at 85% 12%, rgb(79 123 234 / 0.45), transparent 45%),
+    radial-gradient(circle at 10% 95%, rgb(139 61 255 / 0.35), transparent 50%),
+    linear-gradient(135deg, #0b0d24 0%, #1c1550 45%, #4c1d95 78%, #7c3aed 100%);
+}
+
+/* Form side of the auth pages: light tint of the logo violet/blue. */
+.s2p-auth-surface {
+  background:
+    radial-gradient(circle at 100% 0%, rgb(79 123 234 / 0.14), transparent 40%),
+    radial-gradient(circle at 0% 100%, rgb(124 58 237 / 0.14), transparent 45%),
+    linear-gradient(160deg, #f7f4ff 0%, #f1f3ff 55%, #f6f1ff 100%);
+}
+.dark .s2p-auth-surface {
+  background:
+    radial-gradient(circle at 100% 0%, rgb(79 123 234 / 0.18), transparent 40%),
+    radial-gradient(circle at 0% 100%, rgb(124 58 237 / 0.2), transparent 45%),
+    linear-gradient(160deg, #0f1029 0%, #14123a 100%);
+}

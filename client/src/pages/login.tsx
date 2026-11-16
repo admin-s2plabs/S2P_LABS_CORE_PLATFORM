@@ -1,4 +1,6 @@
 import s2pLabsLogo from "@/assets/images/s2plabs_logo.jpeg";
+import { AuthFooter } from "@/components/auth-footer";
+import { AuthSideArt } from "@/components/auth-illustrations";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
@@ -6,29 +8,23 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { encryptPassword } from "@/lib/password-crypto";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { getTenantSubdomain } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import {
   AlertCircle,
-  ArrowLeft,
   ArrowRight,
-  Bot,
-  Building2,
-  Eye, EyeOff,
+  Eye,
+  EyeOff,
   Globe,
   Loader2,
   Lock,
   Mail,
-  Shield, Smartphone,
-  Workflow, Zap
+  Smartphone
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useLocation } from "wouter";
 import { z } from "zod";
-import PrivacyPolicy from "./modules/common/privacy-policy";
-import TermsConditions from "./modules/common/terms-conditions";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email"),
@@ -55,14 +51,6 @@ type OTPFormData = z.infer<typeof otpSchema>;
 interface LoginProps {
   onLogin: (role: "vendor" | "staff", userId: string, orgId?: string, userName?: string, vendorStatus?: string, email?: string, userNameId?: string, supplierId?: string) => void;
 }
-
-const features = [
-  {
-    icon: Shield,
-    title: "Enterprise Ready",
-    description: "Built for scale with compliance, security, and audit trails"
-  }
-];
 
 function getDomainFromHostname(): { domain: string; isSubdomain: boolean; isLocal: boolean; baseDomain: string } {
   const hostname = window.location.hostname;
@@ -100,6 +88,10 @@ function getDomainFromHostname(): { domain: string; isSubdomain: boolean; isLoca
 // subdomain (production) or skipped entirely (localhost/dev).
 // Useful for testing multi-tenant login on localhost.
 const SHOW_DOMAIN_FIELD = true;
+
+// Show the "Other signin options" block (Sign in with OTP, Google, Microsoft).
+// Hidden for S2P; set to true to bring it back.
+const SHOW_ALTERNATE_SIGNIN = false;
 // ──────────────────────────────────────────────────────────────
 
 function GoogleIcon({ className }: { className?: string }) {
@@ -438,74 +430,16 @@ export default function Login({ onLogin }: LoginProps) {
     : "Enter your organization domain to continue";
 
   return (
-    <div className="min-h-screen flex">
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-violet-600 via-purple-600 to-fuchsia-600 relative overflow-hidden">
-        <div className="absolute top-10 left-10 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 right-10 w-80 h-80 bg-white/10 rounded-full blur-3xl" />
-        <div className="absolute top-1/2 left-1/4 w-40 h-40 bg-white/5 rounded-full blur-2xl" />
-
-        <div className="relative z-10 flex flex-col justify-between p-10 text-white w-full">
-          <div>
-            {!getTenantSubdomain() && (
-              <Link href="/">
-                <div className="flex items-center gap-2 mb-2 cursor-pointer group">
-                  <ArrowLeft className="h-4 w-4 opacity-70 group-hover:opacity-100 transition-opacity" />
-                  <span className="text-sm opacity-70 group-hover:opacity-100 transition-opacity">Back to home</span>
-                </div>
-              </Link>
-            )}
-            <img src={s2pLabsLogo} alt="S2P Labs" className="h-10 object-contain object-left" />
-            <span className="text-xs text-white/90 font-semibold uppercase tracking-wider ml-[48px] mt-1">AI Agentic Procurement</span>
-          </div>
-
-          <div className="flex-1 flex flex-col justify-center max-w-md">
-            <div className="mb-8">
-              <h1 className="text-4xl font-bold mb-4 leading-tight">
-                Transform Your Procurement with AI
-              </h1>
-              <p className="text-lg text-white/80">
-                Experience the future of Source-to-Pay with intelligent automation and conversational AI agents.
-              </p>
+    <div className="min-h-screen flex flex-col s2p-auth s2p-auth-surface">
+      <main className="flex-1 flex items-center justify-center gap-10 2xl:gap-16 px-4 py-4">
+        <AuthSideArt side="left" />
+        <div className="w-full max-w-md">
+          <div className="rounded-2xl border bg-card px-6 py-5 sm:px-8 sm:py-6 shadow-xl shadow-violet-900/5">
+            <div className="flex justify-center mb-3">
+              <img src={s2pLabsLogo} alt="S2P Labs" className="h-10 object-contain" />
             </div>
-
-            <div className="space-y-4">
-              {features.map((feature, i) => (
-                <div key={i} className="flex items-start gap-4 p-4 rounded-xl bg-white/10 backdrop-blur">
-                  <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
-                    <feature.icon className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold mb-1">{feature.title}</h3>
-                    <p className="text-sm text-white/70">{feature.description}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex items-center gap-8 pt-6 border-t border-white/20">
-            <div>
-              <p className="text-2xl font-bold">24/7</p>
-              <p className="text-sm text-white/70">Autonomous Execution</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="w-full lg:w-1/2 flex flex-col bg-background">
-        <header className="lg:hidden flex items-center justify-between px-6 py-4 border-b">
-          <Link href="/">
-            <div className="flex flex-col cursor-pointer">
-              <img src={s2pLabsLogo} alt="S2P Labs" className="h-8 object-contain object-left" />
-              <span className="text-[10px] text-primary font-semibold uppercase tracking-wider ml-[38px] bg-primary/10 px-2 py-0.5 rounded">AI-Powered S2P</span>
-            </div>
-          </Link>
-        </header>
-
-        <main className="flex-1 flex items-start justify-center p-6 lg:p-12 pt-16 lg:pt-24">
-          <div className="w-full max-w-md">
-            <div className="mb-8 text-center">
-              <h2 className="text-2xl font-bold tracking-tight mb-2" data-testid="text-login-title">
+            <div className="mb-4 text-center">
+              <h2 className="text-2xl font-bold tracking-tight mb-1" data-testid="text-login-title">
                 {headerText}
               </h2>
               <p className="text-muted-foreground">
@@ -513,7 +447,7 @@ export default function Login({ onLogin }: LoginProps) {
               </p>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3">
               {/* ── Domain Field ── Visible when SHOW_DOMAIN_FIELD=true or on main domain (no subdomain, not localhost) */}
               {domainFieldVisible && (
                 <div className="space-y-2">
@@ -555,7 +489,7 @@ export default function Login({ onLogin }: LoginProps) {
 
               {showCredentials ? (
                 loginMode === "password" ? (
-                  <form onSubmit={form.handleSubmit(handleLogin)} className="space-y-4">
+                  <form onSubmit={form.handleSubmit(handleLogin)} className="space-y-3">
                     <div className="space-y-2">
                       <Label htmlFor="email">Email</Label>
                       <div className="relative">
@@ -603,21 +537,32 @@ export default function Login({ onLogin }: LoginProps) {
                         </Link>
                       </div>
                     </div>
-                    <Button
-                      type="submit"
-                      className="w-full h-11"
-                      disabled={loginMutation.isPending}
-                      data-testid="button-login"
-                    >
-                      {loginMutation.isPending ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Signing in...
-                        </>
-                      ) : (
-                        "Sign In"
-                      )}
-                    </Button>
+                    <div className="grid grid-cols-2 gap-3 pt-1">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="h-11 border-primary/40 text-primary hover:text-primary"
+                        data-testid="link-register-vendor"
+                        onClick={() => setLocation("/register")}
+                      >
+                        Register as Supplier
+                      </Button>
+                      <Button
+                        type="submit"
+                        className="h-11"
+                        disabled={loginMutation.isPending}
+                        data-testid="button-login"
+                      >
+                        {loginMutation.isPending ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Signing in...
+                          </>
+                        ) : (
+                          "Sign In"
+                        )}
+                      </Button>
+                    </div>
                   </form>
                 ) : (
                   <form
@@ -726,7 +671,7 @@ export default function Login({ onLogin }: LoginProps) {
                 </Button>
               )}
 
-              {showCredentials && (
+              {showCredentials && SHOW_ALTERNATE_SIGNIN && (
                 <>
                   <div className="relative">
                     <div className="absolute inset-0 flex items-center">
@@ -793,39 +738,12 @@ export default function Login({ onLogin }: LoginProps) {
               )}
             </div>
 
-            {showCredentials && (
-              <div className="mt-8 p-4 rounded-xl bg-gradient-to-r from-primary/5 to-violet-500/5 border border-primary/10">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                    <Building2 className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="font-medium mb-1">New Supplier?</p>
-                    <p className="text-sm text-muted-foreground mb-3">
-                      Register your company to become an approved supplier
-                    </p>
-                    <Button variant="default" size="sm" className="gap-2" data-testid="link-register-vendor" onClick={() => setLocation("/register")}>
-                      Register as Supplier
-                      <ArrowRight className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div className="text-center text-xs text-muted-foreground mt-8 space-y-2">
-              <div className="flex items-center justify-center gap-2">
-                <TermsConditions type="Signin" className="hover:text-foreground hover:underline" dataTestId="link-terms" />
-                <span>|</span>
-                <PrivacyPolicy className="hover:text-foreground hover:underline" dataTestId="link-privacy-policy" />
-                <span>|</span>
-                <a href="#" className="hover:text-foreground hover:underline">Security</a>
-              </div>
-              <p>Copyright © 2026 S2P Labs Tech Private Limited, All rights reserved.</p>
-            </div>
           </div>
-        </main>
-      </div>
+        </div>
+        <AuthSideArt side="right" />
+      </main>
+
+      <AuthFooter />
     </div>
   );
 }

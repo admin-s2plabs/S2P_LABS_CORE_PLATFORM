@@ -1,4 +1,5 @@
 import s2pLabsLogo from "@/assets/images/s2plabs_logo.jpeg";
+import { AuthFooter } from "@/components/auth-footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
@@ -8,23 +9,17 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import {
-  ArrowLeft,
-  ArrowRight,
-  Bot,
-  CheckCircle2,
-  Eye, EyeOff,
+  Eye,
+  EyeOff,
   Loader2,
   Lock,
   Mail,
-  Shield, Smartphone,
-  Workflow, Zap
+  Smartphone,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useLocation } from "wouter";
 import { z } from "zod";
-import TermsConditions from "./modules/common/terms-conditions";
-import PrivacyPolicy from "./modules/common/privacy-policy";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email"),
@@ -51,28 +46,8 @@ interface AdminSigninProps {
   onLogin: (role: "vendor" | "staff", userId: string, orgId?: string, userName?: string, vendorStatus?: string, email?: string, userNameId?: string, supplierId?: string) => void;
 }
 
-const features = [
-  {
-    icon: Bot,
-    title: "6 Specialized AI Agents",
-    description: "Sourcing, Vendor, Contract, Invoice, Spend & Compliance agents working together"
-  },
-  {
-    icon: Workflow,
-    title: "Agentic Workflows",
-    description: "Configure trigger-based automation that executes procurement tasks autonomously"
-  },
-  {
-    icon: Zap,
-    title: "Natural Language Interface",
-    description: "Describe what you need in plain English - AI handles the execution"
-  },
-  {
-    icon: Shield,
-    title: "Enterprise Ready",
-    description: "Built for scale with compliance, security, and audit trails"
-  }
-];
+// Show the "Other Options" block (Sign in with OTP). Hidden for S2P; set to true to bring it back.
+const SHOW_ALTERNATE_SIGNIN = false;
 
 export default function AdminSignin({ onLogin }: AdminSigninProps) {
   const [, setLocation] = useLocation();
@@ -200,71 +175,14 @@ export default function AdminSignin({ onLogin }: AdminSigninProps) {
   });
 
   return (
-    <div className="min-h-screen flex">
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-violet-600 via-purple-600 to-fuchsia-600 relative overflow-hidden">
-        <div className="absolute top-10 left-10 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 right-10 w-80 h-80 bg-white/10 rounded-full blur-3xl" />
-        <div className="absolute top-1/2 left-1/4 w-40 h-40 bg-white/5 rounded-full blur-2xl" />
-
-        <div className="relative z-10 flex flex-col justify-between p-10 text-white w-full">
-          <div>
-            <Link href="/">
-              <div className="flex items-center gap-2 mb-2 cursor-pointer group">
-                <ArrowLeft className="h-4 w-4 opacity-70 group-hover:opacity-100 transition-opacity" />
-                <span className="text-sm opacity-70 group-hover:opacity-100 transition-opacity">Back to home</span>
-              </div>
-            </Link>
-            <img src={s2pLabsLogo} alt="S2P Labs" className="h-10 object-contain object-left" />
-            <span className="text-xs text-white/90 font-semibold uppercase tracking-wider ml-[48px] mt-1">AI Agentic Procurement</span>
-          </div>
-
-          <div className="flex-1 flex flex-col justify-center max-w-md">
-            <div className="mb-8">
-              <h1 className="text-4xl font-bold mb-4 leading-tight">
-                Admin Portal access
-              </h1>
-              <p className="text-lg text-white/80">
-                Authorized access for S2P Labs procurement administrators and system managers.
-              </p>
+    <div className="min-h-screen flex flex-col s2p-auth s2p-auth-surface">
+      <main className="flex-1 flex items-center justify-center px-4 py-4">
+        <div className="w-full max-w-md">
+          <div className="rounded-2xl border bg-card px-6 py-5 sm:px-8 sm:py-6 shadow-xl shadow-violet-900/5">
+            <div className="flex justify-center mb-3">
+              <img src={s2pLabsLogo} alt="S2P Labs" className="h-10 object-contain" />
             </div>
-
-            <div className="space-y-4">
-              {features.map((feature, i) => (
-                <div key={i} className="flex items-start gap-4 p-4 rounded-xl bg-white/10 backdrop-blur">
-                  <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
-                    <feature.icon className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold mb-1">{feature.title}</h3>
-                    <p className="text-sm text-white/70">{feature.description}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex items-center gap-8 pt-6 border-t border-white/20">
-            <div>
-              <p className="text-2xl font-bold">Admin</p>
-              <p className="text-sm text-white/70">Console</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="w-full lg:w-1/2 flex flex-col bg-background">
-        <header className="lg:hidden flex items-center justify-between px-6 py-4 border-b">
-          <Link href="/">
-            <div className="flex flex-col cursor-pointer">
-              <img src={s2pLabsLogo} alt="S2P Labs" className="h-8 object-contain object-left" />
-              <span className="text-[10px] text-primary font-semibold uppercase tracking-wider ml-[38px] bg-primary/10 px-2 py-0.5 rounded">AI-Powered S2P</span>
-            </div>
-          </Link>
-        </header>
-
-        <main className="flex-1 flex items-start justify-center p-6 lg:p-12 pt-16 lg:pt-24">
-          <div className="w-full max-w-md">
-            <div className="mb-8 text-center">
+            <div className="mb-5 text-center">
               <h2 className="text-2xl font-bold tracking-tight mb-2">
                 Admin Sign In
               </h2>
@@ -318,7 +236,7 @@ export default function AdminSignin({ onLogin }: AdminSigninProps) {
                       <p className="text-sm text-destructive">{form.formState.errors.password.message}</p>
                     )}
                     <div className="text-right">
-                      <Link href="/forgot-password" university-link className="text-xs text-primary hover:underline">
+                      <Link href="/forgot-password" className="text-xs text-primary hover:underline">
                         Forgot password?
                       </Link>
                     </div>
@@ -420,59 +338,55 @@ export default function AdminSignin({ onLogin }: AdminSigninProps) {
                 </form>
               )}
 
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
+              {SHOW_ALTERNATE_SIGNIN && (
+                <>
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">Other Options</span>
+                  </div>
                 </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">Other Options</span>
-                </div>
-              </div>
 
-              {loginMode === "password" ? (
-                <Button
-                  variant="outline"
-                  className="w-full h-11 gap-2"
-                  onClick={() => {
-                    setLoginMode("otp");
-                    setOtpStep("send");
-                    form.reset();
-                    otpForm.setValue("email", form.getValues("email"));
-                  }}
-                >
-                  <Smartphone className="h-4 w-4" />
-                  Sign in With OTP
-                </Button>
-              ) : (
-                <Button
-                  variant="outline"
-                  className="w-full h-11 gap-2"
-                  onClick={() => {
-                    setLoginMode("password");
-                    setOtpStep("send");
-                    otpForm.reset();
-                    form.setValue("email", form.getValues("email"));
-                  }}
-                >
-                  <Lock className="h-4 w-4" />
-                  Sign in With Password
-                </Button>
+                {loginMode === "password" ? (
+                  <Button
+                    variant="outline"
+                    className="w-full h-11 gap-2"
+                    onClick={() => {
+                      setLoginMode("otp");
+                      setOtpStep("send");
+                      form.reset();
+                      otpForm.setValue("email", form.getValues("email"));
+                    }}
+                  >
+                    <Smartphone className="h-4 w-4" />
+                    Sign in With OTP
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    className="w-full h-11 gap-2"
+                    onClick={() => {
+                      setLoginMode("password");
+                      setOtpStep("send");
+                      otpForm.reset();
+                      form.setValue("email", form.getValues("email"));
+                    }}
+                  >
+                    <Lock className="h-4 w-4" />
+                    Sign in With Password
+                  </Button>
+                )}
+                </>
               )}
             </div>
 
-            <div className="text-center text-xs text-muted-foreground mt-8 space-y-2">
-              <div className="flex items-center justify-center gap-2">
-                <TermsConditions type="Signin" className="hover:text-foreground hover:underline" />
-                <span>|</span>
-                <PrivacyPolicy className="hover:text-foreground hover:underline" />
-                <span>|</span>
-                <a href="#" className="hover:text-foreground hover:underline">Security</a>
-              </div>
-              <p>Copyright © 2026 S2P Labs Tech Private Limited, All rights reserved.</p>
-            </div>
           </div>
-        </main>
-      </div>
+        </div>
+      </main>
+
+      <AuthFooter />
     </div>
   );
 }
