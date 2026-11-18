@@ -272,6 +272,22 @@ export async function updateUser(id: string, data: {
   return result;
 }
 
+/** Human-readable name for a table that still references a user (FK violation on delete). */
+function describeUserReference(table: string | null): string {
+  if (!table) return "records";
+  const prefixes: [string, string][] = [
+    ["supp_bid", "bids"],
+    ["au_", "auctions"],
+    ["cm_", "contracts"],
+    ["supp_invoice", "invoices"],
+    ["supp_po", "purchase orders"],
+    ["wf_", "approval workflows"],
+    ["act_", "approval tasks"],
+  ];
+  const match = prefixes.find(([prefix]) => table.startsWith(prefix));
+  return match ? `${match[1]} (${table})` : `records (${table})`;
+}
+
 export async function deleteUser(id: string, actingUserId?: string) {
   if (!id) throw { status: 400, message: "User id is required" };
   if (actingUserId && String(actingUserId) === String(id)) {
@@ -286,9 +302,20 @@ export async function deleteUser(id: string, actingUserId?: string) {
     throw { status: 400, message: "Primary SUPERADMIN user cannot be deleted" };
   }
 
-  await repo.deleteUserRoles(id);
-  await repo.deleteUserOrgMappings(id);
-  const deleted = await repo.deleteUserById(id);
+  let deleted;
+  try {
+    deleted = await repo.deleteUserWithMappings(id);
+  } catch (error: any) {
+    if (error?.status === 409) {
+      throw {
+        status: 409,
+        message:
+          `This user is linked to existing ${describeUserReference(error.referencingTable)} and cannot be deleted. ` +
+          "Deactivate the user instead.",
+      };
+    }
+    throw error;
+  }
   if (!deleted) throw { status: 500, message: "Failed to delete user" };
 
   return { success: true, message: "User deleted successfully", id: deleted.id };

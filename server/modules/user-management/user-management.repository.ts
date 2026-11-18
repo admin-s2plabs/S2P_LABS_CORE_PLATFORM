@@ -419,16 +419,33 @@ export async function deleteUserRoles(userId: string) {
   await getPool().query(`DELETE FROM dbo.um_user_roles_map_dtls WHERE user_id = $1`, [userId]);
 }
 
-export async function deleteUserOrgMappings(userId: string) {
-  await getPool().query(`DELETE FROM dbo.um_user_org_map_dtls WHERE user_id = $1`, [userId]);
-}
-
-export async function deleteUserById(userId: string) {
-  const result = await getPool().query(
-    `DELETE FROM dbo.um_user_dtls WHERE id = $1 RETURNING id, user_name, email_id`,
-    [userId],
-  );
-  return result.rows[0] || null;
+/**
+ * Deletes a user with its role and business-entity mappings in one transaction, so a
+ * failure (e.g. the user is still referenced by bids/approvals) leaves the user untouched
+ * instead of silently stripping their roles. A foreign-key violation is rethrown as a
+ * 409 naming the referencing table.
+ */
+export async function deleteUserWithMappings(userId: string) {
+  const client = await getPool().connect();
+  try {
+    await client.query("BEGIN");
+    await client.query(`DELETE FROM dbo.um_user_roles_map_dtls WHERE user_id = $1`, [userId]);
+    await client.query(`DELETE FROM dbo.um_user_org_map_dtls WHERE user_id = $1`, [userId]);
+    const result = await client.query(
+      `DELETE FROM dbo.um_user_dtls WHERE id = $1 RETURNING id, user_name, email_id`,
+      [userId],
+    );
+    await client.query("COMMIT");
+    return result.rows[0] || null;
+  } catch (error: any) {
+    await client.query("ROLLBACK").catch(() => {});
+    if (error?.code === "23503") {
+      throw { status: 409, referencingTable: error.table ?? null, message: error.message };
+    }
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 export async function insertUserRole(userId: string, roleId: number) {
